@@ -37,7 +37,7 @@ export function DashboardHeader({ title, onMobileMenuToggle }: DashboardHeaderPr
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
             placeholder="Search posts, trends..."
-            className="pl-9 h-9 bg-secondary border-0 focus-visible:ring-1"
+            className="pl-9 h-9 bg-secondary border-0 focus-visible:ring-1 focus-visible:ring-red-500/50"
           />
         </div>
       </div>
@@ -58,12 +58,12 @@ export function DashboardHeader({ title, onMobileMenuToggle }: DashboardHeaderPr
 
         <button className="relative w-9 h-9 flex items-center justify-center rounded-lg hover:bg-accent text-muted-foreground transition-colors">
           <Bell className="w-4 h-4" />
-          <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-purple-500" />
+          <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-red-500" />
         </button>
 
         <Avatar className="w-8 h-8 cursor-pointer">
           <AvatarImage src="" />
-          <AvatarFallback className="bg-gradient-to-br from-purple-600 to-blue-600 text-white text-xs font-bold">
+          <AvatarFallback className="bg-gradient-to-br from-red-600 to-rose-700 text-white text-xs font-bold">
             U
           </AvatarFallback>
         </Avatar>

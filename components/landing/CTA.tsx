@@ -11,18 +11,17 @@ export function CTA() {
       {/* Background */}
       <div className="absolute inset-0 pointer-events-none">
         <div
-          className="absolute inset-0 opacity-5"
+          className="absolute inset-0 opacity-[0.06]"
           style={{
-            background:
-              "radial-gradient(ellipse 80% 60% at 50% 50%, #7c3aed, transparent)",
+            background: "radial-gradient(ellipse 80% 60% at 50% 50%, #dc2626, transparent)",
           }}
         />
         <div
-          className="absolute inset-0 opacity-[0.02]"
+          className="absolute inset-0 opacity-[0.025]"
           style={{
             backgroundImage: `
-              linear-gradient(rgba(255,255,255,0.15) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(255,255,255,0.15) 1px, transparent 1px)
+              linear-gradient(rgba(255,255,255,0.12) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(255,255,255,0.12) 1px, transparent 1px)
             `,
             backgroundSize: "40px 40px",
           }}
@@ -38,7 +37,7 @@ export function CTA() {
           className="text-center"
         >
           {/* Badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-purple-500/30 bg-purple-500/10 text-purple-300 text-sm mb-8">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-red-500/30 bg-red-500/10 text-red-400 text-sm mb-8">
             <Zap className="w-3.5 h-3.5 fill-current" />
             Free for 14 days — no credit card required
           </div>

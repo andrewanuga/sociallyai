@@ -3,29 +3,29 @@ import { Zap, Globe, Send, ExternalLink } from "lucide-react";
 
 const FOOTER_LINKS = {
   Product: [
-    { label: "Features", href: "#features" },
-    { label: "Pricing", href: "#pricing" },
+    { label: "Features",  href: "#features"  },
+    { label: "Pricing",   href: "#pricing"   },
     { label: "ROI Pulse", href: "#roi-pulse" },
-    { label: "Changelog", href: "#" },
-    { label: "Roadmap", href: "#" },
+    { label: "Changelog", href: "#"          },
+    { label: "Roadmap",   href: "#"          },
   ],
   Company: [
-    { label: "About", href: "#" },
-    { label: "Blog", href: "#" },
-    { label: "Careers", href: "#" },
-    { label: "Press Kit", href: "#" },
+    { label: "About",    href: "#" },
+    { label: "Blog",     href: "#" },
+    { label: "Careers",  href: "#" },
+    { label: "Press Kit",href: "#" },
   ],
   Legal: [
-    { label: "Privacy Policy", href: "#" },
-    { label: "Terms of Service", href: "#" },
-    { label: "Cookie Policy", href: "#" },
-    { label: "GDPR", href: "#" },
+    { label: "Privacy Policy",  href: "#" },
+    { label: "Terms of Service",href: "#" },
+    { label: "Cookie Policy",   href: "#" },
+    { label: "GDPR",            href: "#" },
   ],
   Support: [
     { label: "Documentation", href: "#" },
-    { label: "Help Center", href: "#" },
-    { label: "Community", href: "#" },
-    { label: "Status", href: "#" },
+    { label: "Help Center",   href: "#" },
+    { label: "Community",     href: "#" },
+    { label: "Status",        href: "#" },
   ],
 };
 
@@ -37,7 +37,7 @@ export function Footer() {
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
             <Link href="/" className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-red-600 to-rose-700 flex items-center justify-center shadow-lg shadow-red-600/30">
                 <Zap className="w-4 h-4 text-white fill-white" />
               </div>
               <span className="font-bold text-lg">
@@ -54,7 +54,7 @@ export function Footer() {
                 <a
                   key={i}
                   href="#"
-                  className="w-9 h-9 rounded-lg border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-border/80 transition-colors"
+                  className="w-9 h-9 rounded-lg border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-red-500/40 hover:bg-red-500/5 transition-colors"
                 >
                   <Icon className="w-4 h-4" />
                 </a>

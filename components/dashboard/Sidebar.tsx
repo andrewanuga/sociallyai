@@ -4,42 +4,27 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  LayoutDashboard,
-  PenSquare,
-  Calendar,
-  MessageSquare,
-  Ghost,
-  TrendingUp,
-  BarChart3,
-  Settings,
-  Zap,
-  ChevronLeft,
-  ChevronRight,
-  LogOut,
-  CreditCard,
+  LayoutDashboard, PenSquare, Calendar, MessageSquare,
+  Ghost, TrendingUp, BarChart3, Settings, Zap,
+  ChevronLeft, ChevronRight, LogOut, CreditCard,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 
 const NAV_ITEMS = [
-  {
-    href: "/dashboard",
-    label: "Overview",
-    icon: LayoutDashboard,
-    exact: true,
-  },
-  { href: "/dashboard/compose", label: "Compose", icon: PenSquare },
-  { href: "/dashboard/calendar", label: "Calendar", icon: Calendar },
-  { href: "/dashboard/inbox", label: "Inbox", icon: MessageSquare, badge: 4 },
-  { href: "/dashboard/ghost-mode", label: "Ghost Mode", icon: Ghost },
-  { href: "/dashboard/trends", label: "Trends", icon: TrendingUp },
-  { href: "/dashboard/analytics", label: "Analytics", icon: BarChart3 },
+  { href: "/dashboard",             label: "Overview",    icon: LayoutDashboard, exact: true },
+  { href: "/dashboard/compose",     label: "Compose",     icon: PenSquare                   },
+  { href: "/dashboard/calendar",    label: "Calendar",    icon: Calendar                    },
+  { href: "/dashboard/inbox",       label: "Inbox",       icon: MessageSquare, badge: 4     },
+  { href: "/dashboard/ghost-mode",  label: "Ghost Mode",  icon: Ghost                       },
+  { href: "/dashboard/trends",      label: "Trends",      icon: TrendingUp                  },
+  { href: "/dashboard/analytics",   label: "Analytics",   icon: BarChart3                   },
 ];
 
 const BOTTOM_ITEMS = [
-  { href: "/dashboard/billing", label: "Billing", icon: CreditCard },
-  { href: "/dashboard/settings", label: "Settings", icon: Settings },
+  { href: "/dashboard/billing",  label: "Billing",  icon: CreditCard },
+  { href: "/dashboard/settings", label: "Settings", icon: Settings   },
 ];
 
 interface SidebarProps {
@@ -49,7 +34,7 @@ interface SidebarProps {
 
 export function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const pathname = usePathname();
-  const router = useRouter();
+  const router   = useRouter();
 
   const handleLogout = async () => {
     const supabase = createClient();
@@ -77,7 +62,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
           collapsed ? "justify-center" : "gap-3"
         )}
       >
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-purple-500/30">
+        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-red-600 to-rose-700 flex items-center justify-center flex-shrink-0 shadow-lg shadow-red-600/30">
           <Zap className="w-4 h-4 text-white fill-white" />
         </div>
         {!collapsed && (
@@ -100,22 +85,19 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
                 className={cn(
                   "flex items-center gap-3 px-2.5 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 group relative",
                   active
-                    ? "bg-primary/10 text-primary"
+                    ? "bg-red-500/10 text-red-400"
                     : "text-muted-foreground hover:text-foreground hover:bg-accent",
                   collapsed && "justify-center px-2"
                 )}
               >
                 <item.icon
-                  className={cn(
-                    "w-5 h-5 flex-shrink-0",
-                    active && "text-purple-400"
-                  )}
+                  className={cn("w-5 h-5 flex-shrink-0", active && "text-red-400")}
                 />
                 {!collapsed && (
                   <>
                     <span className="flex-1">{item.label}</span>
                     {item.badge && (
-                      <span className="w-5 h-5 rounded-full bg-purple-500/20 text-purple-400 text-xs flex items-center justify-center font-semibold">
+                      <span className="w-5 h-5 rounded-full bg-red-500/20 text-red-400 text-xs flex items-center justify-center font-semibold">
                         {item.badge}
                       </span>
                     )}
@@ -127,9 +109,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
                   <div className="absolute left-full ml-2 px-2 py-1 rounded-md bg-popover border border-border text-sm whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity shadow-lg">
                     {item.label}
                     {item.badge && (
-                      <span className="ml-1.5 text-purple-400">
-                        ({item.badge})
-                      </span>
+                      <span className="ml-1.5 text-red-400">({item.badge})</span>
                     )}
                   </div>
                 )}

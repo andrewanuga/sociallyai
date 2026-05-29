@@ -108,7 +108,7 @@ export function Pricing() {
           transition={{ duration: 0.6 }}
           className="text-center mb-16"
         >
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-green-500/30 bg-green-500/10 text-green-300 text-sm mb-6">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-green-500/30 bg-green-500/10 text-green-400 text-sm mb-6">
             <Zap className="w-3.5 h-3.5" />
             Pricing built for the African market
           </div>
@@ -135,14 +135,14 @@ export function Pricing() {
               className={cn(
                 "relative flex flex-col rounded-2xl border p-6 transition-all duration-300",
                 plan.highlight
-                  ? "border-purple-500/50 bg-gradient-to-b from-purple-950/50 to-card shadow-xl shadow-purple-500/10 scale-[1.02]"
-                  : "border-border bg-card hover:border-border/80 hover:shadow-lg"
+                  ? "border-red-500/50 bg-gradient-to-b from-red-950/40 to-card shadow-xl shadow-red-500/10 scale-[1.02]"
+                  : "border-border bg-card hover:border-red-500/20 hover:shadow-lg hover:shadow-red-500/5"
               )}
             >
               {/* Popular badge */}
               {plan.badge && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                  <span className="px-4 py-1 text-xs font-semibold rounded-full bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg">
+                  <span className="px-4 py-1 text-xs font-semibold rounded-full bg-gradient-to-r from-red-600 to-rose-600 text-white shadow-lg shadow-red-500/30">
                     {plan.badge}
                   </span>
                 </div>
@@ -154,33 +154,27 @@ export function Pricing() {
                   <plan.icon
                     className={cn(
                       "w-5 h-5",
-                      plan.highlight ? "text-purple-400" : "text-muted-foreground"
+                      plan.highlight ? "text-red-400" : "text-muted-foreground"
                     )}
                   />
                   <span className="font-semibold">{plan.name}</span>
                 </div>
                 <div className="flex items-end gap-1 mb-2">
                   <span className="text-3xl font-bold">{plan.price}</span>
-                  <span className="text-muted-foreground text-sm pb-1">
-                    {plan.period}
-                  </span>
+                  <span className="text-muted-foreground text-sm pb-1">{plan.period}</span>
                 </div>
                 <p className="text-xs text-muted-foreground">{plan.desc}</p>
               </div>
 
               {/* AI tier */}
               <div className="mb-5 p-3 rounded-lg bg-muted/50 border border-border/50">
-                <p className="text-xs font-medium text-muted-foreground mb-0.5">
-                  AI Engine
-                </p>
+                <p className="text-xs font-medium text-muted-foreground mb-0.5">AI Engine</p>
                 <p className="text-xs text-foreground">{plan.ai}</p>
               </div>
 
               {/* Accounts */}
               <div className="mb-5">
-                <Badge variant="blue" className="text-xs">
-                  {plan.accounts}
-                </Badge>
+                <Badge variant="blue" className="text-xs">{plan.accounts}</Badge>
               </div>
 
               {/* Features */}
@@ -190,7 +184,7 @@ export function Pricing() {
                     <Check
                       className={cn(
                         "w-4 h-4 mt-0.5 flex-shrink-0",
-                        plan.highlight ? "text-purple-400" : "text-green-500"
+                        plan.highlight ? "text-red-400" : "text-green-500"
                       )}
                     />
                     <span className="text-muted-foreground">{f}</span>
@@ -200,10 +194,7 @@ export function Pricing() {
 
               {/* CTA */}
               <Link href="/signup">
-                <Button
-                  variant={plan.ctaVariant}
-                  className="w-full"
-                >
+                <Button variant={plan.ctaVariant} className="w-full">
                   {plan.cta}
                 </Button>
               </Link>

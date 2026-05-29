@@ -8,17 +8,17 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const navLinks = [
-  { href: "#features", label: "Features" },
-  { href: "#how-it-works", label: "How it Works" },
-  { href: "#pricing", label: "Pricing" },
-  { href: "#roi-pulse", label: "ROI Pulse" },
+  { href: "#features",     label: "Features"      },
+  { href: "#how-it-works", label: "How it Works"  },
+  { href: "#pricing",      label: "Pricing"       },
+  { href: "#roi-pulse",    label: "ROI Pulse"     },
 ];
 
 export function Navbar() {
-  const [scrolled, setScrolled] = useState(false);
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
+  const [scrolled,    setScrolled]    = useState(false);
+  const [mobileOpen,  setMobileOpen]  = useState(false);
+  const { theme,      setTheme }      = useTheme();
+  const [mounted,     setMounted]     = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -32,14 +32,14 @@ export function Navbar() {
       className={cn(
         "fixed top-0 left-0 right-0 z-50 transition-all duration-300",
         scrolled
-          ? "bg-background/80 backdrop-blur-xl border-b border-border/50 shadow-sm"
+          ? "bg-background/85 backdrop-blur-xl border-b border-border/60 shadow-sm shadow-black/40"
           : "bg-transparent"
       )}
     >
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 group">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center shadow-lg shadow-purple-500/30 group-hover:shadow-purple-500/50 transition-shadow">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-red-600 to-rose-700 flex items-center justify-center shadow-lg shadow-red-600/30 group-hover:shadow-red-600/55 transition-shadow">
             <Zap className="w-4 h-4 text-white fill-white" />
           </div>
           <span className="font-bold text-lg tracking-tight">
@@ -77,14 +77,10 @@ export function Navbar() {
             </button>
           )}
           <Link href="/login">
-            <Button variant="ghost" size="sm">
-              Sign in
-            </Button>
+            <Button variant="ghost" size="sm">Sign in</Button>
           </Link>
           <Link href="/signup">
-            <Button variant="gradient" size="sm">
-              Get started free
-            </Button>
+            <Button variant="gradient" size="sm">Get started free</Button>
           </Link>
         </div>
 
@@ -106,11 +102,7 @@ export function Navbar() {
             onClick={() => setMobileOpen(!mobileOpen)}
             className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-accent text-muted-foreground"
           >
-            {mobileOpen ? (
-              <X className="w-5 h-5" />
-            ) : (
-              <Menu className="w-5 h-5" />
-            )}
+            {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
         </div>
       </nav>
@@ -131,14 +123,10 @@ export function Navbar() {
             ))}
             <div className="border-t border-border mt-2 pt-4 flex flex-col gap-2">
               <Link href="/login" onClick={() => setMobileOpen(false)}>
-                <Button variant="ghost" className="w-full justify-start">
-                  Sign in
-                </Button>
+                <Button variant="ghost" className="w-full justify-start">Sign in</Button>
               </Link>
               <Link href="/signup" onClick={() => setMobileOpen(false)}>
-                <Button variant="gradient" className="w-full">
-                  Get started free
-                </Button>
+                <Button variant="gradient" className="w-full">Get started free</Button>
               </Link>
             </div>
           </div>

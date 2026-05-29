@@ -5,57 +5,57 @@ import { useEffect, useRef } from "react";
 export function AnimatedBackground() {
   return (
     <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
-      {/* Base — dark mode dark, light mode white */}
-      <div className="absolute inset-0 bg-white dark:bg-[#030712]" />
+      {/* Base — pure black dark, white light */}
+      <div className="absolute inset-0 bg-white dark:bg-black" />
 
-      {/* Primary purple blob */}
+      {/* Primary red blob — top left */}
       <div
-        className="absolute -top-40 -left-40 w-[700px] h-[700px] rounded-full opacity-20 blur-[120px] animate-float"
+        className="absolute -top-40 -left-40 w-[700px] h-[700px] rounded-full opacity-[0.18] blur-[130px] animate-float"
         style={{
           background:
-            "radial-gradient(circle, #7c3aed 0%, #4f46e5 50%, transparent 70%)",
+            "radial-gradient(circle, #dc2626 0%, #7f1d1d 55%, transparent 75%)",
           animationDelay: "0s",
         }}
       />
 
-      {/* Blue blob */}
+      {/* Deep crimson blob — right */}
       <div
-        className="absolute top-1/3 -right-40 w-[600px] h-[600px] rounded-full opacity-15 blur-[100px] animate-float"
+        className="absolute top-1/3 -right-40 w-[600px] h-[600px] rounded-full opacity-[0.12] blur-[110px] animate-float"
         style={{
           background:
-            "radial-gradient(circle, #2563eb 0%, #0ea5e9 50%, transparent 70%)",
+            "radial-gradient(circle, #ef4444 0%, #991b1b 55%, transparent 75%)",
           animationDelay: "2s",
         }}
       />
 
-      {/* Pink/Magenta blob */}
+      {/* Rose blob — bottom */}
       <div
-        className="absolute bottom-0 left-1/3 w-[500px] h-[500px] rounded-full opacity-10 blur-[100px] animate-float"
+        className="absolute bottom-0 left-1/3 w-[500px] h-[500px] rounded-full opacity-[0.09] blur-[100px] animate-float"
         style={{
           background:
-            "radial-gradient(circle, #db2777 0%, #9333ea 50%, transparent 70%)",
+            "radial-gradient(circle, #f43f5e 0%, #be123c 55%, transparent 75%)",
           animationDelay: "4s",
         }}
       />
 
-      {/* Grid overlay */}
+      {/* Subtle grid */}
       <div
-        className="absolute inset-0 opacity-[0.03]"
+        className="absolute inset-0 opacity-[0.025] dark:opacity-[0.04]"
         style={{
           backgroundImage: `
-            linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)
+            linear-gradient(rgba(255,255,255,0.15) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255,255,255,0.15) 1px, transparent 1px)
           `,
           backgroundSize: "60px 60px",
         }}
       />
 
-      {/* Radial fade center */}
+      {/* Radial fade — black centre vignette */}
       <div
-        className="absolute inset-0"
+        className="absolute inset-0 hidden dark:block"
         style={{
           background:
-            "radial-gradient(ellipse 80% 50% at 50% 0%, transparent 0%, #030712 100%)",
+            "radial-gradient(ellipse 90% 60% at 50% 0%, transparent 0%, #000 100%)",
         }}
       />
     </div>
@@ -87,7 +87,7 @@ export function SpotlightEffect() {
       className="absolute inset-0 opacity-0 hover:opacity-100 transition-opacity duration-500 pointer-events-none"
       style={{
         background:
-          "radial-gradient(600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(124,58,237,0.08), transparent 40%)",
+          "radial-gradient(600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(220,38,38,0.07), transparent 40%)",
       }}
     />
   );
@@ -104,12 +104,12 @@ type OrbConfig = {
 
 export function FloatingOrbs() {
   const orbs: OrbConfig[] = [
-    { size: 8, top: "15%", left: "10%", delay: "0s", duration: "4s" },
-    { size: 5, top: "25%", right: "15%", delay: "1s", duration: "5s" },
-    { size: 6, top: "60%", left: "20%", delay: "2s", duration: "6s" },
+    { size: 8, top: "15%", left: "10%",  delay: "0s",   duration: "4s"   },
+    { size: 5, top: "25%", right: "15%", delay: "1s",   duration: "5s"   },
+    { size: 6, top: "60%", left: "20%",  delay: "2s",   duration: "6s"   },
     { size: 4, top: "70%", right: "25%", delay: "0.5s", duration: "4.5s" },
-    { size: 3, top: "40%", left: "50%", delay: "1.5s", duration: "3.5s" },
-    { size: 7, top: "80%", left: "5%", delay: "3s", duration: "5.5s" },
+    { size: 3, top: "40%", left: "50%",  delay: "1.5s", duration: "3.5s" },
+    { size: 7, top: "80%", left: "5%",   delay: "3s",   duration: "5.5s" },
   ];
 
   return (
@@ -124,11 +124,11 @@ export function FloatingOrbs() {
             top: orb.top,
             left: orb.left,
             right: orb.right,
-            background: i % 2 === 0 ? "#7c3aed" : "#2563eb",
-            boxShadow: `0 0 ${orb.size * 3}px ${i % 2 === 0 ? "#7c3aed" : "#2563eb"}`,
+            background: i % 2 === 0 ? "#ef4444" : "#f87171",
+            boxShadow: `0 0 ${orb.size * 3}px ${i % 2 === 0 ? "#ef4444" : "#f87171"}`,
             animationDelay: orb.delay,
             animationDuration: orb.duration,
-            opacity: 0.6,
+            opacity: 0.55,
           }}
         />
       ))}

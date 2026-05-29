@@ -2,29 +2,22 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
-import {
-  ArrowRight,
-  Sparkles,
-  TrendingUp,
-  Zap,
-  Play,
-  Star,
-} from "lucide-react";
+import { ArrowRight, Sparkles, Zap, Play, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { FloatingOrbs } from "./AnimatedBackground";
 
 const PLATFORMS = [
-  { name: "X (Twitter)", color: "#1DA1F2", letter: "X" },
-  { name: "LinkedIn", color: "#0077B5", letter: "in" },
-  { name: "Instagram", color: "#E1306C", letter: "IG" },
-  { name: "TikTok", color: "#010101", letter: "TT" },
+  { name: "X (Twitter)", color: "#1DA1F2", letter: "X"  },
+  { name: "LinkedIn",    color: "#0077B5", letter: "in" },
+  { name: "Instagram",   color: "#E1306C", letter: "IG" },
+  { name: "TikTok",      color: "#888888", letter: "TT" },
 ];
 
 const STATS = [
-  { value: "10x", label: "Faster content creation" },
-  { value: "3.4x", label: "Avg engagement boost" },
-  { value: "₦0", label: "Per-token cost (self-hosted)" },
+  { value: "10x",  label: "Faster content creation"     },
+  { value: "3.4x", label: "Avg engagement boost"        },
+  { value: "₦0",   label: "Per-token cost (self-hosted)" },
 ];
 
 export function Hero() {
@@ -34,18 +27,12 @@ export function Hero() {
 
       {/* Spotlight beam */}
       <div
-        className="absolute top-0 left-1/2 -translate-x-1/2 w-px h-80 opacity-20"
-        style={{
-          background:
-            "linear-gradient(to bottom, transparent, #7c3aed, transparent)",
-        }}
+        className="absolute top-0 left-1/2 -translate-x-1/2 w-px h-80 opacity-25"
+        style={{ background: "linear-gradient(to bottom, transparent, #ef4444, transparent)" }}
       />
       <div
         className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] opacity-10 blur-[80px]"
-        style={{
-          background:
-            "radial-gradient(ellipse at top, #7c3aed 0%, transparent 70%)",
-        }}
+        style={{ background: "radial-gradient(ellipse at top, #dc2626 0%, transparent 70%)" }}
       />
 
       <div className="relative z-10 max-w-5xl mx-auto text-center">
@@ -56,11 +43,9 @@ export function Hero() {
           transition={{ duration: 0.5 }}
           className="mb-8 flex justify-center"
         >
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-purple-500/30 bg-purple-500/10 text-purple-300 text-sm">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-red-500/30 bg-red-500/10 text-red-400 text-sm">
             <Sparkles className="w-3.5 h-3.5" />
-            <span>
-              Powered by Gemma AI — Zero per-token API fees
-            </span>
+            <span>Powered by Gemma AI — Zero per-token API fees</span>
             <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
           </div>
         </motion.div>
@@ -105,7 +90,7 @@ export function Hero() {
             </Button>
           </Link>
           <button className="flex items-center gap-2 px-6 py-3 text-muted-foreground hover:text-foreground transition-colors group">
-            <div className="w-10 h-10 rounded-full border border-border flex items-center justify-center group-hover:border-purple-500 group-hover:bg-purple-500/10 transition-all">
+            <div className="w-10 h-10 rounded-full border border-border flex items-center justify-center group-hover:border-red-500 group-hover:bg-red-500/10 transition-all">
               <Play className="w-4 h-4 ml-0.5 fill-current" />
             </div>
             <span className="text-sm font-medium">Watch demo (2 min)</span>
@@ -121,22 +106,18 @@ export function Hero() {
         >
           <div className="flex items-center gap-1">
             {[...Array(5)].map((_, i) => (
-              <Star
-                key={i}
-                className="w-4 h-4 text-yellow-400 fill-yellow-400"
-              />
+              <Star key={i} className="w-4 h-4 text-yellow-400 fill-yellow-400" />
             ))}
             <span className="ml-2">4.9/5 from 200+ creators</span>
           </div>
           <div className="hidden sm:block w-px h-4 bg-border" />
           <div>
-            <span className="text-foreground font-medium">2,000+</span> accounts
-            managed
+            <span className="text-foreground font-medium">2,000+</span> accounts managed
           </div>
           <div className="hidden sm:block w-px h-4 bg-border" />
           <div>
             Accepts{" "}
-            <span className="text-foreground font-medium">Paystack & Flutterwave</span>
+            <span className="text-foreground font-medium">Paystack &amp; Flutterwave</span>
           </div>
         </motion.div>
 
@@ -149,9 +130,7 @@ export function Hero() {
         >
           {STATS.map((stat, i) => (
             <div key={i} className="text-center">
-              <div className="text-3xl font-bold gradient-text mb-1">
-                {stat.value}
-              </div>
+              <div className="text-3xl font-bold gradient-text mb-1">{stat.value}</div>
               <div className="text-xs text-muted-foreground">{stat.label}</div>
             </div>
           ))}
@@ -164,9 +143,7 @@ export function Hero() {
           transition={{ duration: 0.7, delay: 0.6 }}
           className="flex flex-wrap items-center justify-center gap-3"
         >
-          <span className="text-xs text-muted-foreground mr-2">
-            Connects to:
-          </span>
+          <span className="text-xs text-muted-foreground mr-2">Connects to:</span>
           {PLATFORMS.map((p) => (
             <div
               key={p.name}
@@ -174,16 +151,14 @@ export function Hero() {
             >
               <span
                 className="text-xs font-bold"
-                style={{ color: p.color !== "#010101" ? p.color : undefined }}
+                style={{ color: p.color !== "#888888" ? p.color : undefined }}
               >
                 {p.letter}
               </span>
               {p.name}
             </div>
           ))}
-          <Badge variant="purple" className="text-xs">
-            + more coming
-          </Badge>
+          <Badge variant="red" className="text-xs">+ more coming</Badge>
         </motion.div>
       </div>
 
