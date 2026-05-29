@@ -3,38 +3,33 @@
 import { useState } from "react";
 import { Calendar, ChevronLeft, ChevronRight, Plus, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-const SCHEDULED_POSTS: Record<number, { time: string; platform: string; content: string; color: string }[]> = {
-  3: [{ time: "8:00am", platform: "X", content: "5 mistakes founders make... 🧵", color: "#1DA1F2" }],
-  7: [
-    { time: "7:30am", platform: "LinkedIn", content: "Why self-hosting AI beats GPT-4 for startups", color: "#0077B5" },
-    { time: "6:00pm", platform: "Instagram", content: "Day in the life content 📸", color: "#E1306C" },
-  ],
-  12: [{ time: "8:00am", platform: "X", content: "Trend thread: AI regulation in Africa", color: "#1DA1F2" }],
-  15: [{ time: "12:00pm", platform: "LinkedIn", content: "Case study: ₦2.4M from social posts", color: "#0077B5" }],
-  19: [{ time: "7:00am", platform: "X", content: "Weekly growth tips thread", color: "#1DA1F2" }],
-  22: [
-    { time: "9:00am", platform: "LinkedIn", content: "Naira SaaS pricing breakdown", color: "#0077B5" },
-    { time: "3:00pm", platform: "TikTok", content: "Behind the scenes video", color: "#888" },
-  ],
-  26: [{ time: "8:30am", platform: "Instagram", content: "Creator economy insights", color: "#E1306C" }],
-  28: [{ time: "7:00am", platform: "X", content: "Auto-Plug announcement thread", color: "#1DA1F2" }],
+// All posts use red brand colour — no per-platform colours
+const SCHEDULED_POSTS: Record<number, { time: string; platform: string; content: string }[]> = {
+  3:  [{ time: "8:00am",  platform: "X",         content: "5 mistakes founders make... 🧵"                }],
+  7:  [{ time: "7:30am",  platform: "LinkedIn",   content: "Why self-hosting AI beats GPT-4 for startups"  },
+       { time: "6:00pm",  platform: "Instagram",  content: "Day in the life content 📸"                    }],
+  12: [{ time: "8:00am",  platform: "X",         content: "Trend thread: AI regulation in Africa"          }],
+  15: [{ time: "12:00pm", platform: "LinkedIn",   content: "Case study: ₦2.4M from social posts"           }],
+  19: [{ time: "7:00am",  platform: "X",         content: "Weekly growth tips thread"                      }],
+  22: [{ time: "9:00am",  platform: "LinkedIn",   content: "Naira SaaS pricing breakdown"                  },
+       { time: "3:00pm",  platform: "TikTok",     content: "Behind the scenes video"                       }],
+  26: [{ time: "8:30am",  platform: "Instagram",  content: "Creator economy insights"                      }],
+  28: [{ time: "7:00am",  platform: "X",         content: "Auto-Plug announcement thread"                  }],
 };
 
 export default function CalendarPage() {
   const [currentMonth, setCurrentMonth] = useState({ year: 2026, month: 4 }); // May 2026
   const today = 28;
 
-  const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  const monthNames = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 
   const daysInMonth = new Date(currentMonth.year, currentMonth.month + 1, 0).getDate();
-  const firstDay = new Date(currentMonth.year, currentMonth.month, 1).getDay();
-
-  const cells = Array.from({ length: firstDay + daysInMonth }, (_, i) =>
+  const firstDay    = new Date(currentMonth.year, currentMonth.month, 1).getDay();
+  const cells       = Array.from({ length: firstDay + daysInMonth }, (_, i) =>
     i < firstDay ? null : i - firstDay + 1
   );
 
@@ -43,7 +38,7 @@ export default function CalendarPage() {
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Calendar className="w-6 h-6 text-blue-400" />
+            <Calendar className="w-6 h-6 text-red-400" />
             Content Calendar
           </h1>
           <p className="text-muted-foreground text-sm mt-0.5">
@@ -88,11 +83,9 @@ export default function CalendarPage() {
         {/* Calendar grid */}
         <div className="grid grid-cols-7 gap-1">
           {cells.map((day, i) => {
-            if (day === null) {
-              return <div key={i} className="h-20 sm:h-24" />;
-            }
+            if (day === null) return <div key={i} className="h-20 sm:h-24" />;
 
-            const posts = SCHEDULED_POSTS[day] || [];
+            const posts   = SCHEDULED_POSTS[day] || [];
             const isToday = day === today;
 
             return (
@@ -101,18 +94,15 @@ export default function CalendarPage() {
                 className={cn(
                   "h-20 sm:h-24 rounded-lg p-1.5 border transition-colors cursor-pointer",
                   isToday
-                    ? "border-purple-500/50 bg-purple-500/5"
+                    ? "border-red-500/50 bg-red-500/5"
                     : posts.length > 0
-                    ? "border-border hover:border-purple-500/20 bg-card hover:bg-muted/30"
+                    ? "border-border hover:border-red-500/20 bg-card hover:bg-muted/30"
                     : "border-transparent hover:border-border hover:bg-accent/30"
                 )}
               >
-                <div className={cn(
-                  "text-xs font-medium mb-1",
-                  isToday ? "text-purple-400" : "text-muted-foreground"
-                )}>
+                <div className={cn("text-xs font-medium mb-1", isToday ? "text-red-400" : "text-muted-foreground")}>
                   {isToday ? (
-                    <span className="w-5 h-5 rounded-full bg-purple-500 text-white flex items-center justify-center text-[10px]">
+                    <span className="w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center text-[10px]">
                       {day}
                     </span>
                   ) : day}
@@ -121,8 +111,7 @@ export default function CalendarPage() {
                   {posts.slice(0, 2).map((post, j) => (
                     <div
                       key={j}
-                      className="flex items-center gap-1 text-[10px] rounded px-1 py-0.5 truncate"
-                      style={{ backgroundColor: post.color + "20", color: post.color }}
+                      className="flex items-center gap-1 text-[10px] rounded px-1 py-0.5 truncate bg-red-500/15 text-red-400"
                     >
                       <Clock className="w-2 h-2 flex-shrink-0" />
                       <span className="truncate">{post.time}</span>

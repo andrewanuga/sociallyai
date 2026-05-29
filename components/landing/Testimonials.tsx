@@ -57,7 +57,7 @@ const TESTIMONIALS = [
 export function Testimonials() {
   return (
     <section className="py-24 px-4 relative overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-purple-950/5 to-transparent pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-red-950/5 to-transparent pointer-events-none" />
 
       <div className="max-w-7xl mx-auto">
         <motion.div
@@ -68,13 +68,13 @@ export function Testimonials() {
           className="text-center mb-14"
         >
           <h2 className="text-4xl sm:text-5xl font-bold mb-4">
-            Creators & businesses
+            Creators &amp; businesses
             <br />
             <span className="gradient-text">love SociallyAI</span>
           </h2>
           <div className="flex items-center justify-center gap-1 mb-4">
             {[...Array(5)].map((_, i) => (
-              <Star key={i} className="w-5 h-5 text-yellow-400 fill-yellow-400" />
+              <Star key={i} className="w-5 h-5 text-red-500 fill-red-500" />
             ))}
             <span className="ml-2 text-muted-foreground">
               4.9/5 average rating
@@ -90,18 +90,15 @@ export function Testimonials() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: i * 0.08 }}
-              className="break-inside-avoid p-6 rounded-2xl border border-border bg-card hover:border-purple-500/20 hover:shadow-lg transition-all duration-200"
+              className="break-inside-avoid p-6 rounded-2xl border border-border bg-card hover:border-red-500/25 hover:shadow-lg hover:shadow-red-500/5 transition-all duration-200"
             >
               {/* Quote icon */}
-              <Quote className="w-6 h-6 text-purple-400/40 mb-3" />
+              <Quote className="w-6 h-6 text-red-400/35 mb-3" />
 
               {/* Stars */}
               <div className="flex gap-0.5 mb-3">
                 {[...Array(t.rating)].map((_, j) => (
-                  <Star
-                    key={j}
-                    className="w-3.5 h-3.5 text-yellow-400 fill-yellow-400"
-                  />
+                  <Star key={j} className="w-3.5 h-3.5 text-red-500 fill-red-500" />
                 ))}
               </div>
 
@@ -111,13 +108,13 @@ export function Testimonials() {
               </p>
 
               {/* Highlight badge */}
-              <div className="mb-4 inline-block px-2.5 py-1 rounded-full bg-purple-500/10 text-purple-300 text-xs">
+              <div className="mb-4 inline-block px-2.5 py-1 rounded-full bg-red-500/10 text-red-400 text-xs">
                 {t.highlight}
               </div>
 
               {/* Author */}
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center text-xs font-bold text-white">
+                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-red-700 to-red-900 flex items-center justify-center text-xs font-bold text-white">
                   {t.avatar}
                 </div>
                 <div>
