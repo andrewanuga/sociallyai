@@ -1,6 +1,6 @@
 import { AnimatedBackground } from "@/components/landing/AnimatedBackground";
-import { Navbar } from "@/components/landing/Navbar";
-import { Hero } from "@/components/landing/Hero";
+import { PowerAIHero } from "@/components/landing/PowerAIHero";
+import { FeatureShowcaseGrid } from "@/components/ui/hero-section";
 import { Features } from "@/components/landing/Features";
 import { HowItWorks } from "@/components/landing/HowItWorks";
 import { ROIPulse } from "@/components/landing/ROIPulse";
@@ -14,17 +14,15 @@ export default function LandingPage() {
   return (
     <div className="relative min-h-screen">
       <AnimatedBackground />
-      <Navbar />
-      <main>
-        <Hero />
-        <Features />
-        <HowItWorks />
-        <ROIPulse />
-        <Comparison />
-        <Pricing />
-        <Testimonials />
-        <CTA />
-      </main>
+      <PowerAIHero />
+      <FeatureShowcaseGrid />
+      <Features />
+      <HowItWorks />
+      <ROIPulse />
+      <Comparison />
+      <Pricing />
+      <Testimonials />
+      <CTA />
       <Footer />
     </div>
   );

@@ -24,6 +24,8 @@ const buttonVariants = cva(
           "bg-gradient-to-r from-red-600 via-rose-600 to-red-700 text-white shadow-lg shadow-red-600/25 hover:shadow-red-600/50 hover:scale-[1.02] hover:from-red-500 hover:via-rose-500 hover:to-red-600 font-semibold",
         "gradient-outline":
           "border border-red-600/40 bg-red-600/8 text-red-400 hover:bg-red-600/15 hover:border-red-500/60 gradient-border",
+        "heroSecondary":
+          "rounded-full bg-white/10 text-white border border-white/20 hover:bg-white/20 backdrop-blur-sm font-medium transition-colors",
       },
       size: {
         default: "h-9 px-4 py-2",
