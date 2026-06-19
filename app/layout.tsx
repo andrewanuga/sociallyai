@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "SociallyAI — AI-Powered Social Media Manager",
   description:
-    "The all-in-one AI social media workspace. Schedule posts, deploy autonomous agents, predict performance, and turn engagement into revenue — powered by Gemma AI.",
+    "The all-in-one AI social media workspace. Schedule posts, deploy autonomous agents, predict performance, and turn engagement into revenue — powered by Llama 3.3 70B.",
   keywords: [
     "social media management",
     "AI content creation",
@@ -46,6 +46,12 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
+      <head>
+        <link
+          rel="stylesheet"
+          href="https://api.fontshare.com/v2/css?f[]=general-sans@400,500,600,700&display=swap"
+        />
+      </head>
       <body className="min-h-full flex flex-col">
         <ThemeProvider
           attribute="class"

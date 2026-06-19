@@ -41,7 +41,7 @@ Return only valid JSON.`;
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: process.env.GEMMA_MODEL || "gemma-9b",
+          model: process.env.LLAMA_MODEL || "meta-llama/Llama-3.3-70B-Instruct",
           messages: [{ role: "user", content: prompt }],
           max_tokens: 200,
           temperature: 0.4,

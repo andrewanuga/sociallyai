@@ -58,7 +58,7 @@ Rules:
       ? `Brand context: ${context}\n\nCreate a compelling ${platform || "social media"} post about: ${prompt || "our brand"}`
       : `Create a compelling ${platform || "social media"} post about: ${prompt}`;
 
-    // Call vLLM / Gemma server (falls back to mock in development)
+    // Call vLLM / Llama 3.3 70B server (falls back to mock in development)
     const vllmUrl = process.env.VLLM_SERVER_URL;
 
     let generatedContent: string;
@@ -68,7 +68,7 @@ Rules:
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: process.env.GEMMA_MODEL || "gemma-9b",
+          model: process.env.LLAMA_MODEL || "meta-llama/Llama-3.3-70B-Instruct",
           messages: [
             { role: "system", content: systemPrompt },
             { role: "user", content: userPrompt },
