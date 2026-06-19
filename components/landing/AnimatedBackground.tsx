@@ -8,33 +8,43 @@ export function AnimatedBackground() {
       {/* Base — pure black dark, white light */}
       <div className="absolute inset-0 bg-white dark:bg-black" />
 
-      {/* Primary red blob — top left */}
+      {/* Primary indigo blob — top left */}
       <div
-        className="absolute -top-40 -left-40 w-[700px] h-[700px] rounded-full opacity-[0.18] blur-[130px] animate-float"
+        className="absolute -top-40 -left-40 w-[700px] h-[700px] rounded-full opacity-[0.20] blur-[130px] animate-float"
         style={{
           background:
-            "radial-gradient(circle, #dc2626 0%, #7f1d1d 55%, transparent 75%)",
+            "radial-gradient(circle, #6366f1 0%, #312e81 55%, transparent 75%)",
           animationDelay: "0s",
         }}
       />
 
-      {/* Deep crimson blob — right */}
+      {/* Gold/amber blob — right */}
       <div
-        className="absolute top-1/3 -right-40 w-[600px] h-[600px] rounded-full opacity-[0.12] blur-[110px] animate-float"
+        className="absolute top-1/3 -right-40 w-[600px] h-[600px] rounded-full opacity-[0.14] blur-[110px] animate-float"
         style={{
           background:
-            "radial-gradient(circle, #ef4444 0%, #991b1b 55%, transparent 75%)",
+            "radial-gradient(circle, #f59e0b 0%, #78350f 55%, transparent 75%)",
           animationDelay: "2s",
         }}
       />
 
-      {/* Rose blob — bottom */}
+      {/* Purple blob — bottom */}
       <div
-        className="absolute bottom-0 left-1/3 w-[500px] h-[500px] rounded-full opacity-[0.09] blur-[100px] animate-float"
+        className="absolute bottom-0 left-1/3 w-[500px] h-[500px] rounded-full opacity-[0.12] blur-[100px] animate-float"
         style={{
           background:
-            "radial-gradient(circle, #f43f5e 0%, #be123c 55%, transparent 75%)",
+            "radial-gradient(circle, #a855f7 0%, #6b21a8 55%, transparent 75%)",
           animationDelay: "4s",
+        }}
+      />
+
+      {/* Deep indigo depth blob */}
+      <div
+        className="absolute top-1/2 -left-20 w-[450px] h-[450px] rounded-full opacity-[0.08] blur-[110px] animate-float"
+        style={{
+          background:
+            "radial-gradient(circle, #4f46e5 0%, #1e1b4b 55%, transparent 75%)",
+          animationDelay: "3s",
         }}
       />
 

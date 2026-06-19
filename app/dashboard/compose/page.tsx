@@ -113,15 +113,15 @@ export default function ComposePage() {
   const charCount   = content.length;
   const charPct     = Math.min((charCount / activeLimit) * 100, 100);
 
-  // All score levels use red shades
+  // Semantic: high=green, medium=amber, low=red
   const scoreColor =
-    scoreData?.prediction === "high"   ? "text-red-400"
-    : scoreData?.prediction === "medium" ? "text-red-300"
+    scoreData?.prediction === "high"   ? "text-green-400"
+    : scoreData?.prediction === "medium" ? "text-amber-400"
     : "text-red-500";
 
   const scoreBorder =
-    scoreData?.prediction === "high"   ? "border-red-500/30 bg-red-500/5"
-    : scoreData?.prediction === "medium" ? "border-red-400/20 bg-red-400/5"
+    scoreData?.prediction === "high"   ? "border-green-500/30 bg-green-500/5"
+    : scoreData?.prediction === "medium" ? "border-amber-400/20 bg-amber-400/5"
     : "border-red-600/20 bg-red-600/5";
 
   return (
@@ -132,7 +132,7 @@ export default function ComposePage() {
           className={cn(
             "fixed top-4 right-4 z-50 flex items-center gap-3 px-4 py-3 rounded-xl border shadow-lg text-sm font-medium animate-in slide-in-from-top-2 duration-300",
             toast.type === "success"
-              ? "bg-red-500/10 border-red-500/30 text-red-400"
+              ? "bg-green-500/10 border-green-500/30 text-green-400"
               : "bg-destructive/10 border-destructive/30 text-destructive"
           )}
         >
@@ -266,7 +266,9 @@ export default function ComposePage() {
                     <span className={`text-4xl font-bold ${scoreColor}`}>{scoreData.score}</span>
                     <span className="text-sm text-muted-foreground pb-1">/ 100</span>
                     {scoreData.prediction === "high"
-                      ? <TrendingUp className="w-4 h-4 text-red-400 pb-0.5" />
+                      ? <TrendingUp className="w-4 h-4 text-green-400 pb-0.5" />
+                      : scoreData.prediction === "medium"
+                      ? <TrendingUp className="w-4 h-4 text-amber-400 pb-0.5" />
                       : <TrendingDown className="w-4 h-4 text-red-500 pb-0.5" />}
                   </div>
                   <p className={`text-xs font-medium ${scoreColor} mb-1`}>

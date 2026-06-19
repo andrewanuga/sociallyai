@@ -21,9 +21,9 @@ const buttonVariants = cva(
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
         gradient:
-          "bg-gradient-to-r from-red-600 via-rose-600 to-red-700 text-white shadow-lg shadow-red-600/25 hover:shadow-red-600/50 hover:scale-[1.02] hover:from-red-500 hover:via-rose-500 hover:to-red-600 font-semibold",
+          "bg-gradient-to-r from-indigo-600 via-purple-600 to-amber-500 text-white shadow-lg shadow-indigo-600/25 hover:shadow-indigo-600/50 hover:scale-[1.02] hover:from-indigo-500 hover:via-purple-500 hover:to-amber-400 font-semibold",
         "gradient-outline":
-          "border border-red-600/40 bg-red-600/8 text-red-400 hover:bg-red-600/15 hover:border-red-500/60 gradient-border",
+          "border border-indigo-500/40 bg-indigo-500/8 text-indigo-400 hover:bg-indigo-500/15 hover:border-indigo-400/60 gradient-border",
         "heroSecondary":
           "rounded-full bg-white/10 text-white border border-white/20 hover:bg-white/20 backdrop-blur-sm font-medium transition-colors",
       },

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
+import { FloatingAiAssistant } from "@/components/ui/glowing-ai-chat-assistant";
 import { cn } from "@/lib/utils";
 
 export default function DashboardLayout({
@@ -54,6 +55,9 @@ export default function DashboardLayout({
         <DashboardHeader onMobileMenuToggle={() => setMobileOpen(!mobileOpen)} />
         <main className="flex-1 p-6 overflow-auto">{children}</main>
       </div>
+
+      {/* Floating AI assistant — always accessible from any dashboard page */}
+      <FloatingAiAssistant />
     </div>
   );
 }

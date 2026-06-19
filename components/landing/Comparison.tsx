@@ -26,9 +26,9 @@ const COMPARISON_ROWS: {
 
 function CheckCell({ value, highlight = false }: { value: CellValue; highlight?: boolean }) {
   if (value === true)
-    return <Check className={`w-5 h-5 mx-auto ${highlight ? "text-red-400" : "text-green-500"}`} />;
+    return <Check className={`w-5 h-5 mx-auto ${highlight ? "text-green-400" : "text-green-500"}`} />;
   if (value === "partial")
-    return <Minus className="w-5 h-5 mx-auto text-yellow-500 opacity-60" />;
+    return <Minus className="w-5 h-5 mx-auto text-amber-400 opacity-80" />;
   return <X className="w-4 h-4 mx-auto text-muted-foreground opacity-40" />;
 }
 
@@ -89,7 +89,7 @@ export function Comparison() {
                   className={`border-t border-border/50 ${i % 2 === 0 ? "bg-muted/20" : ""} hover:bg-muted/30 transition-colors`}
                 >
                   <td className="py-3.5 px-4 text-sm text-foreground">{row.feature}</td>
-                  <td className="py-3.5 px-4 text-center bg-red-500/5">
+                  <td className="py-3.5 px-4 text-center bg-indigo-500/5">
                     <CheckCell value={row.socially} highlight />
                   </td>
                   <td className="py-3.5 px-4 text-center">
@@ -111,7 +111,7 @@ export function Comparison() {
               <Check className="w-3.5 h-3.5 text-green-500" /> Available
             </div>
             <div className="flex items-center gap-1.5">
-              <Minus className="w-3.5 h-3.5 text-yellow-500 opacity-60" /> Partial / limited
+              <Minus className="w-3.5 h-3.5 text-amber-400 opacity-80" /> Partial / limited
             </div>
             <div className="flex items-center gap-1.5">
               <X className="w-3.5 h-3.5 text-muted-foreground opacity-40" /> Not available

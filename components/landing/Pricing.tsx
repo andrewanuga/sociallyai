@@ -17,7 +17,7 @@ const PLANS = [
     badge: null,
     highlight: false,
     accounts: "1 social account",
-    ai: "Gemma 2B — 7 generations/week",
+    ai: "Llama 3.3 70B — 7 generations/week",
     features: [
       "Basic post scheduling",
       "Simple analytics dashboard",
@@ -36,7 +36,7 @@ const PLANS = [
     badge: null,
     highlight: false,
     accounts: "3 social accounts",
-    ai: "Gemma 9B — 100 generations/month",
+    ai: "Llama 3.3 70B — 100 generations/month",
     features: [
       "Everything in Free",
       "Website-to-Voice onboarding",
@@ -57,7 +57,7 @@ const PLANS = [
     badge: "Most Popular",
     highlight: true,
     accounts: "7 social accounts",
-    ai: "Gemma 9B/27B — 500 gen/month",
+    ai: "Llama 3.3 70B — 500 gen/month",
     features: [
       "Everything in Basic",
       "1 Active Ghost Mode™ Agent",
@@ -135,14 +135,14 @@ export function Pricing() {
               className={cn(
                 "relative flex flex-col rounded-2xl border p-6 transition-all duration-300",
                 plan.highlight
-                  ? "border-red-500/50 bg-gradient-to-b from-red-950/40 to-card shadow-xl shadow-red-500/10 scale-[1.02]"
-                  : "border-border bg-card hover:border-red-500/20 hover:shadow-lg hover:shadow-red-500/5"
+                  ? "border-indigo-500/50 bg-gradient-to-b from-indigo-950/40 to-card shadow-xl shadow-indigo-500/10 scale-[1.02]"
+                  : "border-border bg-card hover:border-indigo-500/20 hover:shadow-lg hover:shadow-indigo-500/5"
               )}
             >
               {/* Popular badge */}
               {plan.badge && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                  <span className="px-4 py-1 text-xs font-semibold rounded-full bg-gradient-to-r from-red-600 to-rose-600 text-white shadow-lg shadow-red-500/30">
+                  <span className="px-4 py-1 text-xs font-semibold rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-500/30">
                     {plan.badge}
                   </span>
                 </div>
@@ -154,7 +154,7 @@ export function Pricing() {
                   <plan.icon
                     className={cn(
                       "w-5 h-5",
-                      plan.highlight ? "text-red-400" : "text-muted-foreground"
+                      plan.highlight ? "text-indigo-400" : "text-muted-foreground"
                     )}
                   />
                   <span className="font-semibold">{plan.name}</span>
@@ -181,12 +181,7 @@ export function Pricing() {
               <ul className="flex-1 space-y-2.5 mb-8">
                 {plan.features.map((f, j) => (
                   <li key={j} className="flex items-start gap-2 text-sm">
-                    <Check
-                      className={cn(
-                        "w-4 h-4 mt-0.5 flex-shrink-0",
-                        plan.highlight ? "text-red-400" : "text-green-500"
-                      )}
-                    />
+                    <Check className="w-4 h-4 mt-0.5 flex-shrink-0 text-green-500" />
                     <span className="text-muted-foreground">{f}</span>
                   </li>
                 ))}

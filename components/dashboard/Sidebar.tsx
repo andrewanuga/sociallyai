@@ -62,7 +62,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
           collapsed ? "justify-center" : "gap-3"
         )}
       >
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-red-600 to-rose-700 flex items-center justify-center flex-shrink-0 shadow-lg shadow-red-600/30">
+        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-600 to-purple-700 flex items-center justify-center flex-shrink-0 shadow-lg shadow-indigo-600/30">
           <Zap className="w-4 h-4 text-white fill-white" />
         </div>
         {!collapsed && (
@@ -85,19 +85,19 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
                 className={cn(
                   "flex items-center gap-3 px-2.5 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 group relative",
                   active
-                    ? "bg-red-500/10 text-red-400"
+                    ? "bg-indigo-500/10 text-indigo-400"
                     : "text-muted-foreground hover:text-foreground hover:bg-accent",
                   collapsed && "justify-center px-2"
                 )}
               >
                 <item.icon
-                  className={cn("w-5 h-5 flex-shrink-0", active && "text-red-400")}
+                  className={cn("w-5 h-5 flex-shrink-0", active && "text-indigo-400")}
                 />
                 {!collapsed && (
                   <>
                     <span className="flex-1">{item.label}</span>
                     {item.badge && (
-                      <span className="w-5 h-5 rounded-full bg-red-500/20 text-red-400 text-xs flex items-center justify-center font-semibold">
+                      <span className="w-5 h-5 rounded-full bg-indigo-500/20 text-indigo-400 text-xs flex items-center justify-center font-semibold">
                         {item.badge}
                       </span>
                     )}
@@ -109,7 +109,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
                   <div className="absolute left-full ml-2 px-2 py-1 rounded-md bg-popover border border-border text-sm whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity shadow-lg">
                     {item.label}
                     {item.badge && (
-                      <span className="ml-1.5 text-red-400">({item.badge})</span>
+                      <span className="ml-1.5 text-indigo-400">({item.badge})</span>
                     )}
                   </div>
                 )}

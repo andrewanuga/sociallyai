@@ -106,7 +106,7 @@ export function Hero() {
         >
           <div className="flex items-center gap-1">
             {[...Array(5)].map((_, i) => (
-              <Star key={i} className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+              <Star key={i} className="w-4 h-4 text-yellow-400 fill-yellow-400 drop-shadow-[0_0_4px_rgba(234,179,8,0.5)]" />
             ))}
             <span className="ml-2">4.9/5 from 200+ creators</span>
           </div>
@@ -130,7 +130,7 @@ export function Hero() {
         >
           {STATS.map((stat, i) => (
             <div key={i} className="text-center">
-              <div className="text-3xl font-bold gradient-text mb-1">{stat.value}</div>
+              <div className={`text-3xl font-bold mb-1 ${i === 2 ? "text-emerald-400" : "gradient-text"}`}>{stat.value}</div>
               <div className="text-xs text-muted-foreground">{stat.label}</div>
             </div>
           ))}

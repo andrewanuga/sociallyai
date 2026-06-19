@@ -10,12 +10,21 @@ export function CTA() {
     <section className="py-24 px-4 relative overflow-hidden">
       {/* Background */}
       <div className="absolute inset-0 pointer-events-none">
+        {/* Main gradient bloom */}
         <div
-          className="absolute inset-0 opacity-[0.06]"
+          className="absolute inset-0 opacity-[0.10]"
           style={{
-            background: "radial-gradient(ellipse 80% 60% at 50% 50%, #dc2626, transparent)",
+            background: "radial-gradient(ellipse 80% 60% at 50% 50%, #6366f1, #1e1b4b, transparent)",
           }}
         />
+        {/* Rose halo on the edge */}
+        <div
+          className="absolute -inset-px opacity-[0.04]"
+          style={{
+            background: "radial-gradient(ellipse 120% 100% at 50% 100%, #a855f7, transparent)",
+          }}
+        />
+        {/* Grid */}
         <div
           className="absolute inset-0 opacity-[0.025]"
           style={{
@@ -37,7 +46,7 @@ export function CTA() {
           className="text-center"
         >
           {/* Badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-red-500/30 bg-red-500/10 text-red-400 text-sm mb-8">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-indigo-500/30 bg-indigo-500/10 text-indigo-400 text-sm mb-8">
             <Zap className="w-3.5 h-3.5 fill-current" />
             Free for 14 days — no credit card required
           </div>
@@ -55,13 +64,13 @@ export function CTA() {
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
             <Link href="/signup">
-              <Button variant="gradient" size="xl" className="group w-full sm:w-auto min-w-[220px]">
+              <Button variant="gradient" size="xl" className="group w-full sm:w-auto min-w-[220px] shadow-2xl shadow-indigo-600/40">
                 Get started free
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Button>
             </Link>
             <Link href="/login">
-              <Button variant="outline" size="xl" className="w-full sm:w-auto min-w-[180px]">
+              <Button variant="outline" size="xl" className="w-full sm:w-auto min-w-[180px] border-white/15 hover:border-indigo-500/30 hover:text-foreground">
                 Sign in to dashboard
               </Button>
             </Link>
