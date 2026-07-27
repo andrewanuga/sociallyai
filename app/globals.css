@@ -22,8 +22,9 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-inter);
+  --font-display: 'General Sans', var(--font-geist-sans);
+  --font-mono: var(--font-jetbrains);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -54,26 +55,26 @@
   --ring: 239 65% 55%;
 }
 
-/* ── Dark mode — pure black ─────────────────────────── */
+/* ── Dark mode — near-black #121212 (no pure black: OLED smear) ── */
 .dark {
-  --background: 0 0% 0%;
-  --foreground: 0 0% 95%;
-  --card: 0 0% 4%;
+  --background: 240 6% 7%;
+  --foreground: 40 8% 96%;
+  --card: 240 6% 9%;
   --card-foreground: 0 0% 95%;
   --popover: 0 0% 5%;
   --popover-foreground: 0 0% 95%;
   --primary: 239 84% 67%;
   --primary-foreground: 0 0% 98%;
-  --secondary: 0 0% 9%;
-  --secondary-foreground: 0 0% 95%;
-  --muted: 0 0% 9%;
-  --muted-foreground: 0 0% 55%;
-  --accent: 0 0% 11%;
-  --accent-foreground: 0 0% 95%;
-  --destructive: 0 62.8% 30.6%;
+  --secondary: 240 5% 12%;
+  --secondary-foreground: 40 8% 96%;
+  --muted: 240 5% 12%;
+  --muted-foreground: 240 5% 60%;
+  --accent: 240 5% 14%;
+  --accent-foreground: 40 8% 96%;
+  --destructive: 350 89% 60%;
   --destructive-foreground: 0 0% 98%;
-  --border: 0 0% 14%;
-  --input: 0 0% 12%;
+  --border: 240 5% 16%;
+  --input: 240 5% 14%;
   --ring: 239 84% 67%;
 }
 
@@ -84,7 +85,7 @@
 body {
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
-  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  font-family: var(--font-inter), Arial, Helvetica, sans-serif;
 }
 
 /* ── Keyframes ──────────────────────────────────────── */
@@ -229,4 +230,132 @@ body {
   mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   SOCIALLY AI — cinematic landing design layer
+   Palette (5): #121212 near-black · frosted white · #6366f1 indigo ·
+   #a855f7 soft violet · #f43f5e electric red  (gold #f5c451 = one accent)
+   Motion signature: expo.out cubic-bezier(0.16,1,0.3,1)
+   ═══════════════════════════════════════════════════════════════════ */
+:root {
+  --sai-bg: #121212;
+  --sai-ink: #f5f4f2;
+  --sai-indigo: #6366f1;
+  --sai-violet: #a855f7;
+  --sai-red: #f43f5e;
+  --sai-gold: #f5c451;
+  --sai-ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.font-display { font-family: var(--font-display); }
+.font-data {
+  font-family: var(--font-jetbrains), ui-monospace, monospace;
+  font-feature-settings: "tnum" 1;
+}
+
+/* ── Premium glass — Vision Pro / Control Center feel ── */
+.glass-panel {
+  position: relative;
+  background: rgba(24, 24, 28, 0.55);
+  backdrop-filter: blur(22px) saturate(1.4);
+  -webkit-backdrop-filter: blur(22px) saturate(1.4);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.10),
+    0 20px 60px -20px rgba(0, 0, 0, 0.7);
+}
+
+/* Light 1px top-edge highlight that fades toward the sides */
+.glass-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.28),
+    rgba(255, 255, 255, 0.02) 40%,
+    rgba(255, 255, 255, 0) 70%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+.glass-pill {
+  background: rgba(20, 20, 24, 0.6);
+  backdrop-filter: blur(18px) saturate(1.5);
+  -webkit-backdrop-filter: blur(18px) saturate(1.5);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.12),
+    0 8px 30px -8px rgba(0, 0, 0, 0.6);
+}
+
+/* Brand gradient text tuned to the 5-colour system */
+.sai-gradient-text {
+  background: linear-gradient(100deg, #c7d2fe 0%, #6366f1 34%, #a855f7 68%, #f5c451 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+/* Hairline divider used to segment the nav */
+.sai-sep {
+  width: 1px;
+  align-self: stretch;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    rgba(255, 255, 255, 0.16),
+    transparent
+  );
+}
+
+/* ── Preloader: bright lead sweeping through the wordmark ── */
+@keyframes sai-flow {
+  0%   { background-position: -140% center; }
+  100% { background-position: 240% center; }
+}
+
+.sai-flow-text {
+  background: linear-gradient(
+    100deg,
+    rgba(245, 244, 242, 0.24) 0%,
+    rgba(245, 244, 242, 0.24) 38%,
+    #ffffff 48%,
+    #c7d2fe 52%,
+    rgba(245, 244, 242, 0.24) 62%,
+    rgba(245, 244, 242, 0.24) 100%
+  );
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  animation: sai-flow 2.1s linear infinite;
+}
+
+/* Reveal defaults — GSAP hides + animates [data-reveal] once mounted.
+   We only pre-hide when JS is confirmed present (html.sai-js), so content is
+   never trapped invisible for no-JS users. */
+html.sai-js [data-reveal] { opacity: 0; }
+
+/* Accessibility: honour reduced motion everywhere */
+@media (prefers-reduced-motion: reduce) {
+  .sai-flow-text { animation: none; }
+  html.sai-js [data-reveal] { opacity: 1 !important; transform: none !important; filter: none !important; }
+  * { scroll-behavior: auto !important; }
+}
+
+/* Subtle grain/vignette helper for section atmosphere */
+.sai-vignette {
+  background:
+    radial-gradient(120% 80% at 50% 0%, rgba(99, 102, 241, 0.08), transparent 60%),
+    radial-gradient(100% 60% at 50% 100%, rgba(168, 85, 247, 0.06), transparent 60%);
 }
