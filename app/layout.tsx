@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Inter, JetBrains_Mono } from "next/font/google";
+import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 
@@ -13,19 +13,10 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-// Body face — precise, technical, premium (pairs with General Sans display).
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
-});
-
-// Utility / data face — eyebrows, numbers, labels.
-const jetbrainsMono = JetBrains_Mono({
-  variable: "--font-jetbrains",
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-});
+// Inter (body) + JetBrains Mono (data) are loaded via a client-side <link> below
+// rather than next/font — next/font fetches font files at build time, which
+// hard-fails in offline/air-gapped environments. The <link> degrades gracefully
+// to Geist/system fallbacks (see --font-inter / --font-jetbrains in globals.css).
 
 export const metadata: Metadata = {
   title: "Socially AI — Your Personal Social Agent",
@@ -57,7 +48,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} ${jetbrainsMono.variable} dark h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} dark sai-js h-full antialiased`}
       suppressHydrationWarning
     >
       <head>
@@ -65,11 +56,9 @@ export default function RootLayout({
           rel="stylesheet"
           href="https://api.fontshare.com/v2/css?f[]=general-sans@400,500,600,700&display=swap"
         />
-        {/* Mark JS-present before paint so reveal elements can pre-hide without FOUC */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `document.documentElement.classList.add('sai-js')`,
-          }}
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
         />
       </head>
       <body className="min-h-full flex flex-col">

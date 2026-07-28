@@ -25,9 +25,20 @@ export async function proxy(request: NextRequest) {
     }
   );
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Resolve the user, but never let an unreachable/slow auth service hang the
+  // whole site. On timeout or network error we treat the request as signed-out:
+  // public routes still render, and protected routes below fail closed (→ login).
+  let user: Awaited<ReturnType<typeof supabase.auth.getUser>>["data"]["user"] =
+    null;
+  try {
+    const timeout = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error("auth-timeout")), 2500)
+    );
+    const result = await Promise.race([supabase.auth.getUser(), timeout]);
+    user = result.data.user;
+  } catch {
+    user = null;
+  }
 
   const isAuthRoute =
     request.nextUrl.pathname.startsWith("/login") ||

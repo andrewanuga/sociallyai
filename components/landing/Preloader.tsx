@@ -27,7 +27,6 @@ export function Preloader() {
 
       // Fonts first (so the wordmark is in General Sans immediately)
       try {
-        // @ts-expect-error - fonts API is fine at runtime
         if (document.fonts?.ready) await document.fonts.ready;
       } catch {}
 

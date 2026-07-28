@@ -85,7 +85,7 @@
 body {
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
-  font-family: var(--font-inter), Arial, Helvetica, sans-serif;
+  font-family: var(--font-inter);
 }
 
 /* ── Keyframes ──────────────────────────────────────── */
@@ -239,6 +239,10 @@ body {
    Motion signature: expo.out cubic-bezier(0.16,1,0.3,1)
    ═══════════════════════════════════════════════════════════════════ */
 :root {
+  /* Body + data faces: real Inter/JetBrains when the <link> loads, else Geist/system. */
+  --font-inter: "Inter", var(--font-geist-sans), system-ui, sans-serif;
+  --font-jetbrains: "JetBrains Mono", var(--font-geist-mono), ui-monospace, monospace;
+
   --sai-bg: #121212;
   --sai-ink: #f5f4f2;
   --sai-indigo: #6366f1;

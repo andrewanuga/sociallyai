@@ -3,15 +3,11 @@
 import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 import {
   FRAME_COUNT,
   framePath,
   POSTER_START,
 } from "@/lib/frames";
-
-gsap.registerPlugin(ScrollTrigger);
 
 const LAST = FRAME_COUNT - 1;
 
@@ -152,9 +148,16 @@ export function CinematicHero() {
         paint(0);
       };
       // Show only the intro; the moving feature/CTA overlays don't apply here.
-      gsap.set(o1.current, { autoAlpha: 1, y: 0, filter: "none" });
-      gsap.set([o2.current, o3.current, o4.current].filter(Boolean), {
-        autoAlpha: 0,
+      // Plain DOM (no GSAP) to keep the reduced-motion path dependency-free.
+      if (o1.current) {
+        o1.current.style.opacity = "1";
+        o1.current.style.visibility = "visible";
+      }
+      [o2.current, o3.current, o4.current].forEach((el) => {
+        if (el) {
+          el.style.opacity = "0";
+          el.style.visibility = "hidden";
+        }
       });
       const onResize = () => {
         sizeCanvas();
@@ -166,10 +169,18 @@ export function CinematicHero() {
 
     // ── Warm the first frames, paint frame 1, then scrub the rest ──
     let cleanup = () => {};
+    let cancelled = false;
     (async () => {
+      // Paint the first frame ASAP, before GSAP even loads.
       await loadFrame(0);
       paint(0);
       preloadAll();
+
+      // Client-only GSAP import (never runs during SSR).
+      const gsap = (await import("gsap")).default;
+      const { ScrollTrigger } = await import("gsap/ScrollTrigger");
+      if (cancelled) return;
+      gsap.registerPlugin(ScrollTrigger);
 
       const scrubVh = isMobile ? SCRUB_VH_MOBILE : SCRUB_VH_DESKTOP;
       const scrollLen = () => window.innerHeight * scrubVh;
@@ -231,7 +242,10 @@ export function CinematicHero() {
       };
     })();
 
-    return () => cleanup();
+    return () => {
+      cancelled = true;
+      cleanup();
+    };
   }, []);
 
   return (
