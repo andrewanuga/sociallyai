@@ -267,7 +267,15 @@ export function CinematicHero() {
           className="pointer-events-none absolute inset-0"
           style={{
             background:
-              "linear-gradient(180deg, rgba(18,18,18,0.55) 0%, rgba(18,18,18,0.05) 22%, rgba(18,18,18,0.05) 62%, rgba(18,18,18,0.85) 100%)",
+              "linear-gradient(180deg, rgba(18,18,18,0.72) 0%, rgba(18,18,18,0.18) 26%, rgba(18,18,18,0.18) 60%, rgba(18,18,18,0.92) 100%)",
+          }}
+        />
+        {/* Edge vignette to focus attention on the centre content */}
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(120% 90% at 50% 50%, transparent 42%, rgba(18,18,18,0.6) 100%)",
           }}
         />
 
@@ -276,19 +284,32 @@ export function CinematicHero() {
           ref={o1}
           className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center px-6 text-center"
         >
-          <div className="pointer-events-auto flex flex-col items-center">
-            <span className="font-data mb-5 rounded-full border border-white/10 bg-white/[0.04] px-4 py-1.5 text-[11px] uppercase tracking-[0.22em] text-white/70 backdrop-blur-md">
+          <div
+            className="pointer-events-auto relative flex flex-col items-center rounded-[40px] px-8 py-10"
+            style={{
+              background:
+                "radial-gradient(60% 60% at 50% 50%, rgba(10,10,12,0.55), transparent 75%)",
+            }}
+          >
+            <span className="font-data mb-5 rounded-full border border-white/15 bg-white/[0.06] px-4 py-1.5 text-[11px] uppercase tracking-[0.22em] text-white/85 backdrop-blur-md">
               Personal Social Agent
             </span>
             <h1
               className="font-display leading-[0.95] tracking-[-0.03em] text-white"
-              style={{ fontSize: "clamp(44px, 9vw, 132px)", fontWeight: 600 }}
+              style={{
+                fontSize: "clamp(44px, 9vw, 132px)",
+                fontWeight: 600,
+                textShadow: "0 2px 40px rgba(0,0,0,0.6)",
+              }}
             >
               Social,
               <br />
               <span className="sai-gradient-text">understood.</span>
             </h1>
-            <p className="mt-6 max-w-md text-base text-white/70 sm:text-lg">
+            <p
+              className="mt-6 max-w-md text-base text-white/90 sm:text-lg"
+              style={{ textShadow: "0 1px 20px rgba(0,0,0,0.7)" }}
+            >
               Every conversation begins here. Scroll to meet the agent behind it.
             </p>
           </div>
@@ -337,17 +358,30 @@ export function CinematicHero() {
           ref={o4}
           className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center px-6 text-center"
         >
-          <div className="pointer-events-auto flex flex-col items-center">
-            <span className="font-data mb-5 text-[11px] uppercase tracking-[0.22em] text-white/60">
+          <div
+            className="pointer-events-auto relative flex flex-col items-center rounded-[40px] px-8 py-10"
+            style={{
+              background:
+                "radial-gradient(62% 62% at 50% 50%, rgba(10,10,12,0.6), transparent 75%)",
+            }}
+          >
+            <span className="font-data mb-5 text-[11px] uppercase tracking-[0.22em] text-white/75">
               It converts
             </span>
             <h2
               className="font-display leading-[1] tracking-[-0.02em] text-white"
-              style={{ fontSize: "clamp(34px, 6vw, 76px)", fontWeight: 600 }}
+              style={{
+                fontSize: "clamp(34px, 6vw, 76px)",
+                fontWeight: 600,
+                textShadow: "0 2px 40px rgba(0,0,0,0.6)",
+              }}
             >
               Your AI never sleeps.
             </h2>
-            <p className="mt-5 max-w-lg text-base text-white/70 sm:text-lg">
+            <p
+              className="mt-5 max-w-lg text-base text-white/90 sm:text-lg"
+              style={{ textShadow: "0 1px 20px rgba(0,0,0,0.7)" }}
+            >
               Attention in. Revenue out. Around the clock.
             </p>
             <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row">

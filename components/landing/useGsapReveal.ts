@@ -56,20 +56,38 @@ export function useGsapReveal<T extends HTMLElement = HTMLElement>(opts?: {
         return;
       }
 
+      // Group elements by their reveal direction (data-reveal="up|left|right").
+      // Default is a gentle slide-up; "left"/"right" slide horizontally in.
+      const groups: Record<string, HTMLElement[]> = { up: [], left: [], right: [] };
+      targets.forEach((el) => {
+        const dir = (el.dataset.reveal || "up").toLowerCase();
+        (groups[dir] ?? groups.up).push(el);
+      });
+
+      const fromFor = (dir: string) => {
+        if (dir === "left") return { opacity: 0, x: -56, y: 0, filter: "blur(8px)" };
+        if (dir === "right") return { opacity: 0, x: 56, y: 0, filter: "blur(8px)" };
+        return { opacity: 0, x: 0, y: opts?.y ?? 28, filter: "blur(8px)" };
+      };
+
       ctx = gsap.context(() => {
-        gsap.set(targets, { opacity: 0, y: opts?.y ?? 26, filter: "blur(8px)" });
-        gsap.to(targets, {
-          opacity: 1,
-          y: 0,
-          filter: "blur(0px)",
-          duration: 0.9,
-          ease: EASE,
-          stagger: opts?.stagger ?? 0.09,
-          scrollTrigger: {
-            trigger: el,
-            start: opts?.start ?? "top 78%",
-            toggleActions: "play none none none",
-          },
+        Object.entries(groups).forEach(([dir, els]) => {
+          if (!els.length) return;
+          gsap.set(els, fromFor(dir));
+          gsap.to(els, {
+            opacity: 1,
+            x: 0,
+            y: 0,
+            filter: "blur(0px)",
+            duration: 0.95,
+            ease: EASE,
+            stagger: opts?.stagger ?? 0.12,
+            scrollTrigger: {
+              trigger: el,
+              start: opts?.start ?? "top 80%",
+              toggleActions: "play none none none",
+            },
+          });
         });
       }, el);
     })();

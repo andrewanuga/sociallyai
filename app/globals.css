@@ -357,6 +357,44 @@ html.sai-js [data-reveal] { opacity: 0; }
   * { scroll-behavior: auto !important; }
 }
 
+/* ── Infinite marquee (testimonials) ────────────────── */
+.sai-marquee {
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    transparent,
+    #000 8%,
+    #000 92%,
+    transparent
+  );
+  mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+}
+
+.sai-marquee-track {
+  display: flex;
+  width: max-content;
+  gap: 1rem;
+  animation: marquee 46s linear infinite;
+  will-change: transform;
+}
+
+.sai-marquee-track.reverse {
+  animation-direction: reverse;
+}
+
+.sai-marquee:hover .sai-marquee-track {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sai-marquee-track {
+    animation: none;
+  }
+  .sai-marquee {
+    overflow-x: auto;
+  }
+}
+
 /* Subtle grain/vignette helper for section atmosphere */
 .sai-vignette {
   background:

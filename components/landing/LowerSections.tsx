@@ -152,7 +152,7 @@ export function HowItWorks() {
           <div className="absolute left-[27px] top-4 bottom-4 hidden w-px bg-gradient-to-b from-[var(--sai-indigo)]/50 via-[var(--sai-violet)]/25 to-transparent md:block" />
           <div className="flex flex-col gap-4">
             {STEPS.map((s, i) => (
-              <div key={s.title} data-reveal className="glass-panel flex items-start gap-5 rounded-2xl p-6">
+              <div key={s.title} data-reveal="left" className="glass-panel flex items-start gap-5 rounded-2xl p-6">
                 <div className="relative z-10 flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.05]">
                   <s.icon className="h-6 w-6 text-[var(--sai-violet)]" />
                 </div>
@@ -184,44 +184,65 @@ const STORIES = [
   { name: "Biodun Afolabi", role: "SaaS Founder, Lagos", avatar: "BA", text: "They self-host Llama 3.3 70B, so my content data doesn't go to anyone else. And the pricing makes sense here.", highlight: "Privacy-first" },
 ];
 
+function StoryCard({ t }: { t: (typeof STORIES)[number] }) {
+  return (
+    <div className="glass-panel w-[330px] flex-shrink-0 rounded-2xl p-6 sm:w-[380px]">
+      <p className="text-sm leading-relaxed text-white/75">“{t.text}”</p>
+      <div className="font-data mt-4 inline-block rounded-full bg-white/[0.05] px-3 py-1 text-[11px] text-[var(--sai-indigo)]">
+        {t.highlight}
+      </div>
+      <div className="mt-5 flex items-center gap-3">
+        <div
+          className="flex h-9 w-9 items-center justify-center rounded-full text-[11px] font-semibold text-white"
+          style={{ background: "linear-gradient(135deg,#6366f1,#a855f7)" }}
+        >
+          {t.avatar}
+        </div>
+        <div>
+          <p className="text-[13px] font-medium text-white">{t.name}</p>
+          <p className="text-[12px] text-white/45">{t.role}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MarqueeRow({ items, reverse }: { items: typeof STORIES; reverse?: boolean }) {
+  // Duplicate the set so the -50% translate loops seamlessly.
+  const doubled = [...items, ...items];
+  return (
+    <div className="sai-marquee py-2">
+      <div className={`sai-marquee-track${reverse ? " reverse" : ""}`}>
+        {doubled.map((t, i) => (
+          <StoryCard key={`${t.name}-${i}`} t={t} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function Stories() {
   const ref = useGsapReveal<HTMLElement>();
+  const rowA = STORIES.slice(0, 3);
+  const rowB = STORIES.slice(3);
   return (
-    <section id="stories" ref={ref} className="sai-vignette relative px-5 py-28 sm:py-32">
-      <div className="mx-auto max-w-6xl">
-        <div className="mx-auto mb-14 max-w-2xl text-center">
-          <div data-reveal><Eyebrow tone="gold">Loved by operators</Eyebrow></div>
-          <h2 data-reveal className="font-display mt-4 text-4xl font-semibold tracking-[-0.02em] text-white sm:text-5xl">
-            Creators & businesses<br /><span className="sai-gradient-text">love Socially AI</span>
-          </h2>
-          <div data-reveal className="mt-4 flex items-center justify-center gap-1.5 text-white/60">
-            {[...Array(5)].map((_, i) => (
-              <Star key={i} className="h-4 w-4 fill-[var(--sai-gold)] text-[var(--sai-gold)]" />
-            ))}
-            <span className="ml-2 text-sm">4.9 / 5 average</span>
-          </div>
-        </div>
-
-        <div className="columns-1 gap-4 md:columns-2 lg:columns-3">
-          {STORIES.map((t) => (
-            <div key={t.name} data-reveal className="glass-panel mb-4 break-inside-avoid rounded-2xl p-6">
-              <p className="text-sm leading-relaxed text-white/75">“{t.text}”</p>
-              <div className="font-data mt-4 inline-block rounded-full bg-white/[0.05] px-3 py-1 text-[11px] text-[var(--sai-indigo)]">
-                {t.highlight}
-              </div>
-              <div className="mt-5 flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-full text-[11px] font-semibold text-white"
-                  style={{ background: "linear-gradient(135deg,#6366f1,#a855f7)" }}>
-                  {t.avatar}
-                </div>
-                <div>
-                  <p className="text-[13px] font-medium text-white">{t.name}</p>
-                  <p className="text-[12px] text-white/45">{t.role}</p>
-                </div>
-              </div>
-            </div>
+    <section id="stories" ref={ref} className="sai-vignette relative overflow-hidden py-28 sm:py-32">
+      <div className="mx-auto mb-14 max-w-2xl px-5 text-center">
+        <div data-reveal><Eyebrow tone="gold">Loved by operators</Eyebrow></div>
+        <h2 data-reveal className="font-display mt-4 text-4xl font-semibold tracking-[-0.02em] text-white sm:text-5xl">
+          Creators & businesses<br /><span className="sai-gradient-text">love Socially AI</span>
+        </h2>
+        <div data-reveal className="mt-4 flex items-center justify-center gap-1.5 text-white/60">
+          {[...Array(5)].map((_, i) => (
+            <Star key={i} className="h-4 w-4 fill-[var(--sai-gold)] text-[var(--sai-gold)]" />
           ))}
+          <span className="ml-2 text-sm">4.9 / 5 average</span>
         </div>
+      </div>
+
+      <div className="flex flex-col gap-4">
+        <MarqueeRow items={rowA} />
+        <MarqueeRow items={rowB} reverse />
       </div>
     </section>
   );
