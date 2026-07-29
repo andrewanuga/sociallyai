@@ -1,158 +1,167 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
-  LayoutDashboard, PenSquare, Calendar, MessageSquare,
-  Ghost, TrendingUp, BarChart3, Settings, Zap,
-  ChevronLeft, ChevronRight, LogOut, CreditCard,
+  LayoutDashboard, MessagesSquare, ListTodo, CalendarRange, Inbox,
+  BarChart3, TrendingUp, Bot, Ghost, Plug, CreditCard, Settings,
+  LogOut, PanelLeftClose, PanelLeftOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
-import { useRouter } from "next/navigation";
 
-const NAV_ITEMS = [
-  { href: "/dashboard",             label: "Overview",    icon: LayoutDashboard, exact: true },
-  { href: "/dashboard/compose",     label: "Compose",     icon: PenSquare                   },
-  { href: "/dashboard/calendar",    label: "Calendar",    icon: Calendar                    },
-  { href: "/dashboard/inbox",       label: "Inbox",       icon: MessageSquare, badge: 4     },
-  { href: "/dashboard/ghost-mode",  label: "Ghost Mode",  icon: Ghost                       },
-  { href: "/dashboard/trends",      label: "Trends",      icon: TrendingUp                  },
-  { href: "/dashboard/analytics",   label: "Analytics",   icon: BarChart3                   },
+type Item = { href: string; label: string; icon: typeof LayoutDashboard; badge?: number; exact?: boolean };
+
+const SECTIONS: { title: string; items: Item[] }[] = [
+  {
+    title: "Workspace",
+    items: [
+      { href: "/dashboard", label: "Overview", icon: LayoutDashboard, exact: true },
+      { href: "/dashboard/create", label: "Create", icon: MessagesSquare },
+      { href: "/dashboard/tasks", label: "Tasks", icon: ListTodo },
+      { href: "/dashboard/calendar", label: "Scheduler", icon: CalendarRange },
+      { href: "/dashboard/inbox", label: "Inbox", icon: Inbox, badge: 4 },
+    ],
+  },
+  {
+    title: "Insights",
+    items: [
+      { href: "/dashboard/analytics", label: "Analytics", icon: BarChart3 },
+      { href: "/dashboard/trends", label: "Trends", icon: TrendingUp },
+    ],
+  },
+  {
+    title: "Automation",
+    items: [
+      { href: "/dashboard/bots", label: "Bots", icon: Bot },
+      { href: "/dashboard/ghost-mode", label: "Ghost Mode", icon: Ghost },
+    ],
+  },
+  {
+    title: "Connect",
+    items: [{ href: "/dashboard/integrations", label: "Integrations", icon: Plug }],
+  },
 ];
 
-const BOTTOM_ITEMS = [
-  { href: "/dashboard/billing",  label: "Billing",  icon: CreditCard },
-  { href: "/dashboard/settings", label: "Settings", icon: Settings   },
+const BOTTOM: Item[] = [
+  { href: "/dashboard/billing", label: "Billing", icon: CreditCard },
+  { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ];
 
-interface SidebarProps {
+export function Sidebar({
+  collapsed,
+  onToggle,
+}: {
   collapsed: boolean;
   onToggle: () => void;
-}
-
-export function Sidebar({ collapsed, onToggle }: SidebarProps) {
+}) {
   const pathname = usePathname();
-  const router   = useRouter();
+  const router = useRouter();
 
-  const handleLogout = async () => {
+  const isActive = (href: string, exact?: boolean) =>
+    exact ? pathname === href : pathname.startsWith(href) && href !== "/dashboard";
+
+  const logout = async () => {
     const supabase = createClient();
     await supabase.auth.signOut();
     router.push("/");
     router.refresh();
   };
 
-  const isActive = (href: string, exact?: boolean) => {
-    if (exact) return pathname === href;
-    return pathname.startsWith(href) && href !== "/dashboard";
+  const Row = ({ item }: { item: Item }) => {
+    const active = isActive(item.href, item.exact);
+    return (
+      <Link
+        href={item.href}
+        className={cn(
+          "group relative flex items-center gap-3 rounded-xl px-2.5 py-2.5 text-[13.5px] font-medium transition-colors duration-150",
+          active ? "text-white" : "text-white/55 hover:text-white",
+          collapsed && "justify-center px-2"
+        )}
+        style={active ? { background: "rgba(99,102,241,0.14)" } : undefined}
+      >
+        {/* active accent bar */}
+        {active && (
+          <span
+            className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-full"
+            style={{ background: "linear-gradient(180deg,#6366f1,#a855f7)" }}
+          />
+        )}
+        <item.icon
+          className="h-[18px] w-[18px] flex-shrink-0"
+          style={active ? { color: "var(--sai-indigo)" } : undefined}
+        />
+        {!collapsed && <span className="flex-1 truncate">{item.label}</span>}
+        {!collapsed && item.badge && (
+          <span
+            className="flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[10.5px] font-semibold text-white"
+            style={{ background: "rgba(99,102,241,0.3)" }}
+          >
+            {item.badge}
+          </span>
+        )}
+        {collapsed && (
+          <span className="glass-panel pointer-events-none absolute left-full z-50 ml-3 whitespace-nowrap rounded-lg px-2.5 py-1.5 text-xs text-white opacity-0 transition-opacity group-hover:opacity-100">
+            {item.label}
+            {item.badge ? <span className="ml-1 text-[var(--sai-indigo)]">· {item.badge}</span> : null}
+          </span>
+        )}
+      </Link>
+    );
   };
 
   return (
     <aside
       className={cn(
-        "fixed left-0 top-0 h-full bg-card border-r border-border flex flex-col z-40 transition-all duration-300",
-        collapsed ? "w-16" : "w-60"
+        "fixed left-0 top-0 z-40 flex h-full flex-col border-r border-white/[0.06] transition-[width] duration-300",
+        collapsed ? "w-[68px]" : "w-[248px]"
       )}
+      style={{ background: "rgba(16,16,20,0.92)", backdropFilter: "blur(20px)" }}
     >
-      {/* Logo */}
-      <div
-        className={cn(
-          "h-16 flex items-center border-b border-border px-4 flex-shrink-0",
-          collapsed ? "justify-center" : "gap-3"
-        )}
-      >
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-600 to-purple-700 flex items-center justify-center flex-shrink-0 shadow-lg shadow-indigo-600/30">
-          <Zap className="w-4 h-4 text-white fill-white" />
-        </div>
+      {/* Brand */}
+      <div className={cn("flex h-16 flex-shrink-0 items-center border-b border-white/[0.06] px-4", collapsed ? "justify-center" : "gap-2.5")}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/logo.png" alt="" width={26} height={23} className="h-[24px] w-auto" style={{ filter: "drop-shadow(0 0 10px rgba(99,102,241,0.4))" }} />
         {!collapsed && (
-          <span className="font-bold text-lg">
-            <span className="gradient-text">Socially</span>
-            <span className="text-foreground">AI</span>
+          <span className="font-display text-[16px] font-semibold text-white">
+            Socially<span className="text-[var(--sai-indigo)]"> AI</span>
           </span>
         )}
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 py-4 px-2 overflow-y-auto">
-        <div className="space-y-1">
-          {NAV_ITEMS.map((item) => {
-            const active = isActive(item.href, item.exact);
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  "flex items-center gap-3 px-2.5 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 group relative",
-                  active
-                    ? "bg-indigo-500/10 text-indigo-400"
-                    : "text-muted-foreground hover:text-foreground hover:bg-accent",
-                  collapsed && "justify-center px-2"
-                )}
-              >
-                <item.icon
-                  className={cn("w-5 h-5 flex-shrink-0", active && "text-indigo-400")}
-                />
-                {!collapsed && (
-                  <>
-                    <span className="flex-1">{item.label}</span>
-                    {item.badge && (
-                      <span className="w-5 h-5 rounded-full bg-indigo-500/20 text-indigo-400 text-xs flex items-center justify-center font-semibold">
-                        {item.badge}
-                      </span>
-                    )}
-                  </>
-                )}
-
-                {/* Tooltip on collapsed */}
-                {collapsed && (
-                  <div className="absolute left-full ml-2 px-2 py-1 rounded-md bg-popover border border-border text-sm whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity shadow-lg">
-                    {item.label}
-                    {item.badge && (
-                      <span className="ml-1.5 text-indigo-400">({item.badge})</span>
-                    )}
-                  </div>
-                )}
-              </Link>
-            );
-          })}
-        </div>
+      <nav className="flex-1 overflow-y-auto px-2.5 py-4">
+        {SECTIONS.map((sec) => (
+          <div key={sec.title} className="mb-4">
+            {!collapsed && (
+              <p className="font-data mb-1.5 px-2.5 text-[10px] uppercase tracking-[0.2em] text-white/30">
+                {sec.title}
+              </p>
+            )}
+            {collapsed && <div className="mx-auto mb-2 h-px w-6 bg-white/10" />}
+            <div className="space-y-0.5">
+              {sec.items.map((item) => <Row key={item.href} item={item} />)}
+            </div>
+          </div>
+        ))}
       </nav>
 
       {/* Bottom */}
-      <div className="py-4 px-2 border-t border-border space-y-1">
-        {BOTTOM_ITEMS.map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={cn(
-              "flex items-center gap-3 px-2.5 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-all group relative",
-              collapsed && "justify-center px-2"
-            )}
-          >
-            <item.icon className="w-5 h-5 flex-shrink-0" />
-            {!collapsed && <span>{item.label}</span>}
-            {collapsed && (
-              <div className="absolute left-full ml-2 px-2 py-1 rounded-md bg-popover border border-border text-sm whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity shadow-lg">
-                {item.label}
-              </div>
-            )}
-          </Link>
-        ))}
-
+      <div className="space-y-0.5 border-t border-white/[0.06] px-2.5 py-3">
+        {BOTTOM.map((item) => <Row key={item.href} item={item} />)}
         <button
-          onClick={handleLogout}
+          onClick={logout}
           className={cn(
-            "w-full flex items-center gap-3 px-2.5 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all group relative",
+            "group relative flex w-full items-center gap-3 rounded-xl px-2.5 py-2.5 text-[13.5px] font-medium text-white/55 transition-colors hover:text-[var(--sai-red)]",
             collapsed && "justify-center px-2"
           )}
         >
-          <LogOut className="w-5 h-5 flex-shrink-0" />
+          <LogOut className="h-[18px] w-[18px] flex-shrink-0" />
           {!collapsed && <span>Sign out</span>}
           {collapsed && (
-            <div className="absolute left-full ml-2 px-2 py-1 rounded-md bg-popover border border-border text-sm whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity shadow-lg">
+            <span className="glass-panel pointer-events-none absolute left-full z-50 ml-3 whitespace-nowrap rounded-lg px-2.5 py-1.5 text-xs text-white opacity-0 transition-opacity group-hover:opacity-100">
               Sign out
-            </div>
+            </span>
           )}
         </button>
       </div>
@@ -160,13 +169,10 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
       {/* Collapse toggle */}
       <button
         onClick={onToggle}
-        className="absolute -right-3 top-20 w-6 h-6 rounded-full bg-card border border-border flex items-center justify-center shadow-sm hover:bg-accent transition-colors z-50"
+        aria-label="Toggle sidebar"
+        className="glass-panel absolute -right-3 top-[70px] z-50 flex h-6 w-6 items-center justify-center rounded-full text-white/70 transition-colors hover:text-white"
       >
-        {collapsed ? (
-          <ChevronRight className="w-3 h-3" />
-        ) : (
-          <ChevronLeft className="w-3 h-3" />
-        )}
+        {collapsed ? <PanelLeftOpen className="h-3.5 w-3.5" /> : <PanelLeftClose className="h-3.5 w-3.5" />}
       </button>
     </aside>
   );

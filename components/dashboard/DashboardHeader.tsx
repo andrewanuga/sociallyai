@@ -1,72 +1,62 @@
 "use client";
 
-import { useTheme } from "next-themes";
 import { useState, useEffect } from "react";
-import { Bell, Sun, Moon, Search, Menu } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import Link from "next/link";
+import { Bell, Search, Menu, Plus } from "lucide-react";
 
-interface DashboardHeaderProps {
+export function DashboardHeader({
+  onMobileMenuToggle,
+}: {
   title?: string;
   onMobileMenuToggle?: () => void;
-}
-
-export function DashboardHeader({ title, onMobileMenuToggle }: DashboardHeaderProps) {
-  const { theme, setTheme } = useTheme();
+}) {
   const [mounted, setMounted] = useState(false);
-
   useEffect(() => setMounted(true), []);
 
   return (
-    <header className="h-16 flex items-center justify-between px-6 border-b border-border bg-background/80 backdrop-blur-sm sticky top-0 z-30">
-      <div className="flex items-center gap-4">
+    <header
+      className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-white/[0.06] px-4 sm:px-6"
+      style={{ background: "rgba(18,18,22,0.72)", backdropFilter: "blur(18px)" }}
+    >
+      <div className="flex items-center gap-3">
         <button
           onClick={onMobileMenuToggle}
-          className="md:hidden w-9 h-9 flex items-center justify-center rounded-lg hover:bg-accent text-muted-foreground"
+          className="flex h-9 w-9 items-center justify-center rounded-lg text-white/60 hover:bg-white/[0.06] md:hidden"
         >
-          <Menu className="w-5 h-5" />
+          <Menu className="h-5 w-5" />
         </button>
-        {title && (
-          <h1 className="text-xl font-semibold hidden sm:block">{title}</h1>
-        )}
-      </div>
 
-      <div className="flex-1 max-w-xs mx-4 hidden md:block">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="Search posts, trends..."
-            className="pl-9 h-9 bg-secondary border-0 focus-visible:ring-1 focus-visible:ring-red-500/50"
+        {/* Search */}
+        <div className="relative hidden sm:block">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/35" />
+          <input
+            placeholder="Search posts, tasks, trends…"
+            className="h-9 w-64 rounded-full border border-white/10 bg-white/[0.04] pl-9 pr-3 text-sm text-white placeholder:text-white/35 focus:border-[var(--sai-indigo)]/50 focus:outline-none focus:ring-2 focus:ring-[var(--sai-indigo)]/20"
           />
         </div>
       </div>
 
       <div className="flex items-center gap-2">
-        {mounted && (
-          <button
-            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-accent text-muted-foreground transition-colors"
-          >
-            {theme === "dark" ? (
-              <Sun className="w-4 h-4" />
-            ) : (
-              <Moon className="w-4 h-4" />
-            )}
-          </button>
-        )}
+        <Link
+          href="/dashboard/create"
+          className="hidden items-center gap-1.5 rounded-full px-3.5 py-2 text-[13px] font-semibold text-white transition-transform hover:scale-[1.03] sm:flex"
+          style={{ background: "linear-gradient(135deg,#6366f1,#a855f7)", boxShadow: "0 0 24px -10px rgba(99,102,241,0.8)" }}
+        >
+          <Plus className="h-4 w-4" /> Create
+        </Link>
 
-        <button className="relative w-9 h-9 flex items-center justify-center rounded-lg hover:bg-accent text-muted-foreground transition-colors">
-          <Bell className="w-4 h-4" />
-          <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-red-500" />
+        <button className="relative flex h-9 w-9 items-center justify-center rounded-lg text-white/60 transition-colors hover:bg-white/[0.06] hover:text-white">
+          <Bell className="h-[18px] w-[18px]" />
+          <span className="absolute right-2 top-2 h-2 w-2 rounded-full" style={{ background: "var(--sai-red)" }} />
         </button>
 
-        <Avatar className="w-8 h-8 cursor-pointer">
-          <AvatarImage src="" />
-          <AvatarFallback className="bg-gradient-to-br from-red-600 to-rose-700 text-white text-xs font-bold">
-            U
-          </AvatarFallback>
-        </Avatar>
+        <div
+          className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-[12px] font-bold text-white"
+          style={{ background: "linear-gradient(135deg,#6366f1,#a855f7)" }}
+          suppressHydrationWarning
+        >
+          {mounted ? "U" : ""}
+        </div>
       </div>
     </header>
   );
