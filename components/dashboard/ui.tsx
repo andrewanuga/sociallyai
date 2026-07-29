@@ -43,10 +43,10 @@ export function PageHeader({
             {eyebrow}
           </span>
         )}
-        <h1 className="font-display mt-1.5 text-[26px] font-semibold tracking-[-0.02em] text-white sm:text-[30px]">
+        <h1 className="font-display mt-1.5 text-[26px] font-semibold tracking-[-0.02em] text-[var(--fg)] sm:text-[30px]">
           {title}
         </h1>
-        {sub && <p className="mt-1.5 max-w-xl text-sm text-white/50">{sub}</p>}
+        {sub && <p className="mt-1.5 max-w-xl text-sm text-[var(--fg-3)]">{sub}</p>}
       </div>
       {actions && <div className="flex flex-wrap items-center gap-2.5">{actions}</div>}
     </div>
@@ -75,7 +75,7 @@ export function StatTile({
   return (
     <GlassCard className="p-5">
       <div className="flex items-center justify-between">
-        <span className="text-[13px] text-white/50">{label}</span>
+        <span className="text-[13px] text-[var(--fg-3)]">{label}</span>
         {Icon && (
           <span
             className="flex h-8 w-8 items-center justify-center rounded-lg"
@@ -86,7 +86,7 @@ export function StatTile({
         )}
       </div>
       <div className="mt-3 flex items-end gap-2">
-        <span className="font-display text-2xl font-semibold text-white">{value}</span>
+        <span className="font-display text-2xl font-semibold text-[var(--fg)]">{value}</span>
         {delta && (
           <span
             className="mb-1 font-data text-[12px]"
@@ -108,7 +108,7 @@ export function GhostButton({
   return (
     <button
       className={cn(
-        "inline-flex items-center gap-2 rounded-full border border-white/12 bg-white/[0.04] px-4 py-2 text-[13px] font-medium text-white/80 transition-colors hover:bg-white/[0.08] hover:text-white",
+        "inline-flex items-center gap-2 rounded-full border border-[var(--stroke)] bg-[var(--panel-fill)] px-4 py-2 text-[13px] font-medium text-[var(--fg)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--fg)]",
         className
       )}
       {...props}
@@ -126,7 +126,7 @@ export function PrimaryButton({
   return (
     <button
       className={cn(
-        "inline-flex items-center gap-2 rounded-full px-4 py-2 text-[13px] font-semibold text-white transition-transform duration-200 hover:scale-[1.03] disabled:opacity-50 disabled:hover:scale-100",
+        "inline-flex items-center gap-2 rounded-full px-4 py-2 text-[13px] font-semibold text-[var(--fg)] transition-transform duration-200 hover:scale-[1.03] disabled:opacity-50 disabled:hover:scale-100",
         className
       )}
       style={{
@@ -152,7 +152,7 @@ export function Pill({
     : tone === "gold" ? "var(--sai-gold)"
     : tone === "red" ? "var(--sai-red)"
     : tone === "green" ? "#34d399"
-    : tone === "muted" ? "rgba(255,255,255,0.6)"
+    : tone === "muted" ? "var(--fg-3)"
     : "var(--sai-indigo)";
   return (
     <span

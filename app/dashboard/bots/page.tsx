@@ -102,19 +102,19 @@ export default function BotsPage() {
                 </span>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <h3 className="font-display text-[15px] font-semibold text-white">{b.name}</h3>
+                    <h3 className="font-display text-[15px] font-semibold text-[var(--fg)]">{b.name}</h3>
                     {active ? <Pill tone="green">Active</Pill> : <Pill tone="muted">Paused</Pill>}
                   </div>
-                  <p className="mt-1.5 text-[13px] leading-relaxed text-white/50">{b.desc}</p>
+                  <p className="mt-1.5 text-[13px] leading-relaxed text-[var(--fg-3)]">{b.desc}</p>
 
                   {/* autonomy toggle */}
-                  <div className="mt-4 inline-flex rounded-full border border-white/10 bg-white/[0.03] p-0.5 text-[12px]">
+                  <div className="mt-4 inline-flex rounded-full border border-[var(--stroke)] bg-[var(--panel-fill)] p-0.5 text-[12px]">
                     {(["assist", "auto"] as const).map((mode) => (
                       <button
                         key={mode}
                         onClick={() => setAutonomy(b, mode)}
                         className="rounded-full px-3 py-1 transition-colors"
-                        style={s.autonomy === mode ? { background: "rgba(99,102,241,0.2)", color: "#fff" } : { color: "rgba(255,255,255,0.5)" }}
+                        style={s.autonomy === mode ? { background: "rgba(99,102,241,0.2)", color: "#fff" } : { color: "var(--fg-3)" }}
                       >
                         {mode === "assist" ? "Human-in-loop" : "Full auto"}
                       </button>
@@ -123,19 +123,19 @@ export default function BotsPage() {
                 </div>
               </div>
 
-              <div className="mt-4 flex items-center justify-between border-t border-white/[0.06] pt-4">
-                <span className="text-[12px] text-white/40">{s.actions} actions this month</span>
+              <div className="mt-4 flex items-center justify-between border-t border-[var(--stroke)] pt-4">
+                <span className="text-[12px] text-[var(--fg-4)]">{s.actions} actions this month</span>
                 <div className="flex items-center gap-2">
                   {b.kind === "ghost" && (
-                    <Link href="/dashboard/ghost-mode" className="rounded-full border border-white/12 bg-white/[0.04] px-3 py-1.5 text-[12px] text-white/70 hover:bg-white/[0.08]">
+                    <Link href="/dashboard/ghost-mode" className="rounded-full border border-[var(--stroke)] bg-[var(--panel-fill)] px-3 py-1.5 text-[12px] text-[var(--fg-2)] hover:bg-[var(--hover)]">
                       Configure
                     </Link>
                   )}
                   <button
                     onClick={() => setStatus(b, active ? "paused" : "active")}
-                    className="rounded-full px-4 py-1.5 text-[12.5px] font-semibold text-white transition-transform hover:scale-[1.03]"
+                    className="rounded-full px-4 py-1.5 text-[12.5px] font-semibold text-[var(--fg)] transition-transform hover:scale-[1.03]"
                     style={active
-                      ? { background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)" }
+                      ? { background: "var(--panel-fill-2)", border: "1px solid var(--stroke)" }
                       : { background: "linear-gradient(135deg,#6366f1,#a855f7)" }}
                   >
                     {active ? "Pause" : "Deploy"}

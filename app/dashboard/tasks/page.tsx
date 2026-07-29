@@ -125,21 +125,21 @@ export default function TasksPage() {
                   onChange={(e) => setTitle(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && push()}
                   placeholder="Push a task onto the stack…"
-                  className="h-11 w-full rounded-xl border border-white/10 bg-white/[0.04] pl-3.5 pr-10 text-sm text-white placeholder:text-white/35 focus:border-[var(--sai-indigo)]/50 focus:outline-none focus:ring-2 focus:ring-[var(--sai-indigo)]/20"
+                  className="h-11 w-full rounded-xl border border-[var(--stroke)] bg-[var(--panel-fill)] pl-3.5 pr-10 text-sm text-[var(--fg)] placeholder:text-[var(--fg-4)] focus:border-[var(--sai-indigo)]/50 focus:outline-none focus:ring-2 focus:ring-[var(--sai-indigo)]/20"
                 />
-                <CornerDownLeft className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/25" />
+                <CornerDownLeft className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--fg-4)]" />
               </div>
               <button
                 onClick={push}
                 disabled={!title.trim()}
-                className="flex h-11 items-center gap-1.5 rounded-xl px-4 text-sm font-semibold text-white transition-transform hover:scale-[1.02] disabled:opacity-40"
+                className="flex h-11 items-center gap-1.5 rounded-xl px-4 text-sm font-semibold text-[var(--fg)] transition-transform hover:scale-[1.02] disabled:opacity-40"
                 style={{ background: "linear-gradient(135deg,#6366f1,#a855f7)" }}
               >
                 <Plus className="h-4 w-4" /> Push
               </button>
             </div>
             <div className="mt-3 flex items-center gap-2">
-              <span className="font-data text-[10px] uppercase tracking-wider text-white/35">Priority</span>
+              <span className="font-data text-[10px] uppercase tracking-wider text-[var(--fg-4)]">Priority</span>
               {PRIORITIES.map((p) => (
                 <button
                   key={p.id}
@@ -148,7 +148,7 @@ export default function TasksPage() {
                   style={
                     priority === p.id
                       ? { background: "rgba(99,102,241,0.18)", color: "#fff" }
-                      : { color: "rgba(255,255,255,0.5)" }
+                      : { color: "var(--fg-3)" }
                   }
                 >
                   {p.label}
@@ -159,14 +159,14 @@ export default function TasksPage() {
 
           {/* Stack visual */}
           <div className="mb-3 flex items-center justify-between">
-            <div className="flex items-center gap-2 text-sm text-white/60">
+            <div className="flex items-center gap-2 text-sm text-[var(--fg-2)]">
               <Layers className="h-4 w-4 text-[var(--sai-indigo)]" />
               <span className="font-data text-[11px] uppercase tracking-[0.18em]">Stack · {stack.length}</span>
             </div>
             {stack.length > 0 && (
               <button
                 onClick={() => pop(stack[0].id)}
-                className="flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.04] px-3 py-1.5 text-[12px] text-white/80 hover:bg-white/[0.08]"
+                className="flex items-center gap-1.5 rounded-full border border-[var(--stroke)] bg-[var(--panel-fill)] px-3 py-1.5 text-[12px] text-[var(--fg)] hover:bg-[var(--hover)]"
               >
                 <ArrowUpFromLine className="h-3.5 w-3.5" /> Pop top
               </button>
@@ -174,12 +174,12 @@ export default function TasksPage() {
           </div>
 
           {!loaded ? (
-            <GlassCard className="p-10 text-center text-sm text-white/40">Loading…</GlassCard>
+            <GlassCard className="p-10 text-center text-sm text-[var(--fg-4)]">Loading…</GlassCard>
           ) : stack.length === 0 ? (
             <GlassCard className="flex flex-col items-center p-12 text-center">
-              <Layers className="mb-3 h-8 w-8 text-white/25" />
-              <p className="text-sm text-white/55">The stack is empty.</p>
-              <p className="mt-1 text-[13px] text-white/35">Push a task above to get started.</p>
+              <Layers className="mb-3 h-8 w-8 text-[var(--fg-4)]" />
+              <p className="text-sm text-[var(--fg-2)]">The stack is empty.</p>
+              <p className="mt-1 text-[13px] text-[var(--fg-4)]">Push a task above to get started.</p>
             </GlassCard>
           ) : (
             <div className="space-y-2.5">
@@ -197,28 +197,28 @@ export default function TasksPage() {
                   >
                     <div className="flex items-start gap-3">
                       <div className="flex flex-col items-center pt-0.5">
-                        <span className="font-data text-[11px] text-white/30">#{i + 1}</span>
+                        <span className="font-data text-[11px] text-[var(--fg-4)]">#{i + 1}</span>
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
                           {top && <Pill tone="indigo">Next to pop</Pill>}
                           <Pill tone={toneFor(t.priority)}>{t.priority}</Pill>
                         </div>
-                        <p className="mt-2 text-[15px] font-medium leading-snug text-white">{t.title}</p>
-                        {t.notes && <p className="mt-1 text-[13px] text-white/50">{t.notes}</p>}
+                        <p className="mt-2 text-[15px] font-medium leading-snug text-[var(--fg)]">{t.title}</p>
+                        {t.notes && <p className="mt-1 text-[13px] text-[var(--fg-3)]">{t.notes}</p>}
                       </div>
                       <div className="flex flex-shrink-0 items-center gap-1">
                         <button
                           onClick={() => pop(t.id)}
                           title="Complete"
-                          className="flex h-9 w-9 items-center justify-center rounded-lg text-white/50 transition-colors hover:bg-[var(--sai-indigo)]/15 hover:text-[var(--sai-indigo)]"
+                          className="flex h-9 w-9 items-center justify-center rounded-lg text-[var(--fg-3)] transition-colors hover:bg-[var(--sai-indigo)]/15 hover:text-[var(--sai-indigo)]"
                         >
                           <Check className="h-4 w-4" />
                         </button>
                         <button
                           onClick={() => remove(t.id)}
                           title="Delete"
-                          className="flex h-9 w-9 items-center justify-center rounded-lg text-white/40 transition-colors hover:bg-[var(--sai-red)]/15 hover:text-[var(--sai-red)]"
+                          className="flex h-9 w-9 items-center justify-center rounded-lg text-[var(--fg-4)] transition-colors hover:bg-[var(--sai-red)]/15 hover:text-[var(--sai-red)]"
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
@@ -235,7 +235,7 @@ export default function TasksPage() {
         <div className="space-y-5">
           <GlassCard className="p-5">
             <p className="font-data text-[11px] uppercase tracking-[0.18em] text-[var(--sai-violet)]">How the stack works</p>
-            <ul className="mt-3 space-y-2.5 text-[13px] text-white/60">
+            <ul className="mt-3 space-y-2.5 text-[13px] text-[var(--fg-2)]">
               <li className="flex gap-2"><span className="text-[var(--sai-indigo)]">Push</span> adds to the top.</li>
               <li className="flex gap-2"><span className="text-[var(--sai-indigo)]">Pop</span> completes the top first (LIFO).</li>
               <li className="flex gap-2"><span className="text-[var(--sai-indigo)]">Newest</span> work stays front-of-mind.</li>
@@ -244,18 +244,18 @@ export default function TasksPage() {
 
           <GlassCard className="p-5">
             <div className="mb-3 flex items-center justify-between">
-              <p className="font-data text-[11px] uppercase tracking-[0.18em] text-white/40">Recently popped</p>
-              <span className="text-[12px] text-white/35">{done.length}</span>
+              <p className="font-data text-[11px] uppercase tracking-[0.18em] text-[var(--fg-4)]">Recently popped</p>
+              <span className="text-[12px] text-[var(--fg-4)]">{done.length}</span>
             </div>
             {done.length === 0 ? (
-              <p className="text-[13px] text-white/35">Nothing completed yet.</p>
+              <p className="text-[13px] text-[var(--fg-4)]">Nothing completed yet.</p>
             ) : (
               <div className="space-y-1.5">
                 {done.map((t) => (
-                  <div key={t.id} className="flex items-center gap-2.5 rounded-lg px-2 py-1.5 hover:bg-white/[0.03]">
+                  <div key={t.id} className="flex items-center gap-2.5 rounded-lg px-2 py-1.5 hover:bg-[var(--hover)]">
                     <Check className="h-3.5 w-3.5 flex-shrink-0 text-[#34d399]" />
-                    <span className="flex-1 truncate text-[13px] text-white/45 line-through">{t.title}</span>
-                    <button onClick={() => undo(t.id)} title="Undo" className="text-white/30 hover:text-white">
+                    <span className="flex-1 truncate text-[13px] text-[var(--fg-3)] line-through">{t.title}</span>
+                    <button onClick={() => undo(t.id)} title="Undo" className="text-[var(--fg-4)] hover:text-[var(--fg)]">
                       <Undo2 className="h-3.5 w-3.5" />
                     </button>
                   </div>

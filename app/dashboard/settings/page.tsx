@@ -33,14 +33,14 @@ const FONTS = [
 ];
 
 const inputCls =
-  "h-11 w-full rounded-xl border border-white/10 bg-white/[0.04] px-3.5 text-sm text-white placeholder:text-white/35 focus:border-[var(--sai-indigo)]/50 focus:outline-none focus:ring-2 focus:ring-[var(--sai-indigo)]/20";
+  "h-11 w-full rounded-xl border border-[var(--stroke)] bg-[var(--panel-fill)] px-3.5 text-sm text-[var(--fg)] placeholder:text-[var(--fg-4)] focus:border-[var(--sai-indigo)]/50 focus:outline-none focus:ring-2 focus:ring-[var(--sai-indigo)]/20";
 
 function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void }) {
   return (
     <button
       onClick={() => onChange(!on)}
       className="relative h-6 w-11 flex-shrink-0 rounded-full transition-colors"
-      style={{ background: on ? "linear-gradient(135deg,#6366f1,#a855f7)" : "rgba(255,255,255,0.12)" }}
+      style={{ background: on ? "linear-gradient(135deg,#6366f1,#a855f7)" : "var(--stroke)" }}
     >
       <span
         className="absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform"
@@ -53,9 +53,9 @@ function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void 
 function Field({ label, children, hint }: { label: string; children: React.ReactNode; hint?: string }) {
   return (
     <div>
-      <label className="font-data mb-1.5 block text-[11px] uppercase tracking-[0.16em] text-white/55">{label}</label>
+      <label className="font-data mb-1.5 block text-[11px] uppercase tracking-[0.16em] text-[var(--fg-2)]">{label}</label>
       {children}
-      {hint && <p className="mt-1.5 text-[12px] text-white/35">{hint}</p>}
+      {hint && <p className="mt-1.5 text-[12px] text-[var(--fg-4)]">{hint}</p>}
     </div>
   );
 }
@@ -128,7 +128,7 @@ export default function SettingsPage() {
           <button
             onClick={save}
             disabled={saving}
-            className="inline-flex items-center gap-2 rounded-full px-5 py-2 text-[13px] font-semibold text-white transition-transform hover:scale-[1.03] disabled:opacity-50"
+            className="inline-flex items-center gap-2 rounded-full px-5 py-2 text-[13px] font-semibold text-[var(--fg)] transition-transform hover:scale-[1.03] disabled:opacity-50"
             style={{ background: "linear-gradient(135deg,#6366f1,#a855f7)", boxShadow: "0 0 26px -10px rgba(99,102,241,0.8)" }}
           >
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save changes
@@ -144,7 +144,7 @@ export default function SettingsPage() {
               key={t.id}
               onClick={() => setTab(t.id)}
               className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-[13.5px] transition-colors"
-              style={tab === t.id ? { background: "rgba(99,102,241,0.14)", color: "#fff" } : { color: "rgba(255,255,255,0.55)" }}
+              style={tab === t.id ? { background: "rgba(99,102,241,0.14)", color: "#fff" } : { color: "var(--fg-2)" }}
             >
               <t.icon className="h-[17px] w-[17px]" style={tab === t.id ? { color: "var(--sai-indigo)" } : undefined} />
               {t.label}
@@ -166,34 +166,34 @@ export default function SettingsPage() {
           {tab === "appearance" && (
             <>
               <GlassCard className="p-6">
-                <p className="font-display text-[15px] font-semibold text-white">Theme</p>
-                <p className="mt-1 text-[13px] text-white/45">Socially is designed for dark. Light is available.</p>
+                <p className="font-display text-[15px] font-semibold text-[var(--fg)]">Theme</p>
+                <p className="mt-1 text-[13px] text-[var(--fg-3)]">Socially is designed for dark. Light is available.</p>
                 <div className="mt-4 grid grid-cols-3 gap-3">
                   {[{ id: "dark", label: "Dark", icon: Moon }, { id: "light", label: "Light", icon: Sun }, { id: "system", label: "System", icon: Monitor }].map((o) => (
                     <button
                       key={o.id}
                       onClick={() => setTheme(o.id)}
                       className="flex flex-col items-center gap-2 rounded-xl border p-4 transition-colors"
-                      style={{ borderColor: theme === o.id ? "rgba(99,102,241,0.6)" : "rgba(255,255,255,0.1)", background: theme === o.id ? "rgba(99,102,241,0.1)" : "rgba(255,255,255,0.02)" }}
+                      style={{ borderColor: theme === o.id ? "rgba(99,102,241,0.6)" : "var(--stroke)", background: theme === o.id ? "rgba(99,102,241,0.1)" : "var(--panel-fill)" }}
                     >
-                      <o.icon className="h-5 w-5" style={{ color: theme === o.id ? "var(--sai-indigo)" : "rgba(255,255,255,0.5)" }} />
-                      <span className="text-[13px] text-white/80">{o.label}</span>
+                      <o.icon className="h-5 w-5" style={{ color: theme === o.id ? "var(--sai-indigo)" : "var(--fg-3)" }} />
+                      <span className="text-[13px] text-[var(--fg)]">{o.label}</span>
                     </button>
                   ))}
                 </div>
               </GlassCard>
               <GlassCard className="p-6">
-                <p className="font-display text-[15px] font-semibold text-white">Font</p>
+                <p className="font-display text-[15px] font-semibold text-[var(--fg)]">Font</p>
                 <div className="mt-4 grid gap-3 sm:grid-cols-3">
                   {FONTS.map((f) => (
                     <button
                       key={f.id}
                       onClick={() => { setForm({ ...form, font_pref: f.id }); applyFont(f.id); }}
                       className="rounded-xl border p-4 text-left transition-colors"
-                      style={{ borderColor: form.font_pref === f.id ? "rgba(99,102,241,0.6)" : "rgba(255,255,255,0.1)", background: form.font_pref === f.id ? "rgba(99,102,241,0.1)" : "rgba(255,255,255,0.02)" }}
+                      style={{ borderColor: form.font_pref === f.id ? "rgba(99,102,241,0.6)" : "var(--stroke)", background: form.font_pref === f.id ? "rgba(99,102,241,0.1)" : "var(--panel-fill)" }}
                     >
-                      <span className="block text-[15px] font-semibold text-white" style={{ fontFamily: f.stack }}>{f.label}</span>
-                      <span className="mt-1 block text-[12px] text-white/40" style={{ fontFamily: f.stack }}>The quick brown fox</span>
+                      <span className="block text-[15px] font-semibold text-[var(--fg)]" style={{ fontFamily: f.stack }}>{f.label}</span>
+                      <span className="mt-1 block text-[12px] text-[var(--fg-4)]" style={{ fontFamily: f.stack }}>The quick brown fox</span>
                     </button>
                   ))}
                 </div>
@@ -204,17 +204,17 @@ export default function SettingsPage() {
           {tab === "ai" && (
             <>
               <GlassCard className="p-6">
-                <p className="font-display text-[15px] font-semibold text-white">Model</p>
-                <p className="mt-1 text-[13px] text-white/45">The engine powering your agent.</p>
+                <p className="font-display text-[15px] font-semibold text-[var(--fg)]">Model</p>
+                <p className="mt-1 text-[13px] text-[var(--fg-3)]">The engine powering your agent.</p>
                 <div className="mt-4 space-y-2.5">
                   {AI_MODELS.map((m) => (
                     <button
                       key={m.id}
                       onClick={() => setForm({ ...form, ai_model: m.id })}
                       className="flex w-full items-center justify-between rounded-xl border p-3.5 text-left transition-colors"
-                      style={{ borderColor: form.ai_model === m.id ? "rgba(99,102,241,0.6)" : "rgba(255,255,255,0.1)", background: form.ai_model === m.id ? "rgba(99,102,241,0.1)" : "rgba(255,255,255,0.02)" }}
+                      style={{ borderColor: form.ai_model === m.id ? "rgba(99,102,241,0.6)" : "var(--stroke)", background: form.ai_model === m.id ? "rgba(99,102,241,0.1)" : "var(--panel-fill)" }}
                     >
-                      <div><span className="text-[14px] font-medium text-white">{m.label}</span><span className="ml-2 text-[12px] text-white/40">{m.note}</span></div>
+                      <div><span className="text-[14px] font-medium text-[var(--fg)]">{m.label}</span><span className="ml-2 text-[12px] text-[var(--fg-4)]">{m.note}</span></div>
                       {form.ai_model === m.id && <Check className="h-4 w-4 text-[var(--sai-indigo)]" />}
                     </button>
                   ))}
@@ -226,9 +226,9 @@ export default function SettingsPage() {
                   <div>
                     <div className="flex items-center gap-2">
                       <ShieldAlert className="h-4 w-4 text-[var(--sai-gold)]" />
-                      <p className="font-display text-[15px] font-semibold text-white">Raw language mode</p>
+                      <p className="font-display text-[15px] font-semibold text-[var(--fg)]">Raw language mode</p>
                     </div>
-                    <p className="mt-1.5 max-w-md text-[13px] text-white/50">
+                    <p className="mt-1.5 max-w-md text-[13px] text-[var(--fg-3)]">
                       Let the agent write directly, without softening or corporate filters. Output stays lawful — you own what you post.
                     </p>
                   </div>
@@ -243,7 +243,7 @@ export default function SettingsPage() {
 
               <GlassCard className="p-6">
                 <div className="flex items-center justify-between">
-                  <p className="font-display text-[15px] font-semibold text-white">Creativity</p>
+                  <p className="font-display text-[15px] font-semibold text-[var(--fg)]">Creativity</p>
                   <Pill tone="indigo">{form.ai_temperature.toFixed(1)}</Pill>
                 </div>
                 <input
@@ -251,7 +251,7 @@ export default function SettingsPage() {
                   onChange={(e) => setForm({ ...form, ai_temperature: Number(e.target.value) })}
                   className="mt-4 w-full accent-[var(--sai-indigo)]"
                 />
-                <div className="mt-1 flex justify-between text-[11px] text-white/35"><span>Precise</span><span>Balanced</span><span>Wild</span></div>
+                <div className="mt-1 flex justify-between text-[11px] text-[var(--fg-4)]"><span>Precise</span><span>Balanced</span><span>Wild</span></div>
               </GlassCard>
             </>
           )}
@@ -260,22 +260,22 @@ export default function SettingsPage() {
             <GlassCard className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-display text-[15px] font-semibold text-white">Current plan</p>
-                  <div className="mt-2 flex items-center gap-2"><Pill tone="violet">{form.plan}</Pill><span className="text-[13px] text-white/45">14-day trial</span></div>
+                  <p className="font-display text-[15px] font-semibold text-[var(--fg)]">Current plan</p>
+                  <div className="mt-2 flex items-center gap-2"><Pill tone="violet">{form.plan}</Pill><span className="text-[13px] text-[var(--fg-3)]">14-day trial</span></div>
                 </div>
-                <Link href="/dashboard/billing" className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-[13px] font-semibold text-white" style={{ background: "linear-gradient(135deg,#6366f1,#a855f7)" }}>
+                <Link href="/dashboard/billing" className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-[13px] font-semibold text-[var(--fg)]" style={{ background: "linear-gradient(135deg,#6366f1,#a855f7)" }}>
                   <Sparkles className="h-4 w-4" /> Manage plan
                 </Link>
               </div>
-              <div className="mt-6 border-t border-white/[0.06] pt-5">
-                <p className="font-data text-[11px] uppercase tracking-[0.16em] text-white/45">Payment methods</p>
-                <p className="mt-2 text-[13px] text-white/55">Paystack, Flutterwave, and all Nigerian bank cards are supported at checkout.</p>
+              <div className="mt-6 border-t border-[var(--stroke)] pt-5">
+                <p className="font-data text-[11px] uppercase tracking-[0.16em] text-[var(--fg-3)]">Payment methods</p>
+                <p className="mt-2 text-[13px] text-[var(--fg-2)]">Paystack, Flutterwave, and all Nigerian bank cards are supported at checkout.</p>
               </div>
             </GlassCard>
           )}
 
           {tab === "notifications" && (
-            <GlassCard className="divide-y divide-white/[0.06] p-2">
+            <GlassCard className="divide-y divide-[var(--stroke)] p-2">
               {[
                 { k: "leads", label: "New leads", desc: "When the agent flags a real lead" },
                 { k: "trends", label: "Trend alerts", desc: "When something breaks in your niche" },
@@ -283,7 +283,7 @@ export default function SettingsPage() {
                 { k: "reports", label: "Weekly report", desc: "Your ROI Pulse summary" },
               ].map((n) => (
                 <div key={n.k} className="flex items-center justify-between px-4 py-3.5">
-                  <div><p className="text-[14px] text-white">{n.label}</p><p className="text-[12.5px] text-white/45">{n.desc}</p></div>
+                  <div><p className="text-[14px] text-[var(--fg)]">{n.label}</p><p className="text-[12.5px] text-[var(--fg-3)]">{n.desc}</p></div>
                   <Toggle on={notif[n.k as keyof typeof notif]} onChange={(v) => setNotif({ ...notif, [n.k]: v })} />
                 </div>
               ))}

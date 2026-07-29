@@ -75,7 +75,7 @@ export function Sidebar({
         href={item.href}
         className={cn(
           "group relative flex items-center gap-3 rounded-xl px-2.5 py-2.5 text-[13.5px] font-medium transition-colors duration-150",
-          active ? "text-white" : "text-white/55 hover:text-white",
+          active ? "text-[var(--fg)]" : "text-[var(--fg-2)] hover:text-[var(--fg)]",
           collapsed && "justify-center px-2"
         )}
         style={active ? { background: "rgba(99,102,241,0.14)" } : undefined}
@@ -94,14 +94,14 @@ export function Sidebar({
         {!collapsed && <span className="flex-1 truncate">{item.label}</span>}
         {!collapsed && item.badge && (
           <span
-            className="flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[10.5px] font-semibold text-white"
+            className="flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[10.5px] font-semibold text-[var(--fg)]"
             style={{ background: "rgba(99,102,241,0.3)" }}
           >
             {item.badge}
           </span>
         )}
         {collapsed && (
-          <span className="glass-panel pointer-events-none absolute left-full z-50 ml-3 whitespace-nowrap rounded-lg px-2.5 py-1.5 text-xs text-white opacity-0 transition-opacity group-hover:opacity-100">
+          <span className="glass-panel pointer-events-none absolute left-full z-50 ml-3 whitespace-nowrap rounded-lg px-2.5 py-1.5 text-xs text-[var(--fg)] opacity-0 transition-opacity group-hover:opacity-100">
             {item.label}
             {item.badge ? <span className="ml-1 text-[var(--sai-indigo)]">· {item.badge}</span> : null}
           </span>
@@ -113,17 +113,17 @@ export function Sidebar({
   return (
     <aside
       className={cn(
-        "fixed left-0 top-0 z-40 flex h-full flex-col border-r border-white/[0.06] transition-[width] duration-300",
+        "fixed left-0 top-0 z-40 flex h-full flex-col border-r border-[var(--stroke)] transition-[width] duration-300",
         collapsed ? "w-[68px]" : "w-[248px]"
       )}
-      style={{ background: "rgba(16,16,20,0.92)", backdropFilter: "blur(20px)" }}
+      style={{ background: "var(--app-surface)", backdropFilter: "blur(20px)" }}
     >
       {/* Brand */}
-      <div className={cn("flex h-16 flex-shrink-0 items-center border-b border-white/[0.06] px-4", collapsed ? "justify-center" : "gap-2.5")}>
+      <div className={cn("flex h-16 flex-shrink-0 items-center border-b border-[var(--stroke)] px-4", collapsed ? "justify-center" : "gap-2.5")}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/logo.png" alt="" width={26} height={23} className="h-[24px] w-auto" style={{ filter: "drop-shadow(0 0 10px rgba(99,102,241,0.4))" }} />
         {!collapsed && (
-          <span className="font-display text-[16px] font-semibold text-white">
+          <span className="font-display text-[16px] font-semibold text-[var(--fg)]">
             Socially<span className="text-[var(--sai-indigo)]"> AI</span>
           </span>
         )}
@@ -134,11 +134,11 @@ export function Sidebar({
         {SECTIONS.map((sec) => (
           <div key={sec.title} className="mb-4">
             {!collapsed && (
-              <p className="font-data mb-1.5 px-2.5 text-[10px] uppercase tracking-[0.2em] text-white/30">
+              <p className="font-data mb-1.5 px-2.5 text-[10px] uppercase tracking-[0.2em] text-[var(--fg-4)]">
                 {sec.title}
               </p>
             )}
-            {collapsed && <div className="mx-auto mb-2 h-px w-6 bg-white/10" />}
+            {collapsed && <div className="mx-auto mb-2 h-px w-6 bg-[var(--stroke)]" />}
             <div className="space-y-0.5">
               {sec.items.map((item) => <Row key={item.href} item={item} />)}
             </div>
@@ -147,19 +147,19 @@ export function Sidebar({
       </nav>
 
       {/* Bottom */}
-      <div className="space-y-0.5 border-t border-white/[0.06] px-2.5 py-3">
+      <div className="space-y-0.5 border-t border-[var(--stroke)] px-2.5 py-3">
         {BOTTOM.map((item) => <Row key={item.href} item={item} />)}
         <button
           onClick={logout}
           className={cn(
-            "group relative flex w-full items-center gap-3 rounded-xl px-2.5 py-2.5 text-[13.5px] font-medium text-white/55 transition-colors hover:text-[var(--sai-red)]",
+            "group relative flex w-full items-center gap-3 rounded-xl px-2.5 py-2.5 text-[13.5px] font-medium text-[var(--fg-2)] transition-colors hover:text-[var(--sai-red)]",
             collapsed && "justify-center px-2"
           )}
         >
           <LogOut className="h-[18px] w-[18px] flex-shrink-0" />
           {!collapsed && <span>Sign out</span>}
           {collapsed && (
-            <span className="glass-panel pointer-events-none absolute left-full z-50 ml-3 whitespace-nowrap rounded-lg px-2.5 py-1.5 text-xs text-white opacity-0 transition-opacity group-hover:opacity-100">
+            <span className="glass-panel pointer-events-none absolute left-full z-50 ml-3 whitespace-nowrap rounded-lg px-2.5 py-1.5 text-xs text-[var(--fg)] opacity-0 transition-opacity group-hover:opacity-100">
               Sign out
             </span>
           )}
@@ -170,7 +170,7 @@ export function Sidebar({
       <button
         onClick={onToggle}
         aria-label="Toggle sidebar"
-        className="glass-panel absolute -right-3 top-[70px] z-50 flex h-6 w-6 items-center justify-center rounded-full text-white/70 transition-colors hover:text-white"
+        className="glass-panel absolute -right-3 top-[70px] z-50 flex h-6 w-6 items-center justify-center rounded-full text-[var(--fg-2)] transition-colors hover:text-[var(--fg)]"
       >
         {collapsed ? <PanelLeftOpen className="h-3.5 w-3.5" /> : <PanelLeftClose className="h-3.5 w-3.5" />}
       </button>

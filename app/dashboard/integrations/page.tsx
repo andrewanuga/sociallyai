@@ -85,7 +85,7 @@ export default function IntegrationsPage() {
         if (!items.length) return null;
         return (
           <div key={cat} className="mb-8">
-            <p className="font-data mb-3 text-[11px] uppercase tracking-[0.2em] text-white/40">{cat}</p>
+            <p className="font-data mb-3 text-[11px] uppercase tracking-[0.2em] text-[var(--fg-4)]">{cat}</p>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {items.map((t) => {
                 const on = !!connected[t.provider];
@@ -97,14 +97,14 @@ export default function IntegrationsPage() {
                       </span>
                       {on && <Pill tone="green"><Check className="h-3 w-3" /> Connected</Pill>}
                     </div>
-                    <h3 className="font-display mt-4 text-[15px] font-semibold text-white">{t.name}</h3>
-                    <p className="mt-1.5 flex-1 text-[13px] leading-relaxed text-white/50">{t.desc}</p>
+                    <h3 className="font-display mt-4 text-[15px] font-semibold text-[var(--fg)]">{t.name}</h3>
+                    <p className="mt-1.5 flex-1 text-[13px] leading-relaxed text-[var(--fg-3)]">{t.desc}</p>
                     <button
                       onClick={() => toggle(t)}
                       disabled={pending === t.provider}
                       className="mt-4 flex items-center justify-center gap-1.5 rounded-xl py-2.5 text-[13px] font-medium transition-colors disabled:opacity-60"
                       style={on
-                        ? { background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)", color: "#fff" }
+                        ? { background: "var(--panel-fill-2)", border: "1px solid var(--stroke)", color: "#fff" }
                         : { background: "linear-gradient(135deg,#6366f1,#a855f7)", color: "#fff" }}
                     >
                       {pending === t.provider ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plug className="h-4 w-4" />}

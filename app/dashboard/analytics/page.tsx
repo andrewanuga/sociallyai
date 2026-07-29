@@ -81,10 +81,10 @@ export default function AnalyticsPage() {
         title="Analytics"
         sub="Understand what's working — per account and per post — and where to take it next."
         actions={
-          <div className="inline-flex rounded-full border border-white/10 bg-white/[0.03] p-0.5 text-[12.5px]">
+          <div className="inline-flex rounded-full border border-[var(--stroke)] bg-[var(--panel-fill)] p-0.5 text-[12.5px]">
             {RANGES.map((r) => (
               <button key={r} onClick={() => setRange(r)} className="rounded-full px-3 py-1 transition-colors"
-                style={range === r ? { background: "rgba(99,102,241,0.2)", color: "#fff" } : { color: "rgba(255,255,255,0.5)" }}>
+                style={range === r ? { background: "rgba(99,102,241,0.2)", color: "#fff" } : { color: "var(--fg-3)" }}>
                 {r}
               </button>
             ))}
@@ -105,10 +105,10 @@ export default function AnalyticsPage() {
         <GlassCard className="p-5">
           <div className="mb-4 flex items-center justify-between">
             <div>
-              <p className="font-display text-[15px] font-semibold text-white">Performance over time</p>
+              <p className="font-display text-[15px] font-semibold text-[var(--fg)]">Performance over time</p>
               <div className="mt-1 flex items-center gap-4 text-[12px]">
-                <span className="flex items-center gap-1.5 text-white/55"><span className="h-2 w-2 rounded-full" style={{ background: "#6366f1" }} /> Impressions</span>
-                <span className="flex items-center gap-1.5 text-white/55"><span className="h-2 w-2 rounded-full" style={{ background: "#a855f7" }} /> Engagement</span>
+                <span className="flex items-center gap-1.5 text-[var(--fg-2)]"><span className="h-2 w-2 rounded-full" style={{ background: "#6366f1" }} /> Impressions</span>
+                <span className="flex items-center gap-1.5 text-[var(--fg-2)]"><span className="h-2 w-2 rounded-full" style={{ background: "#a855f7" }} /> Engagement</span>
               </div>
             </div>
           </div>
@@ -120,15 +120,15 @@ export default function AnalyticsPage() {
 
         {/* engagement by platform */}
         <GlassCard className="p-5">
-          <p className="font-display text-[15px] font-semibold text-white">Engagement by platform</p>
+          <p className="font-display text-[15px] font-semibold text-[var(--fg)]">Engagement by platform</p>
           <div className="mt-5 space-y-4">
             {PLATFORMS.map((p) => (
               <div key={p.name}>
                 <div className="mb-1.5 flex items-center justify-between text-[12.5px]">
-                  <span className="text-white/70">{p.name}</span>
-                  <span className="font-data text-white/45">{p.value}%</span>
+                  <span className="text-[var(--fg-2)]">{p.name}</span>
+                  <span className="font-data text-[var(--fg-3)]">{p.value}%</span>
                 </div>
-                <div className="h-2 overflow-hidden rounded-full bg-white/[0.06]">
+                <div className="h-2 overflow-hidden rounded-full bg-[var(--panel-fill-2)]">
                   <div className="h-full rounded-full" style={{ width: `${p.value}%`, background: p.color }} />
                 </div>
               </div>
@@ -141,23 +141,23 @@ export default function AnalyticsPage() {
       <div className="mt-5">
         <div className="mb-3 flex items-center gap-2">
           <Sparkles className="h-4 w-4 text-[var(--sai-indigo)]" />
-          <p className="font-data text-[11px] uppercase tracking-[0.18em] text-white/50">Content reference engine</p>
+          <p className="font-data text-[11px] uppercase tracking-[0.18em] text-[var(--fg-3)]">Content reference engine</p>
         </div>
         <div className="space-y-3">
           {TOP_CONTENT.map((c, i) => (
             <GlassCard key={i} className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center">
               <div className="flex min-w-0 flex-1 items-center gap-3">
                 <Pill tone={c.tone}>{c.platform}</Pill>
-                <p className="min-w-0 flex-1 truncate text-[14px] text-white/85">{c.text}</p>
+                <p className="min-w-0 flex-1 truncate text-[14px] text-[var(--fg)]">{c.text}</p>
               </div>
               <div className="flex items-center gap-5">
-                <div className="text-right"><p className="font-data text-[13px] text-white">{c.impr}</p><p className="text-[11px] text-white/40">impressions</p></div>
-                <div className="text-right"><p className="font-data text-[13px] text-white">{c.eng}</p><p className="text-[11px] text-white/40">engagement</p></div>
+                <div className="text-right"><p className="font-data text-[13px] text-[var(--fg)]">{c.impr}</p><p className="text-[11px] text-[var(--fg-4)]">impressions</p></div>
+                <div className="text-right"><p className="font-data text-[13px] text-[var(--fg)]">{c.eng}</p><p className="text-[11px] text-[var(--fg-4)]">engagement</p></div>
                 <Sparkline data={c.spark} color="#34d399" />
                 {/* reference suggestion */}
                 <div className="flex items-center gap-2 rounded-xl border border-[var(--sai-indigo)]/25 bg-[var(--sai-indigo)]/10 px-3 py-2">
                   <ArrowUpRight className="h-4 w-4 text-[var(--sai-indigo)]" />
-                  <span className="text-[12px] text-white/75"><b className="text-white">{c.lift}</b> vs avg — repost to <b className="text-white">{c.best}</b>?</span>
+                  <span className="text-[12px] text-[var(--fg-2)]"><b className="text-[var(--fg)]">{c.lift}</b> vs avg — repost to <b className="text-[var(--fg)]">{c.best}</b>?</span>
                 </div>
               </div>
             </GlassCard>
@@ -169,7 +169,7 @@ export default function AnalyticsPage() {
       <div className="mt-6">
         <div className="mb-3 flex items-center gap-2">
           <FlaskConical className="h-4 w-4 text-[var(--sai-violet)]" />
-          <p className="font-data text-[11px] uppercase tracking-[0.18em] text-white/50">
+          <p className="font-data text-[11px] uppercase tracking-[0.18em] text-[var(--fg-3)]">
             A/B testing {persona === "marketer" && <span className="text-[var(--sai-violet)]">· recommended for you</span>}
           </p>
         </div>
@@ -179,23 +179,23 @@ export default function AnalyticsPage() {
               { v: "A", hook: "\"Stop posting. Start sharing insights.\"", conv: 4.8, win: true },
               { v: "B", hook: "\"The growth hack founders sleep on.\"", conv: 3.1, win: false },
             ].map((t) => (
-              <div key={t.v} className="rounded-2xl border p-4" style={{ borderColor: t.win ? "rgba(168,85,247,0.5)" : "rgba(255,255,255,0.08)", background: t.win ? "rgba(168,85,247,0.06)" : "rgba(255,255,255,0.02)" }}>
+              <div key={t.v} className="rounded-2xl border p-4" style={{ borderColor: t.win ? "rgba(168,85,247,0.5)" : "var(--panel-fill-2)", background: t.win ? "rgba(168,85,247,0.06)" : "var(--panel-fill)" }}>
                 <div className="flex items-center justify-between">
-                  <span className="font-display text-[15px] font-semibold text-white">Variant {t.v}</span>
+                  <span className="font-display text-[15px] font-semibold text-[var(--fg)]">Variant {t.v}</span>
                   {t.win && <Pill tone="violet"><Trophy className="h-3 w-3" /> Winner</Pill>}
                 </div>
-                <p className="mt-2 text-[13.5px] italic text-white/70">{t.hook}</p>
+                <p className="mt-2 text-[13.5px] italic text-[var(--fg-2)]">{t.hook}</p>
                 <div className="mt-4">
-                  <div className="mb-1 flex items-center justify-between text-[12px]"><span className="text-white/50">Conversion rate</span><span className="font-data text-white">{t.conv}%</span></div>
-                  <div className="h-2.5 overflow-hidden rounded-full bg-white/[0.06]">
-                    <div className="h-full rounded-full" style={{ width: `${(t.conv / 5) * 100}%`, background: t.win ? "linear-gradient(90deg,#6366f1,#a855f7)" : "rgba(255,255,255,0.25)" }} />
+                  <div className="mb-1 flex items-center justify-between text-[12px]"><span className="text-[var(--fg-3)]">Conversion rate</span><span className="font-data text-[var(--fg)]">{t.conv}%</span></div>
+                  <div className="h-2.5 overflow-hidden rounded-full bg-[var(--panel-fill-2)]">
+                    <div className="h-full rounded-full" style={{ width: `${(t.conv / 5) * 100}%`, background: t.win ? "linear-gradient(90deg,#6366f1,#a855f7)" : "var(--fg-4)" }} />
                   </div>
                 </div>
               </div>
             ))}
           </div>
-          <p className="mt-4 text-[12.5px] text-white/45">
-            Variant A converts <b className="text-white">55% better</b>. Socially will favour this hook style in future drafts.
+          <p className="mt-4 text-[12.5px] text-[var(--fg-3)]">
+            Variant A converts <b className="text-[var(--fg)]">55% better</b>. Socially will favour this hook style in future drafts.
           </p>
         </GlassCard>
       </div>

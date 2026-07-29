@@ -103,7 +103,7 @@ export default function ComposePage() {
   const chipStyle = (active: boolean) =>
     active
       ? { borderColor: "rgba(99,102,241,0.5)", background: "rgba(99,102,241,0.12)", color: "#fff" }
-      : { borderColor: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.55)" };
+      : { borderColor: "var(--stroke)", color: "var(--fg-2)" };
 
   return (
     <div className="mx-auto max-w-5xl">
@@ -113,7 +113,7 @@ export default function ComposePage() {
         {/* main */}
         <div className="space-y-4 lg:col-span-2">
           <GlassCard className="p-4">
-            <p className="mb-3 text-[13px] font-medium text-white/70">Post to</p>
+            <p className="mb-3 text-[13px] font-medium text-[var(--fg-2)]">Post to</p>
             <div className="flex flex-wrap gap-2">
               {PLATFORMS.map((p) => (
                 <button key={p.id} onClick={() => togglePlatform(p.id)} className="rounded-lg border px-3 py-1.5 text-[13px] font-medium transition-all" style={chipStyle(selectedPlatforms.includes(p.id))}>
@@ -124,12 +124,12 @@ export default function ComposePage() {
           </GlassCard>
 
           <GlassCard className="p-4">
-            <label className="mb-2 block font-data text-[11px] uppercase tracking-[0.16em] text-white/50">Topic / prompt</label>
+            <label className="mb-2 block font-data text-[11px] uppercase tracking-[0.16em] text-[var(--fg-3)]">Topic / prompt</label>
             <input
               value={topic}
               onChange={(e) => setTopic(e.target.value)}
               placeholder="e.g. 5 lessons I learned bootstrapping a SaaS in Lagos"
-              className="w-full border-b border-white/10 bg-transparent pb-2 text-sm text-white outline-none transition-colors placeholder:text-white/35 focus:border-[var(--sai-indigo)]"
+              className="w-full border-b border-[var(--stroke)] bg-transparent pb-2 text-sm text-[var(--fg)] outline-none transition-colors placeholder:text-[var(--fg-4)] focus:border-[var(--sai-indigo)]"
             />
           </GlassCard>
 
@@ -138,36 +138,36 @@ export default function ComposePage() {
               value={content}
               onChange={(e) => setContent(e.target.value)}
               placeholder="Your post will appear here after generation, or type directly…"
-              className="min-h-[280px] w-full resize-none bg-transparent text-[15px] leading-relaxed text-white outline-none placeholder:text-white/35"
+              className="min-h-[280px] w-full resize-none bg-transparent text-[15px] leading-relaxed text-[var(--fg)] outline-none placeholder:text-[var(--fg-4)]"
             />
-            <div className="mt-3 flex items-center justify-between border-t border-white/[0.06] pt-3">
+            <div className="mt-3 flex items-center justify-between border-t border-[var(--stroke)] pt-3">
               <div className="flex items-center gap-1">
                 {[ImageIcon, Hash, AtSign].map((Icon, i) => (
-                  <button key={i} className="flex h-8 w-8 items-center justify-center rounded-lg text-white/45 transition-colors hover:bg-white/[0.06] hover:text-white"><Icon className="h-4 w-4" /></button>
+                  <button key={i} className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--fg-3)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--fg)]"><Icon className="h-4 w-4" /></button>
                 ))}
               </div>
               <div className="flex items-center gap-3">
-                {scoring && <Loader2 className="h-4 w-4 animate-spin text-white/40" />}
+                {scoring && <Loader2 className="h-4 w-4 animate-spin text-[var(--fg-4)]" />}
                 <div className="relative h-7 w-7">
                   <svg viewBox="0 0 36 36" className="h-7 w-7 -rotate-90">
-                    <circle cx="18" cy="18" r="15.9" fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="3" />
+                    <circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--stroke)" strokeWidth="3" />
                     <circle cx="18" cy="18" r="15.9" fill="none" strokeWidth="3" strokeDasharray={`${charPct} 100`} stroke={charPct > 95 ? "var(--sai-red)" : "var(--sai-indigo)"} />
                   </svg>
-                  <span className="absolute inset-0 flex items-center justify-center text-[9px] font-medium text-white/70">{activeLimit - charCount > 0 ? activeLimit - charCount : "!"}</span>
+                  <span className="absolute inset-0 flex items-center justify-center text-[9px] font-medium text-[var(--fg-2)]">{activeLimit - charCount > 0 ? activeLimit - charCount : "!"}</span>
                 </div>
               </div>
             </div>
           </GlassCard>
 
           <div className="flex flex-wrap items-center gap-3">
-            <button onClick={handleGenerate} disabled={generating} className="flex min-w-[160px] flex-1 items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold text-white transition-transform hover:scale-[1.02] disabled:opacity-60" style={{ background: "linear-gradient(135deg,#6366f1,#a855f7)" }}>
+            <button onClick={handleGenerate} disabled={generating} className="flex min-w-[160px] flex-1 items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold text-[var(--fg)] transition-transform hover:scale-[1.02] disabled:opacity-60" style={{ background: "linear-gradient(135deg,#6366f1,#a855f7)" }}>
               {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
               {generating ? "Generating…" : "Generate with AI"}
             </button>
-            <button onClick={handleSchedule} disabled={scheduling || !content} className="flex items-center gap-2 rounded-xl border border-white/12 bg-white/[0.04] px-5 py-2.5 text-sm font-medium text-white hover:bg-white/[0.08] disabled:opacity-50">
+            <button onClick={handleSchedule} disabled={scheduling || !content} className="flex items-center gap-2 rounded-xl border border-[var(--stroke)] bg-[var(--panel-fill)] px-5 py-2.5 text-sm font-medium text-[var(--fg)] hover:bg-[var(--hover)] disabled:opacity-50">
               {scheduling ? <Loader2 className="h-4 w-4 animate-spin" /> : <Calendar className="h-4 w-4" />} Schedule
             </button>
-            <button onClick={handleSchedule} disabled={!content || scheduling} className="flex items-center gap-2 rounded-xl border border-white/12 bg-white/[0.04] px-5 py-2.5 text-sm font-medium text-white hover:bg-white/[0.08] disabled:opacity-50">
+            <button onClick={handleSchedule} disabled={!content || scheduling} className="flex items-center gap-2 rounded-xl border border-[var(--stroke)] bg-[var(--panel-fill)] px-5 py-2.5 text-sm font-medium text-[var(--fg)] hover:bg-[var(--hover)] disabled:opacity-50">
               <Send className="h-4 w-4" /> Post now
             </button>
           </div>
@@ -177,37 +177,37 @@ export default function ComposePage() {
         <div className="space-y-4">
           {content.length > 30 && (
             <GlassCard className="p-4" style={scoreData ? { borderColor: `color-mix(in srgb, ${scoreColor} 35%, transparent)` } : undefined}>
-              <p className="flex items-center gap-2 text-[13px] font-medium text-white">
+              <p className="flex items-center gap-2 text-[13px] font-medium text-[var(--fg)]">
                 <Zap className="h-4 w-4 text-[var(--sai-indigo)]" /> Socially Score™
-                {scoring && <Loader2 className="ml-auto h-3 w-3 animate-spin text-white/40" />}
+                {scoring && <Loader2 className="ml-auto h-3 w-3 animate-spin text-[var(--fg-4)]" />}
               </p>
               {scoreData ? (
                 <>
                   <div className="mb-1 mt-2 flex items-end gap-2">
                     <span className="font-display text-4xl font-bold" style={{ color: scoreColor }}>{scoreData.score}</span>
-                    <span className="pb-1 text-sm text-white/40">/ 100</span>
+                    <span className="pb-1 text-sm text-[var(--fg-4)]">/ 100</span>
                     {scoreData.prediction === "low" ? <TrendingDown className="pb-0.5 h-4 w-4" style={{ color: scoreColor }} /> : <TrendingUp className="pb-0.5 h-4 w-4" style={{ color: scoreColor }} />}
                   </div>
                   <p className="mb-1 text-[12px] font-medium" style={{ color: scoreColor }}>
                     {scoreData.prediction === "high" ? "High engagement predicted" : scoreData.prediction === "medium" ? "Average engagement expected" : "Low engagement risk"}
                   </p>
-                  <p className="mb-2 text-[12px] text-white/45">Best: {scoreData.bestTime}</p>
-                  <p className="mb-2 text-[12px] italic text-white/45">{scoreData.reasoning}</p>
+                  <p className="mb-2 text-[12px] text-[var(--fg-3)]">Best: {scoreData.bestTime}</p>
+                  <p className="mb-2 text-[12px] italic text-[var(--fg-3)]">{scoreData.reasoning}</p>
                   {scoreData.improvements?.length > 0 && (
-                    <div className="mt-2 space-y-1 border-t border-white/[0.06] pt-2">
-                      <p className="text-[12px] font-medium text-white/55">Improvements</p>
-                      {scoreData.improvements.slice(0, 2).map((imp, i) => <p key={i} className="text-[12px] text-white/45">• {imp}</p>)}
+                    <div className="mt-2 space-y-1 border-t border-[var(--stroke)] pt-2">
+                      <p className="text-[12px] font-medium text-[var(--fg-2)]">Improvements</p>
+                      {scoreData.improvements.slice(0, 2).map((imp, i) => <p key={i} className="text-[12px] text-[var(--fg-3)]">• {imp}</p>)}
                     </div>
                   )}
                 </>
               ) : (
-                <p className="mt-2 text-[13px] text-white/45">Analysing your content…</p>
+                <p className="mt-2 text-[13px] text-[var(--fg-3)]">Analysing your content…</p>
               )}
             </GlassCard>
           )}
 
           <GlassCard className="p-4">
-            <p className="mb-3 text-[13px] font-medium text-white/70">Writing framework</p>
+            <p className="mb-3 text-[13px] font-medium text-[var(--fg-2)]">Writing framework</p>
             <div className="space-y-2">
               {FRAMEWORKS.map((f) => (
                 <button key={f.id} onClick={() => setFramework(f.id)} className="w-full rounded-lg border p-2.5 text-left text-sm transition-all" style={chipStyle(framework === f.id)}>
@@ -219,7 +219,7 @@ export default function ComposePage() {
           </GlassCard>
 
           <GlassCard className="p-4">
-            <p className="mb-3 text-[13px] font-medium text-white/70">Brand tone</p>
+            <p className="mb-3 text-[13px] font-medium text-[var(--fg-2)]">Brand tone</p>
             <div className="flex flex-wrap gap-2">
               {TONES.map((t) => (
                 <button key={t} onClick={() => setTone(t)} className="rounded-full border px-2.5 py-1 text-[12px] transition-all" style={chipStyle(tone === t)}>{t}</button>
@@ -227,7 +227,7 @@ export default function ComposePage() {
             </div>
           </GlassCard>
 
-          <button onClick={handleGenerate} disabled={generating || !topic.trim()} className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/12 bg-white/[0.04] py-2.5 text-sm font-medium text-white hover:bg-white/[0.08] disabled:opacity-50">
+          <button onClick={handleGenerate} disabled={generating || !topic.trim()} className="flex w-full items-center justify-center gap-2 rounded-xl border border-[var(--stroke)] bg-[var(--panel-fill)] py-2.5 text-sm font-medium text-[var(--fg)] hover:bg-[var(--hover)] disabled:opacity-50">
             {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCw className="h-4 w-4" />} Regenerate variation
           </button>
         </div>

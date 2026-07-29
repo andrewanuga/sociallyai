@@ -62,7 +62,7 @@ export function CalendarClient({ posts }: { posts: ScheduledPostSlim[] }) {
         title="Scheduler"
         sub="Every scheduled post, at a glance. Drag your strategy across the month."
         actions={
-          <Link href="/dashboard/create" className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-[13px] font-semibold text-white" style={{ background: "linear-gradient(135deg,#6366f1,#a855f7)", boxShadow: "0 0 26px -10px rgba(99,102,241,0.8)" }}>
+          <Link href="/dashboard/create" className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-[13px] font-semibold text-[var(--fg)]" style={{ background: "linear-gradient(135deg,#6366f1,#a855f7)", boxShadow: "0 0 26px -10px rgba(99,102,241,0.8)" }}>
             <Plus className="h-4 w-4" /> Schedule post
           </Link>
         }
@@ -78,39 +78,39 @@ export function CalendarClient({ posts }: { posts: ScheduledPostSlim[] }) {
         {/* calendar */}
         <GlassCard className="p-5">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="font-display text-[16px] font-semibold text-white">{MONTHS[view.month]} {view.year}</h2>
+            <h2 className="font-display text-[16px] font-semibold text-[var(--fg)]">{MONTHS[view.month]} {view.year}</h2>
             <div className="flex items-center gap-1">
-              <button onClick={() => shift(-1)} className="flex h-8 w-8 items-center justify-center rounded-lg text-white/60 hover:bg-white/[0.06] hover:text-white"><ChevronLeft className="h-4 w-4" /></button>
-              <button onClick={() => setView({ year: now.getFullYear(), month: now.getMonth() })} className="rounded-lg px-2.5 py-1.5 text-[12px] text-white/60 hover:bg-white/[0.06] hover:text-white">Today</button>
-              <button onClick={() => shift(1)} className="flex h-8 w-8 items-center justify-center rounded-lg text-white/60 hover:bg-white/[0.06] hover:text-white"><ChevronRight className="h-4 w-4" /></button>
+              <button onClick={() => shift(-1)} className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--fg-2)] hover:bg-[var(--hover)] hover:text-[var(--fg)]"><ChevronLeft className="h-4 w-4" /></button>
+              <button onClick={() => setView({ year: now.getFullYear(), month: now.getMonth() })} className="rounded-lg px-2.5 py-1.5 text-[12px] text-[var(--fg-2)] hover:bg-[var(--hover)] hover:text-[var(--fg)]">Today</button>
+              <button onClick={() => shift(1)} className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--fg-2)] hover:bg-[var(--hover)] hover:text-[var(--fg)]"><ChevronRight className="h-4 w-4" /></button>
             </div>
           </div>
 
           <div className="grid grid-cols-7 gap-1.5">
-            {DAYS.map((d) => <div key={d} className="pb-2 text-center font-data text-[10.5px] uppercase tracking-wider text-white/35">{d}</div>)}
+            {DAYS.map((d) => <div key={d} className="pb-2 text-center font-data text-[10.5px] uppercase tracking-wider text-[var(--fg-4)]">{d}</div>)}
             {cells.map((d, i) => (
               <div
                 key={i}
                 className="min-h-[76px] rounded-xl border p-1.5"
                 style={{
-                  borderColor: d && isToday(d) ? "rgba(99,102,241,0.5)" : "rgba(255,255,255,0.05)",
-                  background: d ? (isToday(d) ? "rgba(99,102,241,0.08)" : "rgba(255,255,255,0.02)") : "transparent",
+                  borderColor: d && isToday(d) ? "rgba(99,102,241,0.5)" : "var(--panel-fill-2)",
+                  background: d ? (isToday(d) ? "rgba(99,102,241,0.08)" : "var(--panel-fill)") : "transparent",
                 }}
               >
                 {d && (
                   <>
-                    <span className={`text-[11px] ${isToday(d) ? "font-semibold text-[var(--sai-indigo)]" : "text-white/40"}`}>{d}</span>
+                    <span className={`text-[11px] ${isToday(d) ? "font-semibold text-[var(--sai-indigo)]" : "text-[var(--fg-4)]"}`}>{d}</span>
                     <div className="mt-1 space-y-1">
                       {(byDay[d] ?? []).slice(0, 2).map((p) => {
                         const meta = PLATFORM[p.platform] ?? { label: "?", color: "#9ca3af" };
                         return (
                           <div key={p.id} className="flex items-center gap-1 rounded-md px-1 py-0.5" style={{ background: `color-mix(in srgb, ${meta.color} 16%, transparent)` }} title={p.content}>
                             <span className="text-[9px] font-bold" style={{ color: meta.color }}>{meta.label}</span>
-                            <span className="truncate text-[10px] text-white/70">{p.content}</span>
+                            <span className="truncate text-[10px] text-[var(--fg-2)]">{p.content}</span>
                           </div>
                         );
                       })}
-                      {(byDay[d]?.length ?? 0) > 2 && <span className="pl-1 text-[10px] text-white/35">+{byDay[d].length - 2} more</span>}
+                      {(byDay[d]?.length ?? 0) > 2 && <span className="pl-1 text-[10px] text-[var(--fg-4)]">+{byDay[d].length - 2} more</span>}
                     </div>
                   </>
                 )}
@@ -121,11 +121,11 @@ export function CalendarClient({ posts }: { posts: ScheduledPostSlim[] }) {
 
         {/* upcoming */}
         <GlassCard className="h-fit p-5">
-          <p className="font-data text-[11px] uppercase tracking-[0.18em] text-white/45">Upcoming</p>
+          <p className="font-data text-[11px] uppercase tracking-[0.18em] text-[var(--fg-3)]">Upcoming</p>
           {upcoming.length === 0 ? (
             <div className="mt-5 text-center">
-              <CalendarDays className="mx-auto h-7 w-7 text-white/20" />
-              <p className="mt-2 text-[13px] text-white/45">Nothing scheduled yet.</p>
+              <CalendarDays className="mx-auto h-7 w-7 text-[var(--fg-4)]" />
+              <p className="mt-2 text-[13px] text-[var(--fg-3)]">Nothing scheduled yet.</p>
               <Link href="/dashboard/create" className="mt-3 inline-block text-[13px] text-[var(--sai-indigo)] hover:underline">Create your first post →</Link>
             </div>
           ) : (
@@ -137,9 +137,9 @@ export function CalendarClient({ posts }: { posts: ScheduledPostSlim[] }) {
                   <div key={p.id} className="flex gap-3">
                     <span className="mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg text-[11px] font-bold" style={{ background: `color-mix(in srgb, ${meta.color} 16%, transparent)`, color: meta.color }}>{meta.label}</span>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-[13px] text-white/80">{p.content}</p>
+                      <p className="truncate text-[13px] text-[var(--fg)]">{p.content}</p>
                       <div className="mt-0.5 flex items-center gap-2">
-                        <span className="text-[11px] text-white/40">{d.toLocaleDateString(undefined, { month: "short", day: "numeric" })} · {d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}</span>
+                        <span className="text-[11px] text-[var(--fg-4)]">{d.toLocaleDateString(undefined, { month: "short", day: "numeric" })} · {d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}</span>
                         {p.status === "queued" && <Pill tone="gold">queued</Pill>}
                       </div>
                     </div>

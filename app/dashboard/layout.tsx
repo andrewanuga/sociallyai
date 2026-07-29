@@ -26,7 +26,7 @@ export default function DashboardLayout({
     });
 
   return (
-    <div className="min-h-screen" style={{ background: "#0d0d10" }}>
+    <div className="sai-app min-h-screen">
       {/* Mobile overlay */}
       {mobileOpen && (
         <div

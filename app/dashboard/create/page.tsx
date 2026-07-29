@@ -164,11 +164,11 @@ export default function CreatePage() {
             <Sparkles className="h-5 w-5 text-[var(--sai-indigo)]" />
           </span>
           <div>
-            <h1 className="font-display text-[17px] font-semibold text-white">Create</h1>
-            <p className="text-[12px] text-white/45">Your personal Socially agent</p>
+            <h1 className="font-display text-[17px] font-semibold text-[var(--fg)]">Create</h1>
+            <p className="text-[12px] text-[var(--fg-3)]">Your personal Socially agent</p>
           </div>
         </div>
-        <button onClick={reset} className="flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.04] px-3 py-1.5 text-[12px] text-white/70 hover:bg-white/[0.08]">
+        <button onClick={reset} className="flex items-center gap-1.5 rounded-full border border-[var(--stroke)] bg-[var(--panel-fill)] px-3 py-1.5 text-[12px] text-[var(--fg-2)] hover:bg-[var(--hover)]">
           <RotateCcw className="h-3.5 w-3.5" /> New chat
         </button>
       </div>
@@ -180,25 +180,25 @@ export default function CreatePage() {
             <div key={m.id} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
               <div
                 className={`group relative max-w-[85%] rounded-2xl px-4 py-3 text-[14px] leading-relaxed ${
-                  m.role === "user" ? "text-white" : "text-white/85"
+                  m.role === "user" ? "text-[var(--fg)]" : "text-[var(--fg)]"
                 }`}
                 style={
                   m.role === "user"
                     ? { background: "linear-gradient(135deg,#6366f1,#a855f7)" }
-                    : { background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }
+                    : { background: "var(--panel-fill-2)", border: "1px solid var(--panel-fill-2)" }
                 }
               >
                 {m.attachments && m.attachments.length > 0 && (
                   <div className="mb-2 flex flex-wrap gap-2">
                     {m.attachments.map((a, k) => (
-                      <div key={k} className="overflow-hidden rounded-lg border border-white/15 bg-black/20">
+                      <div key={k} className="overflow-hidden rounded-lg border border-[var(--stroke)] bg-black/20">
                         {a.type === "image" && a.preview ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img src={a.preview} alt={a.name} className="h-20 w-20 object-cover" />
                         ) : (
                           <div className="flex h-20 w-20 flex-col items-center justify-center gap-1 px-1 text-center">
-                            {a.type === "video" ? <Film className="h-5 w-5 text-white/70" /> : <FileText className="h-5 w-5 text-white/70" />}
-                            <span className="line-clamp-2 text-[9px] text-white/60">{a.name}</span>
+                            {a.type === "video" ? <Film className="h-5 w-5 text-[var(--fg-2)]" /> : <FileText className="h-5 w-5 text-[var(--fg-2)]" />}
+                            <span className="line-clamp-2 text-[9px] text-[var(--fg-2)]">{a.name}</span>
                           </div>
                         )}
                       </div>
@@ -209,7 +209,7 @@ export default function CreatePage() {
                 {m.role === "assistant" && m.id !== 0 && (
                   <button
                     onClick={() => copy(m)}
-                    className="absolute -right-2 -top-2 flex h-7 w-7 items-center justify-center rounded-lg border border-white/10 bg-[#181820] text-white/50 opacity-0 transition-opacity hover:text-white group-hover:opacity-100"
+                    className="absolute -right-2 -top-2 flex h-7 w-7 items-center justify-center rounded-lg border border-[var(--stroke)] bg-[#181820] text-[var(--fg-3)] opacity-0 transition-opacity hover:text-[var(--fg)] group-hover:opacity-100"
                     title="Copy"
                   >
                     {copied === m.id ? <Check className="h-3.5 w-3.5 text-[#34d399]" /> : <Copy className="h-3.5 w-3.5" />}
@@ -220,7 +220,7 @@ export default function CreatePage() {
           ))}
           {busy && (
             <div className="flex justify-start">
-              <div className="flex gap-1.5 rounded-2xl border border-white/8 bg-white/[0.05] px-4 py-3.5">
+              <div className="flex gap-1.5 rounded-2xl border border-[var(--stroke)] bg-[var(--panel-fill-2)] px-4 py-3.5">
                 {[0, 1, 2].map((i) => (
                   <span key={i} className="h-1.5 w-1.5 animate-bounce rounded-full bg-white/50" style={{ animationDelay: `${i * 0.15}s` }} />
                 ))}
@@ -237,7 +237,7 @@ export default function CreatePage() {
             <button
               key={s}
               onClick={() => send(s)}
-              className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-[12.5px] text-white/65 transition-colors hover:bg-white/[0.07] hover:text-white"
+              className="rounded-full border border-[var(--stroke)] bg-[var(--panel-fill)] px-3 py-1.5 text-[12.5px] text-[var(--fg-2)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--fg)]"
             >
               {s}
             </button>
@@ -251,17 +251,17 @@ export default function CreatePage() {
         {attachments.length > 0 && (
           <div className="mb-2 flex flex-wrap gap-2">
             {attachments.map((a) => (
-              <div key={a.id} className="group relative flex items-center gap-2 rounded-xl border border-white/12 bg-white/[0.05] py-1.5 pl-1.5 pr-2.5">
+              <div key={a.id} className="group relative flex items-center gap-2 rounded-xl border border-[var(--stroke)] bg-[var(--panel-fill-2)] py-1.5 pl-1.5 pr-2.5">
                 {a.type === "image" && a.preview ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={a.preview} alt="" className="h-8 w-8 rounded-lg object-cover" />
                 ) : (
-                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/[0.06]">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--panel-fill-2)]">
                     {a.type === "video" ? <Film className="h-4 w-4 text-[var(--sai-violet)]" /> : <FileText className="h-4 w-4 text-[var(--sai-indigo)]" />}
                   </span>
                 )}
-                <span className="max-w-[120px] truncate text-[12px] text-white/70">{a.name}</span>
-                <button onClick={() => removeAttachment(a.id)} className="text-white/40 hover:text-[var(--sai-red)]">
+                <span className="max-w-[120px] truncate text-[12px] text-[var(--fg-2)]">{a.name}</span>
+                <button onClick={() => removeAttachment(a.id)} className="text-[var(--fg-4)] hover:text-[var(--sai-red)]">
                   <X className="h-3.5 w-3.5" />
                 </button>
               </div>
@@ -281,7 +281,7 @@ export default function CreatePage() {
           <button
             onClick={() => fileRef.current?.click()}
             title="Attach image, video, or file"
-            className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl text-white/50 transition-colors hover:bg-white/[0.06] hover:text-white"
+            className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl text-[var(--fg-3)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--fg)]"
           >
             <Paperclip className="h-5 w-5" />
           </button>
@@ -296,18 +296,18 @@ export default function CreatePage() {
             }}
             rows={1}
             placeholder="Ask your agent to draft, refine, or repurpose…"
-            className="max-h-40 flex-1 resize-none bg-transparent px-3 py-2.5 text-[14px] text-white placeholder:text-white/35 focus:outline-none"
+            className="max-h-40 flex-1 resize-none bg-transparent px-3 py-2.5 text-[14px] text-[var(--fg)] placeholder:text-[var(--fg-4)] focus:outline-none"
           />
           <button
             onClick={() => send()}
             disabled={(!input.trim() && attachments.length === 0) || busy}
-            className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl text-white transition-transform hover:scale-105 disabled:opacity-40"
+            className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl text-[var(--fg)] transition-transform hover:scale-105 disabled:opacity-40"
             style={{ background: "linear-gradient(135deg,#6366f1,#a855f7)" }}
           >
             <ArrowUp className="h-5 w-5" />
           </button>
         </div>
-        <p className="mt-2 text-center text-[11px] text-white/30">
+        <p className="mt-2 text-center text-[11px] text-[var(--fg-4)]">
           Socially can draft and refine — always review before you post.
         </p>
       </div>
