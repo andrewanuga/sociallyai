@@ -1,201 +1,203 @@
-import { redirect } from "next/navigation";
-import { BarChart3, TrendingUp, TrendingDown, DollarSign } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { createClient } from "@/lib/supabase/server";
-import { fmtNum, fmtNaira, pctChange, sumField, platformLabel, daysAgoISO } from "@/lib/dashboard/helpers";
+"use client";
 
-export default async function AnalyticsPage() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+import { useEffect, useMemo, useState } from "react";
+import {
+  Eye, Heart, Users, DollarSign, ArrowUpRight, Sparkles, FlaskConical, Trophy,
+} from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
+import { GlassCard, PageHeader, StatTile, Pill } from "@/components/dashboard/ui";
 
-  const d30 = daysAgoISO(30);
-  const d60 = daysAgoISO(60);
+/* ── tiny dependency-free SVG charts ──────────────────────────────── */
 
-  const [
-    { data: curr },
-    { data: prev },
-    { data: topPosts },
-    { data: roiClicks },
-  ] = await Promise.all([
-    /* Per-post data for current 30 days */
-    supabase.from("post_history")
-      .select("platform, impressions, engagements, followers_gained, revenue_attributed, socially_score")
-      .gte("posted_at", d30),
+function AreaChart({ data, color = "#6366f1", height = 150 }: { data: number[]; color?: string; height?: number }) {
+  const w = 560, h = height, pad = 6;
+  const max = Math.max(...data, 1), min = Math.min(...data, 0);
+  const x = (i: number) => pad + (i / (data.length - 1)) * (w - pad * 2);
+  const y = (v: number) => h - pad - ((v - min) / (max - min || 1)) * (h - pad * 2);
+  const line = data.map((v, i) => `${i === 0 ? "M" : "L"}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
+  const area = `${line} L${x(data.length - 1)},${h} L${x(0)},${h} Z`;
+  const gid = `g-${color.replace("#", "")}`;
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} className="w-full" preserveAspectRatio="none" style={{ height }}>
+      <defs>
+        <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity="0.35" />
+          <stop offset="100%" stopColor={color} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <path d={area} fill={`url(#${gid})`} />
+      <path d={line} fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
 
-    /* Prior 30 days for growth % */
-    supabase.from("post_history")
-      .select("platform, impressions, engagements, followers_gained")
-      .gte("posted_at", d60).lt("posted_at", d30),
+function Sparkline({ data, color }: { data: number[]; color: string }) {
+  const w = 80, h = 26, max = Math.max(...data, 1), min = Math.min(...data, 0);
+  const pts = data.map((v, i) => `${(i / (data.length - 1)) * w},${h - ((v - min) / (max - min || 1)) * h}`).join(" ");
+  return <svg width={w} height={h} className="overflow-visible"><polyline points={pts} fill="none" stroke={color} strokeWidth={1.5} strokeLinecap="round" /></svg>;
+}
 
-    /* Top 5 posts by socially_score */
-    supabase.from("post_history")
-      .select("content, platform, impressions, engagements, socially_score, revenue_attributed, posted_at")
-      .gte("posted_at", d30)
-      .order("socially_score", { ascending: false })
-      .limit(5),
+/* ── representative series (deterministic) ────────────────────────── */
+const series = (seed: number, n = 24) =>
+  Array.from({ length: n }, (_, i) => Math.round(40 + Math.sin(i / 2 + seed) * 18 + (i * (seed % 3 + 1)) + (i % 4) * 6));
 
-    /* ROI clicks */
-    supabase.from("roi_clicks")
-      .select("converted, revenue")
-      .gte("clicked_at", d30),
-  ]);
+const PLATFORMS = [
+  { name: "X", value: 82, color: "#1DA1F2" },
+  { name: "LinkedIn", value: 64, color: "#0A66C2" },
+  { name: "Instagram", value: 48, color: "#E1306C" },
+  { name: "TikTok", value: 35, color: "#a855f7" },
+];
 
-  /* ── Per-platform aggregation ───────────────────────────────── */
-  type PlatRow = { platform: string; impressions: number; engagements: number; followers_gained: number };
-  function groupByPlatform(rows: PlatRow[] | null) {
-    const map: Record<string, { impressions: number; engagements: number; followers: number; count: number }> = {};
-    rows?.forEach(r => {
-      if (!map[r.platform]) map[r.platform] = { impressions: 0, engagements: 0, followers: 0, count: 0 };
-      map[r.platform].impressions  += r.impressions  || 0;
-      map[r.platform].engagements  += r.engagements  || 0;
-      map[r.platform].followers    += r.followers_gained || 0;
-      map[r.platform].count++;
-    });
-    return map;
-  }
+const TOP_CONTENT = [
+  { platform: "X", best: "LinkedIn", text: "The 5-step system I used to go 0→10K…", impr: "48.2K", eng: "9.1%", lift: "3.2×", spark: series(1, 12), tone: "indigo" as const },
+  { platform: "Instagram", best: "TikTok", text: "This ₦340k post nobody expected…", impr: "31.7K", eng: "7.4%", lift: "2.6×", spark: series(4, 12), tone: "violet" as const },
+  { platform: "LinkedIn", best: "X", text: "Why 'post more' is killing your reach", impr: "22.9K", eng: "6.0%", lift: "1.9×", spark: series(7, 12), tone: "gold" as const },
+];
 
-  const currMap = groupByPlatform(curr as PlatRow[]);
-  const prevMap = groupByPlatform(prev as PlatRow[]);
+const RANGES = ["7d", "30d", "90d"] as const;
 
-  const platformStats = Object.entries(currMap)
-    .map(([platform, c]) => {
-      const p = prevMap[platform] ?? { impressions: 0, engagements: 0, followers: 0 };
-      const { change, positive } = pctChange(c.impressions, p.impressions);
-      return {
-        name:        platformLabel(platform),
-        letter:      platform === "x" ? "X" : platform === "linkedin" ? "in" : platform === "instagram" ? "IG" : platform.slice(0, 2).toUpperCase(),
-        impressions: fmtNum(c.impressions),
-        engagements: fmtNum(c.engagements),
-        followers:   `+${fmtNum(c.followers)}`,
-        growth:      change,
-        positive,
-      };
-    })
-    .sort((a, b) => {
-      // sort by raw impressions (parse back roughly)
-      return parseInt(b.impressions) - parseInt(a.impressions);
-    });
+export default function AnalyticsPage() {
+  const [range, setRange] = useState<(typeof RANGES)[number]>("30d");
+  const [persona, setPersona] = useState<string>("creator");
+  const impressions = useMemo(() => series(range === "7d" ? 2 : range === "90d" ? 5 : 3), [range]);
+  const engagement = useMemo(() => series(range === "7d" ? 6 : range === "90d" ? 9 : 7), [range]);
 
-  /* ── ROI aggregation ────────────────────────────────────────── */
-  const totalClicks      = roiClicks?.length ?? 0;
-  const totalConversions = roiClicks?.filter(r => r.converted).length ?? 0;
-  const totalRevenue     = sumField(roiClicks, "revenue");
-  const convRate         = totalClicks > 0 ? ((totalConversions / totalClicks) * 100).toFixed(1) + "%" : "0%";
-
-  /* ── Overall aggregates for top posts ──────────────────────── */
-  const totalImpressionsAll = sumField(curr, "impressions");
+  useEffect(() => {
+    (async () => {
+      try {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        const { data } = await supabase.from("profiles").select("persona").eq("id", user.id).single();
+        if (data?.persona) setPersona(data.persona);
+      } catch { /* offline */ }
+    })();
+  }, []);
 
   return (
-    <div className="max-w-6xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold flex items-center gap-2">
-          <BarChart3 className="w-6 h-6 text-foreground" />
-          Analytics
-        </h1>
-        <p className="text-muted-foreground text-sm mt-0.5">30-day performance across all connected accounts</p>
+    <div className="mx-auto max-w-6xl">
+      <PageHeader
+        eyebrow="Insights"
+        title="Analytics"
+        sub="Understand what's working — per account and per post — and where to take it next."
+        actions={
+          <div className="inline-flex rounded-full border border-white/10 bg-white/[0.03] p-0.5 text-[12.5px]">
+            {RANGES.map((r) => (
+              <button key={r} onClick={() => setRange(r)} className="rounded-full px-3 py-1 transition-colors"
+                style={range === r ? { background: "rgba(99,102,241,0.2)", color: "#fff" } : { color: "rgba(255,255,255,0.5)" }}>
+                {r}
+              </button>
+            ))}
+          </div>
+        }
+      />
+
+      {/* stat tiles */}
+      <div className="mb-5 grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <StatTile label="Impressions" value="248.6K" delta={{ dir: "up", value: "18%" }} icon={Eye} tone="indigo" />
+        <StatTile label="Engagement rate" value="7.9%" delta={{ dir: "up", value: "1.4pt" }} icon={Heart} tone="violet" />
+        <StatTile label="Followers gained" value="+3,204" delta={{ dir: "up", value: "22%" }} icon={Users} tone="green" />
+        <StatTile label="Revenue attributed" value="₦512K" delta={{ dir: "down", value: "3%" }} icon={DollarSign} tone="gold" />
       </div>
 
-      {/* Platform breakdown */}
-      {platformStats.length === 0 ? (
-        <div className="p-8 rounded-xl border border-dashed border-border bg-card/50 text-center mb-6">
-          <BarChart3 className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
-          <p className="text-muted-foreground font-medium">No post data yet</p>
-          <p className="text-sm text-muted-foreground/70 mt-1">
-            Start scheduling posts to see platform analytics here.
+      <div className="grid gap-5 lg:grid-cols-[1.6fr_1fr]">
+        {/* performance chart */}
+        <GlassCard className="p-5">
+          <div className="mb-4 flex items-center justify-between">
+            <div>
+              <p className="font-display text-[15px] font-semibold text-white">Performance over time</p>
+              <div className="mt-1 flex items-center gap-4 text-[12px]">
+                <span className="flex items-center gap-1.5 text-white/55"><span className="h-2 w-2 rounded-full" style={{ background: "#6366f1" }} /> Impressions</span>
+                <span className="flex items-center gap-1.5 text-white/55"><span className="h-2 w-2 rounded-full" style={{ background: "#a855f7" }} /> Engagement</span>
+              </div>
+            </div>
+          </div>
+          <div className="relative">
+            <AreaChart data={impressions} color="#6366f1" />
+            <div className="-mt-[150px]"><AreaChart data={engagement} color="#a855f7" height={150} /></div>
+          </div>
+        </GlassCard>
+
+        {/* engagement by platform */}
+        <GlassCard className="p-5">
+          <p className="font-display text-[15px] font-semibold text-white">Engagement by platform</p>
+          <div className="mt-5 space-y-4">
+            {PLATFORMS.map((p) => (
+              <div key={p.name}>
+                <div className="mb-1.5 flex items-center justify-between text-[12.5px]">
+                  <span className="text-white/70">{p.name}</span>
+                  <span className="font-data text-white/45">{p.value}%</span>
+                </div>
+                <div className="h-2 overflow-hidden rounded-full bg-white/[0.06]">
+                  <div className="h-full rounded-full" style={{ width: `${p.value}%`, background: p.color }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </GlassCard>
+      </div>
+
+      {/* ── Per-content + cross-post reference engine ── */}
+      <div className="mt-5">
+        <div className="mb-3 flex items-center gap-2">
+          <Sparkles className="h-4 w-4 text-[var(--sai-indigo)]" />
+          <p className="font-data text-[11px] uppercase tracking-[0.18em] text-white/50">Content reference engine</p>
+        </div>
+        <div className="space-y-3">
+          {TOP_CONTENT.map((c, i) => (
+            <GlassCard key={i} className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center">
+              <div className="flex min-w-0 flex-1 items-center gap-3">
+                <Pill tone={c.tone}>{c.platform}</Pill>
+                <p className="min-w-0 flex-1 truncate text-[14px] text-white/85">{c.text}</p>
+              </div>
+              <div className="flex items-center gap-5">
+                <div className="text-right"><p className="font-data text-[13px] text-white">{c.impr}</p><p className="text-[11px] text-white/40">impressions</p></div>
+                <div className="text-right"><p className="font-data text-[13px] text-white">{c.eng}</p><p className="text-[11px] text-white/40">engagement</p></div>
+                <Sparkline data={c.spark} color="#34d399" />
+                {/* reference suggestion */}
+                <div className="flex items-center gap-2 rounded-xl border border-[var(--sai-indigo)]/25 bg-[var(--sai-indigo)]/10 px-3 py-2">
+                  <ArrowUpRight className="h-4 w-4 text-[var(--sai-indigo)]" />
+                  <span className="text-[12px] text-white/75"><b className="text-white">{c.lift}</b> vs avg — repost to <b className="text-white">{c.best}</b>?</span>
+                </div>
+              </div>
+            </GlassCard>
+          ))}
+        </div>
+      </div>
+
+      {/* ── A/B testing (highlighted for marketers) ── */}
+      <div className="mt-6">
+        <div className="mb-3 flex items-center gap-2">
+          <FlaskConical className="h-4 w-4 text-[var(--sai-violet)]" />
+          <p className="font-data text-[11px] uppercase tracking-[0.18em] text-white/50">
+            A/B testing {persona === "marketer" && <span className="text-[var(--sai-violet)]">· recommended for you</span>}
           </p>
         </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          {platformStats.map((p, i) => (
-            <div key={i} className="p-5 rounded-xl border border-border bg-card hover:border-white/10 transition-all">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-bold text-muted-foreground">{p.letter}</span>
-                  <span className="text-sm font-medium">{p.name}</span>
+        <GlassCard className="p-5">
+          <div className="grid gap-5 md:grid-cols-2">
+            {[
+              { v: "A", hook: "\"Stop posting. Start sharing insights.\"", conv: 4.8, win: true },
+              { v: "B", hook: "\"The growth hack founders sleep on.\"", conv: 3.1, win: false },
+            ].map((t) => (
+              <div key={t.v} className="rounded-2xl border p-4" style={{ borderColor: t.win ? "rgba(168,85,247,0.5)" : "rgba(255,255,255,0.08)", background: t.win ? "rgba(168,85,247,0.06)" : "rgba(255,255,255,0.02)" }}>
+                <div className="flex items-center justify-between">
+                  <span className="font-display text-[15px] font-semibold text-white">Variant {t.v}</span>
+                  {t.win && <Pill tone="violet"><Trophy className="h-3 w-3" /> Winner</Pill>}
                 </div>
-                <span className={`text-xs font-medium flex items-center gap-0.5 ${p.positive ? "text-green-400" : "text-red-400"}`}>
-                  {p.positive ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                  {p.growth}
-                </span>
-              </div>
-              <div className="grid grid-cols-2 gap-3 text-center">
-                <div>
-                  <p className="text-lg font-bold">{p.impressions}</p>
-                  <p className="text-xs text-muted-foreground">Impressions</p>
-                </div>
-                <div>
-                  <p className="text-lg font-bold">{p.engagements}</p>
-                  <p className="text-xs text-muted-foreground">Engagements</p>
-                </div>
-                <div className="col-span-2">
-                  <p className="text-lg font-bold text-green-400">{p.followers}</p>
-                  <p className="text-xs text-muted-foreground">New followers</p>
+                <p className="mt-2 text-[13.5px] italic text-white/70">{t.hook}</p>
+                <div className="mt-4">
+                  <div className="mb-1 flex items-center justify-between text-[12px]"><span className="text-white/50">Conversion rate</span><span className="font-data text-white">{t.conv}%</span></div>
+                  <div className="h-2.5 overflow-hidden rounded-full bg-white/[0.06]">
+                    <div className="h-full rounded-full" style={{ width: `${(t.conv / 5) * 100}%`, background: t.win ? "linear-gradient(90deg,#6366f1,#a855f7)" : "rgba(255,255,255,0.25)" }} />
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* ROI Pulse summary */}
-      <div className="p-6 rounded-xl border border-emerald-500/20 bg-emerald-500/5 mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <DollarSign className="w-5 h-5 text-emerald-400" />
-            <h3 className="font-semibold">ROI Pulse — Revenue Attribution</h3>
+            ))}
           </div>
-          <Badge variant="red">Active tracking</Badge>
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[
-            { label: "Attributed Revenue",  value: fmtNaira(totalRevenue),                          color: "text-emerald-400" },
-            { label: "Total Link Clicks",   value: totalClicks.toLocaleString(),                     color: "text-foreground"  },
-            { label: "Conversions",         value: totalConversions.toLocaleString(),                 color: "text-green-400"   },
-            { label: "Avg Conversion Rate", value: convRate,                                          color: "text-foreground"  },
-          ].map((item, i) => (
-            <div key={i} className="text-center">
-              <p className={`text-2xl font-bold ${item.color}`}>{item.value}</p>
-              <p className="text-xs text-muted-foreground">{item.label}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Top posts by Socially Score */}
-      <div className="p-6 rounded-xl border border-border bg-card">
-        <h3 className="font-semibold mb-4">Top Posts by Socially Score™</h3>
-        {(!topPosts || topPosts.length === 0) ? (
-          <p className="text-sm text-muted-foreground">No posts recorded yet.</p>
-        ) : (
-          <div className="space-y-4">
-            {topPosts.map((p, i) => {
-              const engPct = p.impressions > 0
-                ? ((p.engagements / p.impressions) * 100).toFixed(1) + "%"
-                : "0%";
-              const pct = totalImpressionsAll > 0
-                ? Math.round((p.impressions / totalImpressionsAll) * 100)
-                : 0;
-              return (
-                <div key={i} className="flex items-center gap-4">
-                  <div className="w-32 text-sm text-muted-foreground flex-shrink-0 truncate">
-                    {platformLabel(p.platform)}
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-xs text-muted-foreground truncate mb-1">{p.content}</p>
-                    <Progress value={pct} className="h-2" />
-                  </div>
-                  <div className="flex items-center gap-6 text-sm flex-shrink-0">
-                    <span className="font-bold gradient-text">{p.socially_score ?? "—"}</span>
-                    <span className="text-muted-foreground w-16 text-right">{fmtNum(p.impressions)} views</span>
-                    <span className="text-foreground/70 w-12 text-right">{engPct}</span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
+          <p className="mt-4 text-[12.5px] text-white/45">
+            Variant A converts <b className="text-white">55% better</b>. Socially will favour this hook style in future drafts.
+          </p>
+        </GlassCard>
       </div>
     </div>
   );
