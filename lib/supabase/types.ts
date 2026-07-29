@@ -103,6 +103,50 @@ export interface InboxMessage {
   received_at: string;
 }
 
+export type TaskPriority = "low" | "normal" | "high";
+export interface Task {
+  id: string;
+  user_id: string;
+  title: string;
+  notes: string | null;
+  priority: TaskPriority;
+  status: "pending" | "done";
+  created_at: string;
+  completed_at: string | null;
+}
+
+export interface Integration {
+  id: string;
+  user_id: string;
+  provider: string;
+  status: "connected" | "disconnected" | "error";
+  account_label: string | null;
+  config: Record<string, unknown>;
+  connected_at: string;
+}
+
+export type BotKind = "ghost" | "engagement" | "repurpose" | "monetize" | "triage";
+export interface Bot {
+  id: string;
+  user_id: string;
+  name: string;
+  kind: BotKind;
+  status: "active" | "paused";
+  autonomy: "assist" | "auto";
+  actions_count: number;
+  config: Record<string, unknown>;
+  created_at: string;
+}
+
+export interface AgentMessage {
+  id: string;
+  conversation_id: string;
+  user_id: string;
+  role: "user" | "assistant" | "system";
+  content: string;
+  created_at: string;
+}
+
 export interface Trend {
   id: string;
   niche: string;

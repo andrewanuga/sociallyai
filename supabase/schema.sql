@@ -285,3 +285,100 @@ create policy "Users manage own inbox"
 -- ROI clicks
 create policy "Users read own ROI data"
   on public.roi_clicks for all using (auth.uid() = user_id);
+
+-- ============================================================
+-- AI + APPEARANCE SETTINGS (on profiles)
+-- ============================================================
+alter table public.profiles add column if not exists ai_model text not null default 'llama-3.3-70b';
+alter table public.profiles add column if not exists ai_unfiltered boolean not null default false;
+alter table public.profiles add column if not exists ai_temperature numeric(3,2) not null default 0.7;
+alter table public.profiles add column if not exists theme_pref text not null default 'dark';   -- dark | light | system
+alter table public.profiles add column if not exists font_pref text not null default 'inter';   -- inter | general-sans | geist
+
+-- ============================================================
+-- TASKS  (task manager — LIFO / stack ordering by created_at desc)
+-- ============================================================
+create table if not exists public.tasks (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  title text not null,
+  notes text,
+  priority text not null default 'normal'      -- low | normal | high
+    check (priority in ('low', 'normal', 'high')),
+  status text not null default 'pending'        -- pending | done
+    check (status in ('pending', 'done')),
+  created_at timestamptz not null default now(),
+  completed_at timestamptz
+);
+create index if not exists tasks_user_stack on public.tasks(user_id, created_at desc);
+
+-- ============================================================
+-- INTEGRATIONS  (external tools: calendar, analytics, etc.)
+-- ============================================================
+create table if not exists public.integrations (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  provider text not null,                       -- google_calendar | google_analytics | notion | slack | zapier | webhook ...
+  status text not null default 'connected'      -- connected | disconnected | error
+    check (status in ('connected', 'disconnected', 'error')),
+  account_label text,                           -- e.g. connected account email
+  config jsonb not null default '{}'::jsonb,
+  connected_at timestamptz not null default now(),
+  unique(user_id, provider)
+);
+
+-- ============================================================
+-- BOTS  (autonomous agents: ghost, engagement, repurpose, monetize)
+-- ============================================================
+create table if not exists public.bots (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  name text not null,
+  kind text not null                            -- ghost | engagement | repurpose | monetize | triage
+    check (kind in ('ghost', 'engagement', 'repurpose', 'monetize', 'triage')),
+  status text not null default 'paused'          -- active | paused
+    check (status in ('active', 'paused')),
+  autonomy text not null default 'assist'        -- assist (human-in-loop) | auto
+    check (autonomy in ('assist', 'auto')),
+  actions_count int not null default 0,
+  config jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now()
+);
+
+-- ============================================================
+-- AGENT CHAT  (per-user Socially AI conversations)
+-- ============================================================
+create table if not exists public.agent_conversations (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  title text not null default 'New chat',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create table if not exists public.agent_messages (
+  id uuid primary key default gen_random_uuid(),
+  conversation_id uuid not null references public.agent_conversations(id) on delete cascade,
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  role text not null check (role in ('user', 'assistant', 'system')),
+  content text not null,
+  created_at timestamptz not null default now()
+);
+create index if not exists agent_messages_convo on public.agent_messages(conversation_id, created_at);
+
+-- ── RLS for new tables ──────────────────────────────────
+alter table public.tasks enable row level security;
+alter table public.integrations enable row level security;
+alter table public.bots enable row level security;
+alter table public.agent_conversations enable row level security;
+alter table public.agent_messages enable row level security;
+
+create policy "Users manage own tasks"
+  on public.tasks for all using (auth.uid() = user_id);
+create policy "Users manage own integrations"
+  on public.integrations for all using (auth.uid() = user_id);
+create policy "Users manage own bots"
+  on public.bots for all using (auth.uid() = user_id);
+create policy "Users manage own conversations"
+  on public.agent_conversations for all using (auth.uid() = user_id);
+create policy "Users manage own agent messages"
+  on public.agent_messages for all using (auth.uid() = user_id);
