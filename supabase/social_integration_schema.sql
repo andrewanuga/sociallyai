@@ -102,7 +102,8 @@ create table if not exists public.social_posts (
   -- creator referral: "did well here → try there"
   referral_platform social_platform,
   synced_at timestamptz,
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  unique (account_id, external_id)
 );
 create index if not exists social_posts_perf on public.social_posts(user_id, posted_at desc);
 
