@@ -2,27 +2,24 @@
 
 import { useState, useCallback, useEffect } from "react";
 import {
-  Sparkles, Calendar, Send, Image, Hash, AtSign,
+  Sparkles, Calendar, Send, ImageIcon, Hash, AtSign,
   RotateCw, Zap, TrendingUp, TrendingDown, Loader2,
-  CheckCircle2, AlertCircle,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
+import { GlassCard, PageHeader } from "@/components/dashboard/ui";
+import { useToast } from "@/components/ui/toast";
 
 const PLATFORMS = [
-  { id: "x",         name: "X (Twitter)", maxChars: 280  },
-  { id: "linkedin",  name: "LinkedIn",    maxChars: 3000 },
-  { id: "instagram", name: "Instagram",   maxChars: 2200 },
-  { id: "tiktok",    name: "TikTok",      maxChars: 2200 },
+  { id: "x", name: "X (Twitter)", maxChars: 280 },
+  { id: "linkedin", name: "LinkedIn", maxChars: 3000 },
+  { id: "instagram", name: "Instagram", maxChars: 2200 },
+  { id: "tiktok", name: "TikTok", maxChars: 2200 },
 ];
 
 const FRAMEWORKS = [
-  { id: "aida",  label: "AIDA",          desc: "Attention → Interest → Desire → Action" },
-  { id: "pas",   label: "PAS",           desc: "Problem → Agitate → Solve"              },
-  { id: "hook",  label: "Curiosity Hook",desc: "Open loop to drive engagement"          },
-  { id: "story", label: "Story Arc",     desc: "Narrative-driven content"               },
+  { id: "aida", label: "AIDA", desc: "Attention → Interest → Desire → Action" },
+  { id: "pas", label: "PAS", desc: "Problem → Agitate → Solve" },
+  { id: "hook", label: "Curiosity Hook", desc: "Open loop to drive engagement" },
+  { id: "story", label: "Story Arc", desc: "Narrative-driven content" },
 ];
 
 const TONES = ["Professional", "Casual", "Naija Vibe", "Witty", "Inspirational", "Educational"];
@@ -36,31 +33,24 @@ interface ScoreData {
 }
 
 export default function ComposePage() {
-  const [content,           setContent]           = useState("");
-  const [topic,             setTopic]             = useState("");
+  const { error: toastError, success: toastSuccess } = useToast();
+  const [content, setContent] = useState("");
+  const [topic, setTopic] = useState("");
   const [selectedPlatforms, setSelectedPlatforms] = useState(["x"]);
-  const [framework,         setFramework]         = useState("aida");
-  const [tone,              setTone]              = useState("Professional");
-  const [generating,        setGenerating]        = useState(false);
-  const [scoring,           setScoring]           = useState(false);
-  const [scheduling,        setScheduling]        = useState(false);
-  const [scoreData,         setScoreData]         = useState<ScoreData | null>(null);
-  const [toast, setToast] = useState<{ type: "success" | "error"; msg: string } | null>(null);
+  const [framework, setFramework] = useState("aida");
+  const [tone, setTone] = useState("Professional");
+  const [generating, setGenerating] = useState(false);
+  const [scoring, setScoring] = useState(false);
+  const [scheduling, setScheduling] = useState(false);
+  const [scoreData, setScoreData] = useState<ScoreData | null>(null);
 
-  const showToast = (type: "success" | "error", msg: string) => {
-    setToast({ type, msg });
-    setTimeout(() => setToast(null), 3500);
-  };
-
-  // Auto-score (debounced)
   useEffect(() => {
     if (!content || content.length < 30) { setScoreData(null); return; }
     const timer = setTimeout(async () => {
       setScoring(true);
       try {
         const res = await fetch("/api/ai/score", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
+          method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ content, platform: selectedPlatforms[0] || "x" }),
         });
         if (res.ok) setScoreData(await res.json());
@@ -70,276 +60,176 @@ export default function ComposePage() {
   }, [content, selectedPlatforms]);
 
   const handleGenerate = useCallback(async () => {
-    if (!topic.trim()) { showToast("error", "Enter a topic before generating"); return; }
+    if (!topic.trim()) { toastError("Add a topic first", "Tell the agent what to write about."); return; }
     setGenerating(true);
     try {
       const res = await fetch("/api/ai/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ prompt: topic, platform: selectedPlatforms[0] || "x", framework, tone }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
       setContent(data.content);
     } catch (err: unknown) {
-      showToast("error", err instanceof Error ? err.message : "Generation failed");
+      toastError("Generation failed", err instanceof Error ? err.message : undefined);
     } finally { setGenerating(false); }
-  }, [topic, selectedPlatforms, framework, tone]);
+  }, [topic, selectedPlatforms, framework, tone, toastError]);
 
   const handleSchedule = async () => {
-    if (!content.trim()) { showToast("error", "Write or generate content first"); return; }
+    if (!content.trim()) { toastError("Nothing to schedule", "Write or generate content first."); return; }
     setScheduling(true);
     try {
       const res = await fetch("/api/posts/schedule", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content, platforms: selectedPlatforms, score: scoreData?.score }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
-      showToast("success", `Scheduled to ${selectedPlatforms.length} platform(s) successfully`);
+      toastSuccess("Scheduled", `Queued to ${selectedPlatforms.length} platform(s).`);
       setContent(""); setTopic(""); setScoreData(null);
     } catch (err: unknown) {
-      showToast("error", err instanceof Error ? err.message : "Scheduling failed");
+      toastError("Scheduling failed", err instanceof Error ? err.message : undefined);
     } finally { setScheduling(false); }
   };
 
   const togglePlatform = (id: string) =>
-    setSelectedPlatforms((prev) =>
-      prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]
-    );
+    setSelectedPlatforms((prev) => (prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]));
 
   const activeLimit = PLATFORMS.find((p) => selectedPlatforms.includes(p.id))?.maxChars || 280;
-  const charCount   = content.length;
-  const charPct     = Math.min((charCount / activeLimit) * 100, 100);
+  const charCount = content.length;
+  const charPct = Math.min((charCount / activeLimit) * 100, 100);
 
-  // Semantic: high=green, medium=amber, low=red
-  const scoreColor =
-    scoreData?.prediction === "high"   ? "text-green-400"
-    : scoreData?.prediction === "medium" ? "text-amber-400"
-    : "text-red-500";
-
-  const scoreBorder =
-    scoreData?.prediction === "high"   ? "border-green-500/30 bg-green-500/5"
-    : scoreData?.prediction === "medium" ? "border-amber-400/20 bg-amber-400/5"
-    : "border-red-600/20 bg-red-600/5";
+  const scoreColor = scoreData?.prediction === "high" ? "#34d399" : scoreData?.prediction === "medium" ? "var(--sai-gold)" : "var(--sai-red)";
+  const chipStyle = (active: boolean) =>
+    active
+      ? { borderColor: "rgba(99,102,241,0.5)", background: "rgba(99,102,241,0.12)", color: "#fff" }
+      : { borderColor: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.55)" };
 
   return (
-    <div className="max-w-5xl mx-auto">
-      {/* Toast */}
-      {toast && (
-        <div
-          className={cn(
-            "fixed top-4 right-4 z-50 flex items-center gap-3 px-4 py-3 rounded-xl border shadow-lg text-sm font-medium animate-in slide-in-from-top-2 duration-300",
-            toast.type === "success"
-              ? "bg-green-500/10 border-green-500/30 text-green-400"
-              : "bg-destructive/10 border-destructive/30 text-destructive"
-          )}
-        >
-          {toast.type === "success" ? (
-            <CheckCircle2 className="w-4 h-4" />
-          ) : (
-            <AlertCircle className="w-4 h-4" />
-          )}
-          {toast.msg}
-        </div>
-      )}
+    <div className="mx-auto max-w-5xl">
+      <PageHeader eyebrow="Workspace" title="Compose" sub="Write or generate content, score it live, and schedule across platforms." />
 
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold mb-1">Compose</h1>
-        <p className="text-muted-foreground text-sm">
-          Write or generate AI-powered content and schedule it across platforms
-        </p>
-      </div>
-
-      <div className="grid lg:grid-cols-3 gap-6">
-        {/* Main composer */}
-        <div className="lg:col-span-2 space-y-4">
-          {/* Platform selector */}
-          <div className="p-4 rounded-xl border border-border bg-card">
-            <p className="text-sm font-medium mb-3">Post to</p>
+      <div className="grid gap-5 lg:grid-cols-3">
+        {/* main */}
+        <div className="space-y-4 lg:col-span-2">
+          <GlassCard className="p-4">
+            <p className="mb-3 text-[13px] font-medium text-white/70">Post to</p>
             <div className="flex flex-wrap gap-2">
               {PLATFORMS.map((p) => (
-                <button
-                  key={p.id}
-                  onClick={() => togglePlatform(p.id)}
-                  className={cn(
-                    "px-3 py-1.5 rounded-lg text-sm font-medium border transition-all",
-                    selectedPlatforms.includes(p.id)
-                      ? "border-red-500/50 bg-red-500/10 text-red-400"
-                      : "border-border text-muted-foreground hover:text-foreground hover:border-border/80"
-                  )}
-                >
+                <button key={p.id} onClick={() => togglePlatform(p.id)} className="rounded-lg border px-3 py-1.5 text-[13px] font-medium transition-all" style={chipStyle(selectedPlatforms.includes(p.id))}>
                   {p.name}
                 </button>
               ))}
             </div>
-          </div>
+          </GlassCard>
 
-          {/* Topic input */}
-          <div className="p-4 rounded-xl border border-border bg-card">
-            <label className="text-sm font-medium text-muted-foreground block mb-2">
-              Topic / prompt for AI generation
-            </label>
+          <GlassCard className="p-4">
+            <label className="mb-2 block font-data text-[11px] uppercase tracking-[0.16em] text-white/50">Topic / prompt</label>
             <input
-              type="text"
               value={topic}
               onChange={(e) => setTopic(e.target.value)}
               placeholder="e.g. 5 lessons I learned bootstrapping a SaaS in Lagos"
-              className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground border-b border-border pb-2 focus:border-red-500 transition-colors"
+              className="w-full border-b border-white/10 bg-transparent pb-2 text-sm text-white outline-none transition-colors placeholder:text-white/35 focus:border-[var(--sai-indigo)]"
             />
-          </div>
+          </GlassCard>
 
-          {/* Text editor */}
-          <div className="p-4 rounded-xl border border-border bg-card">
-            <Textarea
+          <GlassCard className="p-4">
+            <textarea
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              placeholder="Your post content will appear here after generation, or type directly..."
-              className="min-h-[280px] resize-none border-0 focus-visible:ring-0 p-0 text-base leading-relaxed"
+              placeholder="Your post will appear here after generation, or type directly…"
+              className="min-h-[280px] w-full resize-none bg-transparent text-[15px] leading-relaxed text-white outline-none placeholder:text-white/35"
             />
-
-            {/* Toolbar */}
-            <div className="flex items-center justify-between pt-3 mt-3 border-t border-border">
+            <div className="mt-3 flex items-center justify-between border-t border-white/[0.06] pt-3">
               <div className="flex items-center gap-1">
-                {[Image, Hash, AtSign].map((Icon, i) => (
-                  <button
-                    key={i}
-                    className="w-8 h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-                  >
-                    <Icon className="w-4 h-4" />
-                  </button>
+                {[ImageIcon, Hash, AtSign].map((Icon, i) => (
+                  <button key={i} className="flex h-8 w-8 items-center justify-center rounded-lg text-white/45 transition-colors hover:bg-white/[0.06] hover:text-white"><Icon className="h-4 w-4" /></button>
                 ))}
               </div>
-
               <div className="flex items-center gap-3">
-                {scoring && <Loader2 className="w-4 h-4 text-muted-foreground animate-spin" />}
-                <div className="relative w-7 h-7">
-                  <svg viewBox="0 0 36 36" className="w-7 h-7 -rotate-90">
-                    <circle cx="18" cy="18" r="15.9" fill="none" stroke="currentColor" strokeWidth="3" className="text-border" />
-                    <circle
-                      cx="18" cy="18" r="15.9" fill="none" strokeWidth="3"
-                      strokeDasharray={`${charPct} 100`}
-                      className={cn("transition-all", charPct > 95 ? "text-red-600" : "text-red-500")}
-                      stroke="currentColor"
-                    />
+                {scoring && <Loader2 className="h-4 w-4 animate-spin text-white/40" />}
+                <div className="relative h-7 w-7">
+                  <svg viewBox="0 0 36 36" className="h-7 w-7 -rotate-90">
+                    <circle cx="18" cy="18" r="15.9" fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="3" />
+                    <circle cx="18" cy="18" r="15.9" fill="none" strokeWidth="3" strokeDasharray={`${charPct} 100`} stroke={charPct > 95 ? "var(--sai-red)" : "var(--sai-indigo)"} />
                   </svg>
-                  <span className="absolute inset-0 flex items-center justify-center text-[9px] font-medium">
-                    {activeLimit - charCount > 0 ? activeLimit - charCount : "!"}
-                  </span>
+                  <span className="absolute inset-0 flex items-center justify-center text-[9px] font-medium text-white/70">{activeLimit - charCount > 0 ? activeLimit - charCount : "!"}</span>
                 </div>
               </div>
             </div>
-          </div>
+          </GlassCard>
 
-          {/* Action buttons */}
-          <div className="flex items-center gap-3 flex-wrap">
-            <Button variant="gradient" className="flex-1 gap-2 min-w-[160px]" onClick={handleGenerate} disabled={generating}>
-              {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-              {generating ? "Generating..." : "Generate with AI"}
-            </Button>
-            <Button variant="outline" className="gap-2" onClick={handleSchedule} disabled={scheduling || !content}>
-              {scheduling ? <Loader2 className="w-4 h-4 animate-spin" /> : <Calendar className="w-4 h-4" />}
-              {scheduling ? "Scheduling..." : "Schedule"}
-            </Button>
-            <Button variant="default" className="gap-2" disabled={!content || scheduling} onClick={handleSchedule}>
-              <Send className="w-4 h-4" />
-              Post now
-            </Button>
+          <div className="flex flex-wrap items-center gap-3">
+            <button onClick={handleGenerate} disabled={generating} className="flex min-w-[160px] flex-1 items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold text-white transition-transform hover:scale-[1.02] disabled:opacity-60" style={{ background: "linear-gradient(135deg,#6366f1,#a855f7)" }}>
+              {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+              {generating ? "Generating…" : "Generate with AI"}
+            </button>
+            <button onClick={handleSchedule} disabled={scheduling || !content} className="flex items-center gap-2 rounded-xl border border-white/12 bg-white/[0.04] px-5 py-2.5 text-sm font-medium text-white hover:bg-white/[0.08] disabled:opacity-50">
+              {scheduling ? <Loader2 className="h-4 w-4 animate-spin" /> : <Calendar className="h-4 w-4" />} Schedule
+            </button>
+            <button onClick={handleSchedule} disabled={!content || scheduling} className="flex items-center gap-2 rounded-xl border border-white/12 bg-white/[0.04] px-5 py-2.5 text-sm font-medium text-white hover:bg-white/[0.08] disabled:opacity-50">
+              <Send className="h-4 w-4" /> Post now
+            </button>
           </div>
         </div>
 
-        {/* Sidebar controls */}
+        {/* sidebar */}
         <div className="space-y-4">
-          {/* Live Socially Score */}
           {content.length > 30 && (
-            <div className={cn("p-4 rounded-xl border transition-all", scoreData ? scoreBorder : "border-border")}>
-              <p className="text-sm font-medium mb-2 flex items-center gap-2">
-                <Zap className="w-4 h-4 text-red-400" />
-                Socially Score™
-                {scoring && <Loader2 className="w-3 h-3 animate-spin text-muted-foreground ml-auto" />}
+            <GlassCard className="p-4" style={scoreData ? { borderColor: `color-mix(in srgb, ${scoreColor} 35%, transparent)` } : undefined}>
+              <p className="flex items-center gap-2 text-[13px] font-medium text-white">
+                <Zap className="h-4 w-4 text-[var(--sai-indigo)]" /> Socially Score™
+                {scoring && <Loader2 className="ml-auto h-3 w-3 animate-spin text-white/40" />}
               </p>
-
               {scoreData ? (
                 <>
-                  <div className="flex items-end gap-2 mb-1">
-                    <span className={`text-4xl font-bold ${scoreColor}`}>{scoreData.score}</span>
-                    <span className="text-sm text-muted-foreground pb-1">/ 100</span>
-                    {scoreData.prediction === "high"
-                      ? <TrendingUp className="w-4 h-4 text-green-400 pb-0.5" />
-                      : scoreData.prediction === "medium"
-                      ? <TrendingUp className="w-4 h-4 text-amber-400 pb-0.5" />
-                      : <TrendingDown className="w-4 h-4 text-red-500 pb-0.5" />}
+                  <div className="mb-1 mt-2 flex items-end gap-2">
+                    <span className="font-display text-4xl font-bold" style={{ color: scoreColor }}>{scoreData.score}</span>
+                    <span className="pb-1 text-sm text-white/40">/ 100</span>
+                    {scoreData.prediction === "low" ? <TrendingDown className="pb-0.5 h-4 w-4" style={{ color: scoreColor }} /> : <TrendingUp className="pb-0.5 h-4 w-4" style={{ color: scoreColor }} />}
                   </div>
-                  <p className={`text-xs font-medium ${scoreColor} mb-1`}>
-                    {scoreData.prediction === "high" ? "High engagement predicted"
-                      : scoreData.prediction === "medium" ? "Average engagement expected"
-                      : "Low engagement risk"}
+                  <p className="mb-1 text-[12px] font-medium" style={{ color: scoreColor }}>
+                    {scoreData.prediction === "high" ? "High engagement predicted" : scoreData.prediction === "medium" ? "Average engagement expected" : "Low engagement risk"}
                   </p>
-                  <p className="text-xs text-muted-foreground mb-2">Best: {scoreData.bestTime}</p>
-                  <p className="text-xs text-muted-foreground italic mb-2">{scoreData.reasoning}</p>
+                  <p className="mb-2 text-[12px] text-white/45">Best: {scoreData.bestTime}</p>
+                  <p className="mb-2 text-[12px] italic text-white/45">{scoreData.reasoning}</p>
                   {scoreData.improvements?.length > 0 && (
-                    <div className="space-y-1 mt-2 border-t border-border pt-2">
-                      <p className="text-xs font-medium text-muted-foreground">Improvements:</p>
-                      {scoreData.improvements.slice(0, 2).map((imp, i) => (
-                        <p key={i} className="text-xs text-muted-foreground">• {imp}</p>
-                      ))}
+                    <div className="mt-2 space-y-1 border-t border-white/[0.06] pt-2">
+                      <p className="text-[12px] font-medium text-white/55">Improvements</p>
+                      {scoreData.improvements.slice(0, 2).map((imp, i) => <p key={i} className="text-[12px] text-white/45">• {imp}</p>)}
                     </div>
                   )}
                 </>
               ) : (
-                <div className="text-sm text-muted-foreground">Analysing your content…</div>
+                <p className="mt-2 text-[13px] text-white/45">Analysing your content…</p>
               )}
-            </div>
+            </GlassCard>
           )}
 
-          {/* Framework selector */}
-          <div className="p-4 rounded-xl border border-border bg-card">
-            <p className="text-sm font-medium mb-3">Writing Framework</p>
+          <GlassCard className="p-4">
+            <p className="mb-3 text-[13px] font-medium text-white/70">Writing framework</p>
             <div className="space-y-2">
               {FRAMEWORKS.map((f) => (
-                <button
-                  key={f.id}
-                  onClick={() => setFramework(f.id)}
-                  className={cn(
-                    "w-full text-left p-2.5 rounded-lg border text-sm transition-all",
-                    framework === f.id
-                      ? "border-red-500/50 bg-red-500/10 text-red-400"
-                      : "border-border text-muted-foreground hover:text-foreground"
-                  )}
-                >
+                <button key={f.id} onClick={() => setFramework(f.id)} className="w-full rounded-lg border p-2.5 text-left text-sm transition-all" style={chipStyle(framework === f.id)}>
                   <span className="font-medium">{f.label}</span>
-                  <span className="text-xs block opacity-70 mt-0.5">{f.desc}</span>
+                  <span className="mt-0.5 block text-[11.5px] opacity-70">{f.desc}</span>
                 </button>
               ))}
             </div>
-          </div>
+          </GlassCard>
 
-          {/* Tone selector */}
-          <div className="p-4 rounded-xl border border-border bg-card">
-            <p className="text-sm font-medium mb-3">Brand Tone</p>
+          <GlassCard className="p-4">
+            <p className="mb-3 text-[13px] font-medium text-white/70">Brand tone</p>
             <div className="flex flex-wrap gap-2">
               {TONES.map((t) => (
-                <button
-                  key={t}
-                  onClick={() => setTone(t)}
-                  className={cn(
-                    "px-2.5 py-1 rounded-full text-xs border transition-all",
-                    tone === t
-                      ? "border-red-500/50 bg-red-500/10 text-red-400"
-                      : "border-border text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  {t}
-                </button>
+                <button key={t} onClick={() => setTone(t)} className="rounded-full border px-2.5 py-1 text-[12px] transition-all" style={chipStyle(tone === t)}>{t}</button>
               ))}
             </div>
-          </div>
+          </GlassCard>
 
-          <Button variant="outline" className="w-full gap-2 text-sm" onClick={handleGenerate} disabled={generating || !topic.trim()}>
-            {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCw className="w-4 h-4" />}
-            Regenerate variation
-          </Button>
+          <button onClick={handleGenerate} disabled={generating || !topic.trim()} className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/12 bg-white/[0.04] py-2.5 text-sm font-medium text-white hover:bg-white/[0.08] disabled:opacity-50">
+            {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCw className="h-4 w-4" />} Regenerate variation
+          </button>
         </div>
       </div>
     </div>

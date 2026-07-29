@@ -2,290 +2,156 @@
 
 import { useState } from "react";
 import { CreditCard, Check, Zap, Crown, Rocket, Shield, ArrowUpRight, RefreshCw, AlertCircle, TrendingUp } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { Separator } from "@/components/ui/separator";
-import { cn } from "@/lib/utils";
+import { GlassCard, PageHeader, Pill } from "@/components/dashboard/ui";
 
 const PLANS = [
-  {
-    id: "free",    name: "Free",     icon: Zap,    price: "₦0",      period: "/month",
-    accounts: 1,  generations: "7/week",   color: "text-muted-foreground",
-    features: ["1 social account", "Basic scheduling", "7 AI generations/week"],
-  },
-  {
-    id: "basic",   name: "Basic",    icon: Shield, price: "₦5,000",  period: "/month",
-    accounts: 3,  generations: "100/month", color: "text-red-400",
-    features: ["3 social accounts", "Brand Voice setup", "Trend Discovery", "100 AI generations/month"],
-  },
-  {
-    id: "pro",     name: "Pro",      icon: Rocket, price: "₦12,000", period: "/month",
-    accounts: 7,  generations: "500/month", color: "text-red-400", popular: true,
-    features: ["7 social accounts", "1 Ghost Mode Agent", "ROI Pulse tracking", "Auto-Plug Loop", "500 AI generations/month", "Team seats (2)"],
-  },
-  {
-    id: "advanced",name: "Advanced", icon: Crown,  price: "₦25,000", period: "/month",
-    accounts: 15, generations: "1,000/month", color: "text-red-400",
-    features: ["15+ social accounts", "3 Autonomous Agents", "Smart Inbox Triage", "White-label reports", "API access", "1,000 AI generations/month", "5 team seats"],
-  },
+  { id: "free", name: "Free", icon: Zap, price: "₦0", period: "/mo", features: ["1 social account", "Basic scheduling", "7 AI generations/week"] },
+  { id: "basic", name: "Basic", icon: Shield, price: "₦5,000", period: "/mo", features: ["3 social accounts", "Brand Voice setup", "Trend Discovery", "100 AI generations/month"] },
+  { id: "pro", name: "Pro", icon: Rocket, price: "₦12,000", period: "/mo", popular: true, features: ["7 social accounts", "1 Ghost Mode Agent", "ROI Pulse tracking", "Auto-Plug Loop", "500 AI generations/month", "2 team seats"] },
+  { id: "advanced", name: "Advanced", icon: Crown, price: "₦25,000", period: "/mo", features: ["15+ social accounts", "3 Autonomous Agents", "Smart Inbox Triage", "White-label reports", "API access", "1,000 AI generations/month", "5 team seats"] },
 ];
 
 const INVOICES = [
-  { date: "May 1, 2026",  amount: "₦12,000", plan: "Pro",   status: "Paid" },
-  { date: "Apr 1, 2026",  amount: "₦12,000", plan: "Pro",   status: "Paid" },
-  { date: "Mar 1, 2026",  amount: "₦5,000",  plan: "Basic", status: "Paid" },
-  { date: "Feb 1, 2026",  amount: "₦0",      plan: "Free",  status: "Paid" },
+  { date: "May 1, 2026", amount: "₦12,000", plan: "Pro", status: "Paid" },
+  { date: "Apr 1, 2026", amount: "₦12,000", plan: "Pro", status: "Paid" },
+  { date: "Mar 1, 2026", amount: "₦5,000", plan: "Basic", status: "Paid" },
+  { date: "Feb 1, 2026", amount: "₦0", plan: "Free", status: "Paid" },
 ];
 
 const TOPUP_PACKS = [
-  { credits: 50,  price: "₦1,500",  tag: null          },
-  { credits: 200, price: "₦5,000",  tag: "Best Value"  },
-  { credits: 500, price: "₦10,000", tag: null          },
+  { credits: 50, price: "₦1,500", tag: null },
+  { credits: 200, price: "₦5,000", tag: "Best value" },
+  { credits: 500, price: "₦10,000", tag: null },
 ];
 
-export default function BillingPage() {
-  const [currentPlan]   = useState("pro");
-  const [billingCycle,   setBillingCycle] = useState<"monthly" | "annual">("monthly");
+function Meter({ label, value, total, note }: { label: string; value: string; total?: number; note: string; }) {
+  const pct = typeof total === "number" ? total : Number(value);
+  return (
+    <div>
+      <div className="mb-1.5 flex items-center justify-between text-[13px]">
+        <span className="text-white/50">{label}</span>
+        <span className="font-data text-white">{value}</span>
+      </div>
+      <div className="h-2 overflow-hidden rounded-full bg-white/[0.06]">
+        <div className="h-full rounded-full" style={{ width: `${pct}%`, background: "linear-gradient(90deg,#6366f1,#a855f7)" }} />
+      </div>
+      <p className="mt-1 text-[11.5px] text-white/35">{note}</p>
+    </div>
+  );
+}
 
-  const usedGenerations  = 312;
-  const totalGenerations = 500;
-  const usagePct         = Math.round((usedGenerations / totalGenerations) * 100);
+export default function BillingPage() {
+  const [currentPlan] = useState("pro");
+  const [cycle, setCycle] = useState<"monthly" | "annual">("monthly");
+  const used = 312, total = 500;
 
   return (
-    <div className="max-w-5xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold flex items-center gap-2">
-          <CreditCard className="w-6 h-6 text-muted-foreground" />
-          Billing &amp; Plans
-        </h1>
-        <p className="text-muted-foreground text-sm mt-0.5">
-          Manage your subscription, usage, and payment methods
-        </p>
-      </div>
+    <div className="mx-auto max-w-5xl">
+      <PageHeader eyebrow="Account" title="Billing & Plans" sub="Manage your subscription, usage, and payment methods." />
 
-      {/* Current plan summary */}
-      <div className="p-6 rounded-xl border border-red-500/30 bg-gradient-to-br from-red-950/25 to-card mb-6">
-        <div className="flex items-start justify-between flex-wrap gap-4">
+      {/* Current plan */}
+      <GlassCard className="mb-5 p-6" style={{ borderColor: "rgba(99,102,241,0.35)" }}>
+        <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <div className="flex items-center gap-2 mb-1">
-              <Rocket className="w-5 h-5 text-red-400" />
-              <span className="font-semibold text-lg">Pro Plan</span>
-              <Badge variant="red">Active</Badge>
+            <div className="mb-1 flex items-center gap-2">
+              <Rocket className="h-5 w-5 text-[var(--sai-indigo)]" />
+              <span className="font-display text-lg font-semibold text-white">Pro Plan</span>
+              <Pill tone="green">Active</Pill>
             </div>
-            <p className="text-muted-foreground text-sm">
-              Renews on <span className="text-foreground font-medium">June 1, 2026</span> · ₦12,000/month
-            </p>
+            <p className="text-[13px] text-white/50">Renews June 1, 2026 · ₦12,000/month</p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" className="gap-2">
-              <RefreshCw className="w-3.5 h-3.5" />
-              Change plan
-            </Button>
-            <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-destructive">
-              Cancel
-            </Button>
+            <button className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.04] px-4 py-2 text-[13px] text-white/80 hover:bg-white/[0.08]"><RefreshCw className="h-3.5 w-3.5" /> Change plan</button>
+            <button className="rounded-full px-4 py-2 text-[13px] text-white/50 transition-colors hover:text-[var(--sai-red)]">Cancel</button>
           </div>
         </div>
-
-        <Separator className="my-4" />
-
-        <div className="grid sm:grid-cols-3 gap-5">
-          <div>
-            <div className="flex items-center justify-between text-sm mb-1.5">
-              <span className="text-muted-foreground">AI Generations</span>
-              <span className="font-medium">{usedGenerations} / {totalGenerations}</span>
-            </div>
-            <Progress value={usagePct} className="h-2" />
-            <p className="text-xs text-muted-foreground mt-1">{totalGenerations - usedGenerations} remaining this month</p>
-          </div>
-          <div>
-            <div className="flex items-center justify-between text-sm mb-1.5">
-              <span className="text-muted-foreground">Connected Accounts</span>
-              <span className="font-medium">2 / 7</span>
-            </div>
-            <Progress value={28} className="h-2" />
-            <p className="text-xs text-muted-foreground mt-1">5 account slots remaining</p>
-          </div>
-          <div>
-            <div className="flex items-center justify-between text-sm mb-1.5">
-              <span className="text-muted-foreground">Ghost Mode Agents</span>
-              <span className="font-medium">1 / 1</span>
-            </div>
-            <Progress value={100} className="h-2" />
-            <p className="text-xs text-muted-foreground mt-1">Upgrade to Advanced for more agents</p>
-          </div>
+        <div className="my-5 h-px bg-white/[0.06]" />
+        <div className="grid gap-5 sm:grid-cols-3">
+          <Meter label="AI generations" value={`${used} / ${total}`} total={Math.round((used / total) * 100)} note={`${total - used} remaining this month`} />
+          <Meter label="Connected accounts" value="2 / 7" total={28} note="5 slots remaining" />
+          <Meter label="Ghost Mode agents" value="1 / 1" total={100} note="Upgrade to Advanced for more" />
         </div>
-      </div>
+      </GlassCard>
 
-      {/* Top-up packs */}
-      <div className="p-6 rounded-xl border border-border bg-card mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h3 className="font-semibold flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-red-400" />
-              Need more generations?
-            </h3>
-            <p className="text-sm text-muted-foreground">One-time top-up packs — never expire within your billing cycle</p>
-          </div>
+      {/* Top-up */}
+      <GlassCard className="mb-5 p-6">
+        <div className="mb-4">
+          <h3 className="font-display flex items-center gap-2 text-[15px] font-semibold text-white"><TrendingUp className="h-4 w-4 text-[var(--sai-violet)]" /> Need more generations?</h3>
+          <p className="text-[13px] text-white/45">One-time top-up packs — never expire within your billing cycle.</p>
         </div>
-        <div className="grid sm:grid-cols-3 gap-4">
-          {TOPUP_PACKS.map((pack, i) => (
-            <div
-              key={i}
-              className={cn(
-                "relative p-4 rounded-xl border transition-colors hover:border-red-500/30 cursor-pointer group",
-                pack.tag ? "border-red-500/30 bg-red-500/5" : "border-border"
-              )}
-            >
-              {pack.tag && (
-                <div className="absolute -top-2.5 left-4">
-                  <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-gradient-to-r from-red-600 to-rose-700 text-white">
-                    {pack.tag}
-                  </span>
-                </div>
-              )}
-              <div className="text-2xl font-bold mb-0.5">{pack.credits}</div>
-              <div className="text-xs text-muted-foreground mb-3">AI generations</div>
-              <div className="flex items-center justify-between">
-                <span className="font-semibold text-sm">{pack.price}</span>
-                <Button size="sm" variant={pack.tag ? "gradient" : "outline"} className="h-7 text-xs px-3">
-                  Buy now
-                </Button>
+        <div className="grid gap-4 sm:grid-cols-3">
+          {TOPUP_PACKS.map((p, i) => (
+            <div key={i} className="relative rounded-2xl border p-4" style={{ borderColor: p.tag ? "rgba(99,102,241,0.4)" : "rgba(255,255,255,0.08)", background: p.tag ? "rgba(99,102,241,0.06)" : "rgba(255,255,255,0.02)" }}>
+              {p.tag && <span className="font-data absolute -top-2.5 left-4 rounded-full px-2.5 py-0.5 text-[10px] uppercase tracking-wider text-white" style={{ background: "linear-gradient(135deg,#6366f1,#a855f7)" }}>{p.tag}</span>}
+              <div className="font-display text-2xl font-semibold text-white">{p.credits}</div>
+              <div className="text-[12px] text-white/40">AI generations</div>
+              <div className="mt-3 flex items-center justify-between">
+                <span className="text-sm font-semibold text-white">{p.price}</span>
+                <button className="rounded-full px-3 py-1.5 text-[12px] font-semibold text-white" style={p.tag ? { background: "linear-gradient(135deg,#6366f1,#a855f7)" } : { background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)" }}>Buy now</button>
               </div>
             </div>
           ))}
         </div>
-      </div>
+      </GlassCard>
 
-      {/* Plan comparison */}
+      {/* Plans */}
       <div className="mb-4 flex items-center justify-between">
-        <h3 className="font-semibold">All plans</h3>
-        <div className="flex items-center gap-1 p-1 rounded-lg bg-muted">
-          {(["monthly", "annual"] as const).map((cycle) => (
-            <button
-              key={cycle}
-              onClick={() => setBillingCycle(cycle)}
-              className={cn(
-                "px-3 py-1.5 rounded-md text-xs font-medium transition-all",
-                billingCycle === cycle ? "bg-background shadow text-foreground" : "text-muted-foreground"
-              )}
-            >
-              {cycle === "annual" ? "Annual (save 20%)" : "Monthly"}
+        <h3 className="font-display text-[15px] font-semibold text-white">All plans</h3>
+        <div className="inline-flex rounded-full border border-white/10 bg-white/[0.03] p-0.5 text-[12px]">
+          {(["monthly", "annual"] as const).map((c) => (
+            <button key={c} onClick={() => setCycle(c)} className="rounded-full px-3 py-1.5 transition-colors" style={cycle === c ? { background: "rgba(99,102,241,0.2)", color: "#fff" } : { color: "rgba(255,255,255,0.5)" }}>
+              {c === "annual" ? "Annual · save 20%" : "Monthly"}
             </button>
           ))}
         </div>
       </div>
 
-      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {PLANS.map((plan) => {
-          const isActive = plan.id === currentPlan;
+          const active = plan.id === currentPlan;
+          const price = cycle === "annual" && plan.price !== "₦0" ? plan.price.replace(/\d+/, (n) => String(Math.round(parseInt(n) * 0.8))) : plan.price;
           return (
-            <div
-              key={plan.id}
-              className={cn(
-                "relative p-5 rounded-xl border flex flex-col transition-all",
-                isActive ? "border-red-500/50 bg-red-500/5" : "border-border bg-card hover:border-red-500/20"
-              )}
-            >
-              {isActive && (
-                <div className="absolute -top-2.5 left-4">
-                  <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-gradient-to-r from-red-600 to-rose-700 text-white">
-                    Current plan
-                  </span>
-                </div>
-              )}
-              {(plan as { popular?: boolean }).popular && !isActive && (
-                <div className="absolute -top-2.5 left-4">
-                  <span className="px-2 py-0.5 text-[10px] font-bold rounded-full border border-red-500/30 text-red-400">
-                    Most Popular
-                  </span>
-                </div>
-              )}
-
-              <div className="flex items-center gap-2 mb-3">
-                <plan.icon className={`w-4 h-4 ${plan.color}`} />
-                <span className="font-semibold text-sm">{plan.name}</span>
-              </div>
-
-              <div className="mb-4">
-                <span className="text-2xl font-bold">
-                  {billingCycle === "annual"
-                    ? plan.price === "₦0" ? "₦0"
-                      : plan.price.replace(/\d+/, (n) => String(Math.round(parseInt(n) * 0.8)))
-                    : plan.price}
-                </span>
-                <span className="text-muted-foreground text-xs">{plan.period}</span>
-              </div>
-
-              <ul className="flex-1 space-y-2 mb-4">
-                {plan.features.map((f, i) => (
-                  <li key={i} className="flex items-start gap-1.5 text-xs">
-                    <Check className="w-3.5 h-3.5 text-green-500 mt-0.5 flex-shrink-0" />
-                    <span className="text-muted-foreground">{f}</span>
-                  </li>
-                ))}
+            <GlassCard key={plan.id} className="relative flex flex-col p-5" style={active ? { borderColor: "rgba(99,102,241,0.5)", boxShadow: "0 20px 60px -30px rgba(99,102,241,0.8)" } : undefined}>
+              {active && <span className="font-data absolute -top-2.5 left-4 rounded-full px-2.5 py-0.5 text-[10px] uppercase tracking-wider text-white" style={{ background: "linear-gradient(135deg,#6366f1,#a855f7)" }}>Current</span>}
+              {plan.popular && !active && <span className="font-data absolute -top-2.5 left-4 rounded-full border border-[var(--sai-indigo)]/40 px-2.5 py-0.5 text-[10px] uppercase tracking-wider text-[var(--sai-indigo)]">Popular</span>}
+              <div className="flex items-center gap-2"><plan.icon className="h-4 w-4 text-[var(--sai-indigo)]" /><span className="text-sm font-medium text-white">{plan.name}</span></div>
+              <div className="mt-3"><span className="font-display text-2xl font-semibold text-white">{price}</span><span className="text-[12px] text-white/40">{plan.period}</span></div>
+              <ul className="mt-4 flex-1 space-y-2">
+                {plan.features.map((f, i) => (<li key={i} className="flex items-start gap-1.5 text-[12.5px] text-white/55"><Check className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-[var(--sai-violet)]" /><span>{f}</span></li>))}
               </ul>
-
-              <Button variant={isActive ? "outline" : "gradient"} size="sm" className="w-full text-xs" disabled={isActive}>
-                {isActive ? "Current plan" : `Switch to ${plan.name}`}
-              </Button>
-            </div>
+              <button disabled={active} className="mt-4 w-full rounded-full py-2 text-[12.5px] font-semibold transition-transform hover:scale-[1.02] disabled:opacity-60 disabled:hover:scale-100" style={active ? { background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", color: "#fff" } : { background: "linear-gradient(135deg,#6366f1,#a855f7)", color: "#fff" }}>
+                {active ? "Current plan" : `Switch to ${plan.name}`}
+              </button>
+            </GlassCard>
           );
         })}
       </div>
 
       {/* Payment method */}
-      <div className="p-6 rounded-xl border border-border bg-card mb-6">
-        <h3 className="font-semibold mb-4 flex items-center gap-2">
-          <CreditCard className="w-4 h-4 text-muted-foreground" />
-          Payment Method
-        </h3>
-        <div className="flex items-center justify-between p-4 rounded-lg border border-border bg-muted/30">
+      <GlassCard className="mb-5 p-6">
+        <h3 className="font-display mb-4 flex items-center gap-2 text-[15px] font-semibold text-white"><CreditCard className="h-4 w-4 text-white/50" /> Payment method</h3>
+        <div className="flex items-center justify-between rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-7 rounded bg-gradient-to-br from-red-700 to-red-900 flex items-center justify-center">
-              <span className="text-white text-[9px] font-black">VISA</span>
-            </div>
-            <div>
-              <p className="text-sm font-medium">•••• •••• •••• 4832</p>
-              <p className="text-xs text-muted-foreground">Expires 09/28</p>
-            </div>
+            <div className="flex h-7 w-10 items-center justify-center rounded" style={{ background: "linear-gradient(135deg,#6366f1,#4338ca)" }}><span className="text-[9px] font-black text-white">VISA</span></div>
+            <div><p className="text-sm font-medium text-white">•••• •••• •••• 4832</p><p className="text-[12px] text-white/40">Expires 09/28</p></div>
           </div>
-          <div className="flex items-center gap-2">
-            <Badge variant="red" className="text-xs">Default</Badge>
-            <Button variant="ghost" size="sm" className="text-xs h-7">Update</Button>
-          </div>
+          <div className="flex items-center gap-2"><Pill tone="indigo">Default</Pill><button className="rounded-full px-3 py-1.5 text-[12px] text-white/60 hover:text-white">Update</button></div>
         </div>
-        <div className="flex items-center gap-2 mt-3">
-          <AlertCircle className="w-3.5 h-3.5 text-muted-foreground" />
-          <p className="text-xs text-muted-foreground">
-            Payments processed securely via Paystack. We never store card details.
-          </p>
-        </div>
-      </div>
+        <div className="mt-3 flex items-center gap-2"><AlertCircle className="h-3.5 w-3.5 text-white/35" /><p className="text-[12px] text-white/40">Payments processed securely via Paystack & Flutterwave. We never store card details.</p></div>
+      </GlassCard>
 
-      {/* Invoice history */}
-      <div className="p-6 rounded-xl border border-border bg-card">
-        <h3 className="font-semibold mb-4">Invoice History</h3>
-        <div className="space-y-2">
+      {/* Invoices */}
+      <GlassCard className="p-6">
+        <h3 className="font-display mb-4 text-[15px] font-semibold text-white">Invoice history</h3>
+        <div>
           {INVOICES.map((inv, i) => (
-            <div key={i} className="flex items-center justify-between py-3 border-b border-border/50 last:border-0">
-              <div className="flex items-center gap-3">
-                <div className="text-sm font-medium">{inv.date}</div>
-                <Badge variant="secondary" className="text-xs">{inv.plan}</Badge>
-              </div>
-              <div className="flex items-center gap-4">
-                <span className="text-sm font-semibold">{inv.amount}</span>
-                <Badge variant="red" className="text-xs">{inv.status}</Badge>
-                <Button variant="ghost" size="sm" className="h-7 text-xs gap-1 text-muted-foreground">
-                  <ArrowUpRight className="w-3 h-3" />
-                  PDF
-                </Button>
-              </div>
+            <div key={i} className="flex items-center justify-between border-b border-white/[0.05] py-3 last:border-0">
+              <div className="flex items-center gap-3"><span className="text-sm font-medium text-white">{inv.date}</span><Pill tone="muted">{inv.plan}</Pill></div>
+              <div className="flex items-center gap-4"><span className="text-sm font-semibold text-white">{inv.amount}</span><Pill tone="green">{inv.status}</Pill><button className="flex items-center gap-1 rounded-full px-2 py-1 text-[12px] text-white/50 hover:text-white"><ArrowUpRight className="h-3 w-3" /> PDF</button></div>
             </div>
           ))}
         </div>
-      </div>
+      </GlassCard>
     </div>
   );
 }
