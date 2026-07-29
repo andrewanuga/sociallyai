@@ -15,6 +15,7 @@ export default async function GhostModePage() {
     { data: actions },
     { data: todayActions },
     { data: weekActions },
+    { data: ghostBot },
   ] = await Promise.all([
     /* Recent 20 actions for the log */
     supabase.from("agent_actions")
@@ -31,6 +32,9 @@ export default async function GhostModePage() {
     supabase.from("agent_actions")
       .select("action")
       .gte("created_at", weekStart),
+
+    /* Persisted Ghost Mode bot (status + rules) */
+    supabase.from("social_bots").select("id, status, config").eq("kind", "ghost").limit(1).maybeSingle(),
   ]);
 
   const autoRepliesToday = todayActions?.filter(a => a.action === "auto_reply").length ?? 0;
@@ -40,13 +44,16 @@ export default async function GhostModePage() {
   const weekLeads        = weekActions?.filter(a => a.action === "flag_lead").length   ?? 0;
   const hoursSaved       = +((weekAutoReplies * 5 + weekLeads * 10) / 60).toFixed(1);
 
-  const initiallyActive  = autoRepliesToday > 0 || leadsToday > 0;
+  const initiallyActive  = ghostBot ? ghostBot.status === "active" : (autoRepliesToday > 0 || leadsToday > 0);
+  const savedRules = (ghostBot?.config as { rules?: { label: string; enabled: boolean }[] } | null)?.rules ?? null;
 
   return (
     <GhostModeClient
       initialActions={(actions ?? []) as AgentActionRow[]}
       statsToday={{ autoReplies: autoRepliesToday, leads: leadsToday, hoursSaved }}
       initiallyActive={initiallyActive}
+      botId={ghostBot?.id ?? null}
+      savedRules={savedRules}
     />
   );
 }

@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Ghost, Bot, AlertCircle, Settings2, Pause, Play, Zap } from "lucide-react";
 import { GlassCard, PageHeader } from "@/components/dashboard/ui";
+import { createClient } from "@/lib/supabase/client";
+import { useToast } from "@/components/ui/toast";
 import type { AgentActionRow } from "@/lib/supabase/types";
 import { timeAgo } from "@/lib/dashboard/helpers";
 
@@ -34,12 +36,46 @@ interface Props {
   initialActions: AgentActionRow[];
   statsToday: { autoReplies: number; leads: number; hoursSaved: number };
   initiallyActive: boolean;
+  botId?: string | null;
+  savedRules?: { label: string; enabled: boolean }[] | null;
 }
 
-export function GhostModeClient({ initialActions, statsToday, initiallyActive }: Props) {
+export function GhostModeClient({ initialActions, statsToday, initiallyActive, botId = null, savedRules = null }: Props) {
+  const { success, error: toastError } = useToast();
   const [agentActive, setAgentActive] = useState(initiallyActive);
-  const [rules, setRules] = useState(DEFAULT_RULES);
-  const toggleRule = (i: number) => setRules((prev) => prev.map((r, j) => (i === j ? { ...r, enabled: !r.enabled } : r)));
+  const [rules, setRules] = useState(savedRules?.length ? savedRules : DEFAULT_RULES);
+  const idRef = useRef<string | null>(botId);
+
+  // Persist the ghost bot (status + rules) to social_bots.
+  const persist = async (patch: { status?: "active" | "paused"; rules?: typeof rules }) => {
+    try {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const nextStatus = patch.status ?? (agentActive ? "active" : "paused");
+      const nextRules = patch.rules ?? rules;
+      if (idRef.current) {
+        await supabase.from("social_bots").update({ status: nextStatus, config: { rules: nextRules } }).eq("id", idRef.current);
+      } else {
+        const { data } = await supabase.from("social_bots").insert({
+          user_id: user.id, name: "Ghost Mode", kind: "ghost", status: nextStatus, config: { rules: nextRules },
+        }).select("id").single();
+        if (data) idRef.current = data.id;
+      }
+    } catch { toastError("Couldn't save Ghost Mode"); }
+  };
+
+  const toggleActive = () => {
+    const next = !agentActive;
+    setAgentActive(next);
+    persist({ status: next ? "active" : "paused" });
+    success(next ? "Ghost Mode activated" : "Ghost Mode paused");
+  };
+  const toggleRule = (i: number) => {
+    const next = rules.map((r, j) => (i === j ? { ...r, enabled: !r.enabled } : r));
+    setRules(next);
+    persist({ rules: next });
+  };
 
   const stats = [
     { label: "Auto-replies (today)", value: String(statsToday.autoReplies), color: "#34d399" },
@@ -58,7 +94,7 @@ export function GhostModeClient({ initialActions, statsToday, initiallyActive }:
             <span className="font-data inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[11px] uppercase tracking-wider" style={{ color: agentActive ? "#34d399" : "var(--fg-3)", background: agentActive ? "color-mix(in srgb,#34d399 13%,transparent)" : "var(--panel-fill-2)" }}>
               <span className="h-2 w-2 rounded-full" style={{ background: agentActive ? "#34d399" : "var(--fg-4)" }} /> {agentActive ? "Active" : "Paused"}
             </span>
-            <button onClick={() => setAgentActive(!agentActive)} className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-[13px] font-semibold text-[var(--fg)] transition-transform hover:scale-[1.03]" style={agentActive ? { background: "var(--panel-fill-2)", border: "1px solid var(--stroke)" } : { background: "linear-gradient(135deg,#6366f1,#a855f7)" }}>
+            <button onClick={toggleActive} className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-[13px] font-semibold text-[var(--fg)] transition-transform hover:scale-[1.03]" style={agentActive ? { background: "var(--panel-fill-2)", border: "1px solid var(--stroke)" } : { background: "linear-gradient(135deg,#6366f1,#a855f7)" }}>
               {agentActive ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />} {agentActive ? "Pause agent" : "Activate agent"}
             </button>
           </div>
