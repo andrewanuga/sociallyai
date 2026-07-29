@@ -342,7 +342,8 @@ create table if not exists public.bots (
     check (autonomy in ('assist', 'auto')),
   actions_count int not null default 0,
   config jsonb not null default '{}'::jsonb,
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  unique(user_id, kind)
 );
 
 -- ============================================================
