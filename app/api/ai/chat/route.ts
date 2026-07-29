@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { learnPersona, getPersonaTone } from "@/lib/social/persona";
 
 type ChatMessage = { role: "user" | "assistant" | "system"; content: string };
 type Attachment = {
@@ -52,11 +53,17 @@ export async function POST(req: NextRequest) {
     const unfiltered = !!profile?.ai_unfiltered;
     const temperature = Number(profile?.ai_temperature ?? 0.7);
 
+    // Learned writing style (personalization) + record this turn for future tone.
+    const lastUserText = [...messages].reverse().find((m) => m.role === "user")?.content ?? "";
+    const tone = await getPersonaTone(supabase, user.id);
+    learnPersona(supabase, user.id, lastUserText); // fire-and-forget
+
     const systemPrompt = [
       "You are Socially AI — a personal social media agent for this specific user.",
       profile?.persona ? `They are a ${profile.persona}.` : "",
       profile?.niche ? `Their niche: ${profile.niche}.` : "",
       profile?.brand_voice ? `Match this brand voice: ${profile.brand_voice}.` : "",
+      tone ? `Mirror how this user writes: ${tone}. Match that voice in drafts and replies.` : "",
       "You help ideate, draft, and refine posts, threads, captions, and replies across X, LinkedIn, Instagram and TikTok.",
       "Be concrete and punchy. Offer ready-to-post drafts, not vague advice.",
       unfiltered
