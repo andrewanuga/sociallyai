@@ -1,44 +1,46 @@
 "use client";
 
 import { useState } from "react";
-import { TrendingUp, Sparkles, ArrowUpRight, RefreshCw, Loader2 } from "lucide-react";
+import Link from "next/link";
+import { TrendingUp, Sparkles, ArrowUpRight, RefreshCw, Loader2, ExternalLink, AtSign } from "lucide-react";
 import { GlassCard, PageHeader, Pill } from "@/components/dashboard/ui";
-import type { Trend } from "@/lib/supabase/types";
+import { useToast } from "@/components/ui/toast";
+import type { SocialTrend, SocialAccount } from "@/lib/social/types";
 
-export function TrendsClient({ trends: initialTrends, userNiche }: { trends: Trend[]; userNiche: string | null }) {
-  const [trends, setTrends] = useState(initialTrends);
-  const [selectedTrend, setSelected] = useState<number | null>(null);
-  const [refreshing, setRefreshing] = useState(false);
+type Acct = Pick<SocialAccount, "id" | "platform" | "handle" | "display_name">;
 
-  const handleRefresh = async () => {
-    setRefreshing(true);
+export function TrendsClient({ trends: initial, accounts, userNiche, persona }: {
+  trends: SocialTrend[]; accounts: Acct[]; userNiche: string | null; persona: string;
+}) {
+  const { success, error: toastError } = useToast();
+  const [trends, setTrends] = useState(initial);
+  const [sel, setSel] = useState<number | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const refresh = async () => {
+    setBusy(true);
     try {
-      const res = await fetch("/api/ai/trends", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ niche: userNiche ?? "General" }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        if (Array.isArray(data.trends)) setTrends(data.trends);
-      }
-    } catch { /* silent */ } finally { setRefreshing(false); }
+      const res = await fetch("/api/social/trends", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed");
+      setTrends(data.trends ?? []);
+      success("Trends refreshed", data.searched ? "From a live web search." : "Connect a search key for live web results.");
+    } catch (e) { toastError("Couldn't refresh trends", e instanceof Error ? e.message : undefined); }
+    finally { setBusy(false); }
   };
 
-  const momentumColor = (m: string | null) =>
-    !m ? "var(--fg-3)"
-    : ["Accelerating", "Rising fast"].includes(m) ? "#34d399"
-    : ["Steady", "Building"].includes(m) ? "var(--sai-gold)"
-    : "var(--fg-3)";
+  const acctFor = (id: string | null) => accounts.find((a) => a.id === id);
+  const momentumColor = (m: string | null) => (m === "Accelerating" ? "#34d399" : m === "Building" ? "var(--sai-gold)" : "var(--fg-3)");
 
   return (
     <div className="mx-auto max-w-5xl">
       <PageHeader
         eyebrow="Insights"
         title="Trend Predictor"
-        sub="AI-matched trending topics with personalised drafts based on your history."
+        sub={`Web-searched trends for ${persona}s${userNiche ? ` in ${userNiche}` : ""} — each referred to a connected account.`}
         actions={
-          <button onClick={handleRefresh} disabled={refreshing} className="inline-flex items-center gap-2 rounded-full border border-[var(--stroke)] bg-[var(--panel-fill)] px-4 py-2 text-[13px] text-[var(--fg)] hover:bg-[var(--hover)] disabled:opacity-60">
-            {refreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />} Refresh trends
+          <button onClick={refresh} disabled={busy} className="inline-flex items-center gap-2 rounded-full border border-[var(--stroke)] bg-[var(--panel-fill)] px-4 py-2 text-[13px] text-[var(--fg)] hover:bg-[var(--hover)] disabled:opacity-60">
+            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />} Refresh trends
           </button>
         }
       />
@@ -46,58 +48,65 @@ export function TrendsClient({ trends: initialTrends, userNiche }: { trends: Tre
       {trends.length === 0 ? (
         <GlassCard className="flex flex-col items-center p-12 text-center">
           <TrendingUp className="mb-3 h-12 w-12 text-[var(--fg-4)]" />
-          <p className="mb-1 font-medium text-[var(--fg-2)]">No trends cached yet</p>
-          <p className="mb-4 text-sm text-[var(--fg-4)]">Fetch AI-matched topics for your niche.</p>
-          <button onClick={handleRefresh} disabled={refreshing} className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-[var(--fg)]" style={{ background: "linear-gradient(135deg,#6366f1,#a855f7)" }}>
-            {refreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />} Fetch trends now
+          <p className="mb-1 font-medium text-[var(--fg-2)]">No trends yet</p>
+          <p className="mb-4 text-sm text-[var(--fg-4)]">Refresh to run a web search for your niche.</p>
+          <button onClick={refresh} disabled={busy} className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-white" style={{ background: "linear-gradient(135deg,#6366f1,#a855f7)" }}>
+            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />} Search trends now
           </button>
         </GlassCard>
       ) : (
         <div className="grid gap-5 lg:grid-cols-2">
           <div className="space-y-3">
-            {trends.map((trend, i) => (
-              <GlassCard key={trend.id} onClick={() => setSelected(i === selectedTrend ? null : i)} className="cursor-pointer p-5"
-                style={selectedTrend === i ? { borderColor: "rgba(99,102,241,0.45)", boxShadow: "0 20px 60px -34px rgba(99,102,241,0.9)" } : undefined}>
-                <div className="mb-3 flex items-start justify-between">
-                  <div className="mr-3 flex-1">
-                    <h3 className="text-sm font-semibold text-[var(--fg)]">{trend.topic}</h3>
-                    {trend.category && <div className="mt-1"><Pill tone="muted">{trend.category}</Pill></div>}
+            {trends.map((t, i) => {
+              const acct = acctFor(t.suggested_account_id);
+              return (
+                <GlassCard key={t.id} onClick={() => setSel(i === sel ? null : i)} className="cursor-pointer p-5"
+                  style={sel === i ? { borderColor: "rgba(99,102,241,0.45)" } : undefined}>
+                  <div className="mb-3 flex items-start justify-between">
+                    <div className="mr-3 flex-1">
+                      <h3 className="text-sm font-semibold text-[var(--fg)]">{t.topic}</h3>
+                      {t.source_name && <div className="mt-1"><Pill tone="muted">{t.source_name}</Pill></div>}
+                    </div>
+                    <div className="flex-shrink-0 text-right">
+                      <div className="font-display text-2xl font-bold sai-gradient-text">{t.score ?? "—"}</div>
+                      <div className="text-[12px] font-medium" style={{ color: momentumColor(t.momentum) }}>{t.momentum}</div>
+                    </div>
                   </div>
-                  <div className="flex-shrink-0 text-right">
-                    <div className="font-display text-2xl font-bold sai-gradient-text">{trend.score ?? "—"}</div>
-                    <div className="text-[12px] font-medium" style={{ color: "#34d399" }}>{trend.growth}</div>
-                  </div>
-                </div>
-                <div className="mb-3 flex items-center justify-between">
-                  <span className="text-[12px] font-medium" style={{ color: momentumColor(trend.momentum) }}>● {trend.momentum ?? "Unknown"}</span>
-                  <div className="h-1.5 w-24 overflow-hidden rounded-full bg-[var(--panel-fill-2)]"><div className="h-full rounded-full" style={{ width: `${trend.score ?? 0}%`, background: "linear-gradient(90deg,#6366f1,#a855f7)" }} /></div>
-                </div>
-                {trend.why && <p className="rounded-md bg-[var(--panel-fill)] px-3 py-2 text-[12px] text-[var(--fg-3)]">💡 {trend.why}</p>}
-              </GlassCard>
-            ))}
+                  {t.summary && <p className="rounded-md bg-[var(--panel-fill)] px-3 py-2 text-[12px] text-[var(--fg-3)]">{t.summary}</p>}
+                  {acct && (
+                    <div className="mt-3 flex items-center gap-2 rounded-lg border border-[var(--sai-indigo)]/25 bg-[var(--sai-indigo)]/10 px-3 py-2">
+                      <AtSign className="h-3.5 w-3.5 text-[var(--sai-indigo)]" />
+                      <span className="text-[12px] text-[var(--fg-2)]">Ride this on <b className="text-[var(--fg)]">{acct.platform}</b> · {acct.handle || acct.display_name}</span>
+                    </div>
+                  )}
+                </GlassCard>
+              );
+            })}
           </div>
 
           <div className="lg:sticky lg:top-6 lg:self-start">
-            {selectedTrend !== null && trends[selectedTrend] ? (
+            {sel !== null && trends[sel] ? (
               <GlassCard className="p-6">
                 <div className="mb-4 flex items-center gap-2">
                   <Sparkles className="h-5 w-5 text-[var(--sai-gold)]" />
-                  <h3 className="font-display text-[15px] font-semibold text-[var(--fg)]">AI-generated draft</h3>
-                  <span className="ml-auto"><Pill tone="indigo">Score {trends[selectedTrend].score}</Pill></span>
+                  <h3 className="font-display text-[15px] font-semibold text-[var(--fg)]">{trends[sel].topic}</h3>
+                  <span className="ml-auto"><Pill tone="indigo">Score {trends[sel].score}</Pill></span>
                 </div>
-                <div className="mb-4 rounded-xl border border-[var(--stroke)] bg-[var(--panel-fill)] p-4">
-                  <p className="whitespace-pre-wrap text-sm leading-relaxed text-[var(--fg)]">{trends[selectedTrend].draft ?? "No draft available. Regenerate to create one."}</p>
-                </div>
-                <div className="flex gap-2">
-                  <button className="flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold text-[var(--fg)] transition-transform hover:scale-[1.02]" style={{ background: "linear-gradient(135deg,#6366f1,#a855f7)" }}><ArrowUpRight className="h-4 w-4" /> Send to Composer</button>
-                  <button onClick={handleRefresh} disabled={refreshing} className="flex items-center gap-2 rounded-xl border border-[var(--stroke)] bg-[var(--panel-fill)] px-4 py-2.5 text-sm text-[var(--fg)] hover:bg-[var(--hover)] disabled:opacity-60"><RefreshCw className="h-4 w-4" /> Regenerate</button>
-                </div>
+                {trends[sel].summary && <p className="mb-4 text-sm leading-relaxed text-[var(--fg-2)]">{trends[sel].summary}</p>}
+                {trends[sel].source_url && (
+                  <a href={trends[sel].source_url!} target="_blank" rel="noreferrer" className="mb-4 inline-flex items-center gap-1.5 text-[12.5px] text-[var(--sai-indigo)] hover:underline">
+                    <ExternalLink className="h-3.5 w-3.5" /> Read source
+                  </a>
+                )}
+                <Link href="/dashboard/create" className="flex items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold text-white" style={{ background: "linear-gradient(135deg,#6366f1,#a855f7)" }}>
+                  <ArrowUpRight className="h-4 w-4" /> Draft a post from this
+                </Link>
               </GlassCard>
             ) : (
-              <GlassCard className="flex min-h-[300px] flex-col items-center justify-center p-8 text-center">
+              <GlassCard className="flex min-h-[280px] flex-col items-center justify-center p-8 text-center">
                 <TrendingUp className="mb-3 h-12 w-12 text-[var(--fg-4)]" />
                 <p className="mb-1 font-medium text-[var(--fg-2)]">Select a trend</p>
-                <p className="text-sm text-[var(--fg-4)]">Click any card to see an AI draft ready to edit and post.</p>
+                <p className="text-sm text-[var(--fg-4)]">See the source and draft a post for the right account.</p>
               </GlassCard>
             )}
           </div>
