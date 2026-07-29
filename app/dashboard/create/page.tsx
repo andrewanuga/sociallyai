@@ -1,10 +1,30 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ArrowUp, Sparkles, Copy, Check, RotateCcw } from "lucide-react";
+import {
+  ArrowUp, Sparkles, Copy, Check, RotateCcw, Paperclip, X,
+  FileText, Film,
+} from "lucide-react";
 import { useToast } from "@/components/ui/toast";
 
-type Msg = { id: number; role: "user" | "assistant"; content: string };
+type Attachment = {
+  id: number;
+  type: "image" | "video" | "file";
+  name: string;
+  mime: string;
+  preview?: string; // object URL for image/video
+  dataUrl?: string; // base64 for images
+  content?: string; // extracted text for text-like files
+};
+
+type Msg = {
+  id: number;
+  role: "user" | "assistant";
+  content: string;
+  attachments?: { type: Attachment["type"]; name: string; preview?: string }[];
+};
+
+const MAX_MB = 25;
 
 const SUGGESTIONS = [
   "Draft an X thread about our launch",
@@ -26,8 +46,60 @@ export default function CreatePage() {
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState<number | null>(null);
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
   const idRef = useRef(1);
+  const attIdRef = useRef(1);
+
+  const readFile = (file: File) =>
+    new Promise<string>((res, rej) => {
+      const r = new FileReader();
+      r.onload = () => res(r.result as string);
+      r.onerror = rej;
+      r.readAsDataURL(file);
+    });
+  const readText = (file: File) =>
+    new Promise<string>((res, rej) => {
+      const r = new FileReader();
+      r.onload = () => res(r.result as string);
+      r.onerror = rej;
+      r.readAsText(file);
+    });
+
+  const onFiles = async (files: FileList | null) => {
+    if (!files) return;
+    for (const file of Array.from(files)) {
+      if (file.size > MAX_MB * 1024 * 1024) {
+        toastError("File too large", `${file.name} exceeds ${MAX_MB}MB.`);
+        continue;
+      }
+      const isImage = file.type.startsWith("image/");
+      const isVideo = file.type.startsWith("video/");
+      const isText = file.type.startsWith("text/") || /\.(txt|md|csv|json)$/i.test(file.name);
+      const att: Attachment = {
+        id: attIdRef.current++,
+        type: isImage ? "image" : isVideo ? "video" : "file",
+        name: file.name,
+        mime: file.type || "application/octet-stream",
+      };
+      try {
+        if (isImage) {
+          att.preview = URL.createObjectURL(file);
+          att.dataUrl = await readFile(file);
+        } else if (isVideo) {
+          att.preview = URL.createObjectURL(file);
+        } else if (isText) {
+          att.content = await readText(file);
+        }
+      } catch { /* ignore read errors */ }
+      setAttachments((prev) => [...prev, att]);
+    }
+    if (fileRef.current) fileRef.current.value = "";
+  };
+
+  const removeAttachment = (id: number) =>
+    setAttachments((prev) => prev.filter((a) => a.id !== id));
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
@@ -35,11 +107,18 @@ export default function CreatePage() {
 
   const send = async (text?: string) => {
     const content = (text ?? input).trim();
-    if (!content || busy) return;
-    const userMsg: Msg = { id: idRef.current++, role: "user", content };
+    if ((!content && attachments.length === 0) || busy) return;
+    const sending = attachments;
+    const userMsg: Msg = {
+      id: idRef.current++,
+      role: "user",
+      content: content || "(see attachment)",
+      attachments: sending.map((a) => ({ type: a.type, name: a.name, preview: a.preview })),
+    };
     const history = [...messages, userMsg];
     setMessages(history);
     setInput("");
+    setAttachments([]);
     setBusy(true);
     try {
       const res = await fetch("/api/ai/chat", {
@@ -49,6 +128,10 @@ export default function CreatePage() {
           messages: history
             .filter((m) => m.id !== 0)
             .map((m) => ({ role: m.role, content: m.content })),
+          attachments: sending.map((a) => ({
+            type: a.type, name: a.name, mime: a.mime,
+            content: a.content, dataUrl: a.dataUrl,
+          })),
         }),
       });
       if (!res.ok) throw new Error((await res.json()).error || "Request failed");
@@ -105,6 +188,23 @@ export default function CreatePage() {
                     : { background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }
                 }
               >
+                {m.attachments && m.attachments.length > 0 && (
+                  <div className="mb-2 flex flex-wrap gap-2">
+                    {m.attachments.map((a, k) => (
+                      <div key={k} className="overflow-hidden rounded-lg border border-white/15 bg-black/20">
+                        {a.type === "image" && a.preview ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={a.preview} alt={a.name} className="h-20 w-20 object-cover" />
+                        ) : (
+                          <div className="flex h-20 w-20 flex-col items-center justify-center gap-1 px-1 text-center">
+                            {a.type === "video" ? <Film className="h-5 w-5 text-white/70" /> : <FileText className="h-5 w-5 text-white/70" />}
+                            <span className="line-clamp-2 text-[9px] text-white/60">{a.name}</span>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
                 <p className="whitespace-pre-wrap">{m.content}</p>
                 {m.role === "assistant" && m.id !== 0 && (
                   <button
@@ -147,7 +247,44 @@ export default function CreatePage() {
 
       {/* composer */}
       <div className="mt-3">
+        {/* attachment chips */}
+        {attachments.length > 0 && (
+          <div className="mb-2 flex flex-wrap gap-2">
+            {attachments.map((a) => (
+              <div key={a.id} className="group relative flex items-center gap-2 rounded-xl border border-white/12 bg-white/[0.05] py-1.5 pl-1.5 pr-2.5">
+                {a.type === "image" && a.preview ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={a.preview} alt="" className="h-8 w-8 rounded-lg object-cover" />
+                ) : (
+                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/[0.06]">
+                    {a.type === "video" ? <Film className="h-4 w-4 text-[var(--sai-violet)]" /> : <FileText className="h-4 w-4 text-[var(--sai-indigo)]" />}
+                  </span>
+                )}
+                <span className="max-w-[120px] truncate text-[12px] text-white/70">{a.name}</span>
+                <button onClick={() => removeAttachment(a.id)} className="text-white/40 hover:text-[var(--sai-red)]">
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
         <div className="glass-panel flex items-end gap-2 rounded-2xl p-2">
+          <input
+            ref={fileRef}
+            type="file"
+            multiple
+            accept="image/*,video/*,.txt,.md,.csv,.json,.pdf,.doc,.docx"
+            className="hidden"
+            onChange={(e) => onFiles(e.target.files)}
+          />
+          <button
+            onClick={() => fileRef.current?.click()}
+            title="Attach image, video, or file"
+            className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl text-white/50 transition-colors hover:bg-white/[0.06] hover:text-white"
+          >
+            <Paperclip className="h-5 w-5" />
+          </button>
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -163,7 +300,7 @@ export default function CreatePage() {
           />
           <button
             onClick={() => send()}
-            disabled={!input.trim() || busy}
+            disabled={(!input.trim() && attachments.length === 0) || busy}
             className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl text-white transition-transform hover:scale-105 disabled:opacity-40"
             style={{ background: "linear-gradient(135deg,#6366f1,#a855f7)" }}
           >

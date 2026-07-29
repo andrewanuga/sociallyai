@@ -2,6 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
 type ChatMessage = { role: "user" | "assistant" | "system"; content: string };
+type Attachment = {
+  type: "image" | "video" | "file";
+  name: string;
+  mime?: string;
+  content?: string; // extracted text (for text-like files)
+  dataUrl?: string; // base64 (images) — used when a vision model is configured
+};
 
 export async function POST(req: NextRequest) {
   try {
@@ -9,9 +16,30 @@ export async function POST(req: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const { messages } = (await req.json()) as { messages: ChatMessage[] };
+    const { messages, attachments } = (await req.json()) as {
+      messages: ChatMessage[];
+      attachments?: Attachment[];
+    };
     if (!messages?.length) {
       return NextResponse.json({ error: "messages required" }, { status: 400 });
+    }
+
+    // Fold attachments into the final user turn so the agent can use them.
+    if (attachments?.length) {
+      const lines: string[] = ["", "--- Attached by the user ---"];
+      for (const a of attachments) {
+        if (a.type === "file" && a.content) {
+          lines.push(`File "${a.name}" contents:\n${a.content.slice(0, 6000)}`);
+        } else if (a.type === "image") {
+          lines.push(`Image: "${a.name}" (${a.mime || "image"}). Use it as visual reference for the copy.`);
+        } else if (a.type === "video") {
+          lines.push(`Video: "${a.name}" (${a.mime || "video"}). Treat as the asset this post promotes.`);
+        } else {
+          lines.push(`Attachment: "${a.name}".`);
+        }
+      }
+      const last = [...messages].reverse().find((m) => m.role === "user");
+      if (last) last.content = `${last.content}\n${lines.join("\n")}`;
     }
 
     // Per-user AI preferences
@@ -55,7 +83,8 @@ export async function POST(req: NextRequest) {
       reply = data.choices?.[0]?.message?.content || "…";
     } else {
       await new Promise((r) => setTimeout(r, 700));
-      reply = mockReply(messages[messages.length - 1]?.content ?? "", unfiltered);
+      const lastUser = [...messages].reverse().find((m) => m.role === "user")?.content ?? "";
+      reply = mockReply(lastUser, unfiltered, attachments ?? []);
     }
 
     return NextResponse.json({ reply });
@@ -65,10 +94,16 @@ export async function POST(req: NextRequest) {
   }
 }
 
-function mockReply(lastUser: string, unfiltered: boolean): string {
-  const topic = lastUser.slice(0, 80).trim() || "your idea";
+function mockReply(lastUser: string, unfiltered: boolean, attachments: Attachment[]): string {
+  const topic = (lastUser.split("--- Attached")[0]).slice(0, 80).trim() || "your idea";
+  const attachNote = attachments.length
+    ? [
+        "",
+        `I've got your ${attachments.map((a) => a.type).join(", ")} — I'll anchor the copy to ${attachments.map((a) => `"${a.name}"`).join(", ")}.`,
+      ].join("\n")
+    : "";
   return [
-    `Here's a first draft on "${topic}":`,
+    `Here's a first draft on "${topic}":${attachNote}`,
     "",
     unfiltered
       ? "Let's be blunt — most people scrolling past this don't care yet. So we earn it in line one:"

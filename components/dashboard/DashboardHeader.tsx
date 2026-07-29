@@ -2,13 +2,15 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Bell, Search, Menu, Plus } from "lucide-react";
+import { Bell, Search, Menu, Plus, PanelLeft } from "lucide-react";
 
 export function DashboardHeader({
   onMobileMenuToggle,
+  onToggleSidebar,
 }: {
   title?: string;
   onMobileMenuToggle?: () => void;
+  onToggleSidebar?: () => void;
 }) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -24,6 +26,14 @@ export function DashboardHeader({
           className="flex h-9 w-9 items-center justify-center rounded-lg text-white/60 hover:bg-white/[0.06] md:hidden"
         >
           <Menu className="h-5 w-5" />
+        </button>
+        {/* Desktop sidebar collapse */}
+        <button
+          onClick={onToggleSidebar}
+          aria-label="Collapse sidebar"
+          className="hidden h-9 w-9 items-center justify-center rounded-lg text-white/60 transition-colors hover:bg-white/[0.06] hover:text-white md:flex"
+        >
+          <PanelLeft className="h-[18px] w-[18px]" />
         </button>
 
         {/* Search */}

@@ -57,7 +57,10 @@ export default function DashboardLayout({
           collapsed ? "md:pl-[68px]" : "md:pl-[248px]"
         )}
       >
-        <DashboardHeader onMobileMenuToggle={() => setMobileOpen((v) => !v)} />
+        <DashboardHeader
+          onMobileMenuToggle={() => setMobileOpen((v) => !v)}
+          onToggleSidebar={toggle}
+        />
         <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">{children}</main>
       </div>
 
