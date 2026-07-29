@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Eye, EyeOff, ArrowRight, Loader2, Check, MailCheck } from "lucide-react";
 import { Label } from "@/components/ui/label";
+import { useToast } from "@/components/ui/toast";
 import { createClient } from "@/lib/supabase/client";
 
 const PASSWORD_REQUIREMENTS = [
@@ -21,13 +22,12 @@ export default function SignupPage() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const { error: toastError, success: toastSuccess } = useToast();
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError(null);
 
     const supabase = createClient();
     const { error: authError } = await supabase.auth.signUp({
@@ -40,20 +40,22 @@ export default function SignupPage() {
     });
 
     if (authError) {
-      setError(authError.message);
+      toastError("Couldn't create account", authError.message);
       setLoading(false);
       return;
     }
+    toastSuccess("Account created", "Check your email to confirm.");
     setSuccess(true);
     setLoading(false);
   };
 
   const handleGoogleSignup = async () => {
     const supabase = createClient();
-    await supabase.auth.signInWithOAuth({
+    const { error: authError } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: { redirectTo: `${window.location.origin}/auth/callback` },
     });
+    if (authError) toastError("Google sign-in failed", authError.message);
   };
 
   if (success) {
@@ -187,12 +189,6 @@ export default function SignupPage() {
               </div>
             )}
           </div>
-
-          {error && (
-            <div className="rounded-xl border border-[var(--sai-red)]/25 bg-[var(--sai-red)]/10 p-3 text-sm text-[var(--sai-red)]">
-              {error}
-            </div>
-          )}
 
           <button
             type="submit"

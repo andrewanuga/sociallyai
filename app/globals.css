@@ -357,6 +357,27 @@ html.sai-js [data-reveal] { opacity: 0; }
   * { scroll-behavior: auto !important; }
 }
 
+/* ── Toasts ─────────────────────────────────────────── */
+@keyframes sai-toast-in {
+  from { opacity: 0; transform: translateY(-14px) scale(0.97); filter: blur(4px); }
+  to   { opacity: 1; transform: translateY(0) scale(1);        filter: blur(0);   }
+}
+@keyframes sai-toast-out {
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to   { opacity: 0; transform: translateY(-10px) scale(0.97); }
+}
+@keyframes sai-toast-bar {
+  from { transform: scaleX(1); }
+  to   { transform: scaleX(0); }
+}
+.sai-toast-in  { animation: sai-toast-in 0.34s var(--sai-ease); }
+.sai-toast-out { animation: sai-toast-out 0.26s var(--sai-ease) forwards; }
+.sai-toast-bar { animation: sai-toast-bar linear forwards; opacity: 0.5; }
+
+@media (prefers-reduced-motion: reduce) {
+  .sai-toast-in, .sai-toast-out, .sai-toast-bar { animation: none; }
+}
+
 /* ── Onboarding step transition ─────────────────────── */
 @keyframes sai-step-in {
   from { opacity: 0; transform: translateY(14px); filter: blur(6px); }

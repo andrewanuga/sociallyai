@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, ArrowRight, Loader2 } from "lucide-react";
 import { Label } from "@/components/ui/label";
+import { useToast } from "@/components/ui/toast";
 import { createClient } from "@/lib/supabase/client";
 
 const inputCls =
@@ -15,19 +16,18 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const { error: toastError } = useToast();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError(null);
 
     const supabase = createClient();
     const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
 
     if (authError) {
-      setError(authError.message);
+      toastError("Couldn't sign in", authError.message);
       setLoading(false);
       return;
     }
@@ -37,10 +37,11 @@ export default function LoginPage() {
 
   const handleGoogleLogin = async () => {
     const supabase = createClient();
-    await supabase.auth.signInWithOAuth({
+    const { error: authError } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: { redirectTo: `${window.location.origin}/auth/callback` },
     });
+    if (authError) toastError("Google sign-in failed", authError.message);
   };
 
   return (
@@ -121,12 +122,6 @@ export default function LoginPage() {
               </button>
             </div>
           </div>
-
-          {error && (
-            <div className="rounded-xl border border-[var(--sai-red)]/25 bg-[var(--sai-red)]/10 p-3 text-sm text-[var(--sai-red)]">
-              {error}
-            </div>
-          )}
 
           <button
             type="submit"

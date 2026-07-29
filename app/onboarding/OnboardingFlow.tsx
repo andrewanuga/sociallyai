@@ -7,6 +7,7 @@ import {
   Loader2, Check, AtSign, CalendarClock,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { useToast } from "@/components/ui/toast";
 
 type Persona = "client" | "creator" | "marketer";
 
@@ -62,9 +63,8 @@ function Chip({
 export function OnboardingFlow({ initialName }: { initialName?: string }) {
   const router = useRouter();
   const [step, setStep] = useState(0);
-  const [dir, setDir] = useState<1 | -1>(1);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { error: toastError } = useToast();
 
   const [persona, setPersona] = useState<Persona | null>(null);
   const [username, setUsername] = useState("");
@@ -78,11 +78,7 @@ export function OnboardingFlow({ initialName }: { initialName?: string }) {
 
   const TOTAL = 3;
 
-  const go = (next: number) => {
-    setError(null);
-    setDir(next > step ? 1 : -1);
-    setStep(next);
-  };
+  const go = (next: number) => setStep(next);
 
   const stepValid = useMemo(() => {
     if (step === 0) return !!persona;
@@ -97,7 +93,6 @@ export function OnboardingFlow({ initialName }: { initialName?: string }) {
 
   const finish = async () => {
     setLoading(true);
-    setError(null);
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
@@ -122,7 +117,7 @@ export function OnboardingFlow({ initialName }: { initialName?: string }) {
       .eq("id", user.id);
 
     if (upErr) {
-      setError(upErr.message);
+      toastError("Couldn't save your setup", upErr.message);
       setLoading(false);
       return;
     }
@@ -322,11 +317,6 @@ export function OnboardingFlow({ initialName }: { initialName?: string }) {
             </>
           )}
 
-          {error && (
-            <div className="mt-5 rounded-xl border border-[var(--sai-red)]/25 bg-[var(--sai-red)]/10 p-3 text-sm text-[var(--sai-red)]">
-              {error}
-            </div>
-          )}
         </div>
 
         {/* nav */}
