@@ -4,19 +4,16 @@ import {
   MousePointerClick, DollarSign, ArrowUpRight,
   Zap, Ghost, Bot, AlertCircle,
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { timeAgo, fmtNum, fmtNaira, pctChange, sumField, platformLabel, daysAgoISO } from "@/lib/dashboard/helpers";
 
 /* ── action type → visual config ─────────────────────────────── */
 const ACTION_META = {
-  auto_reply:         { icon: Bot,         color: "text-green-400", bg: "bg-green-500/10", label: "Auto-replied" },
-  flag_lead:          { icon: AlertCircle, color: "text-amber-400", bg: "bg-amber-500/10", label: "Lead flagged" },
-  escalate_complaint: { icon: AlertCircle, color: "text-red-500",   bg: "bg-red-600/10",   label: "Escalated"   },
-  ignore:             { icon: Bot,         color: "text-muted-foreground", bg: "bg-muted", label: "Ignored"     },
+  auto_reply:         { icon: Bot,         color: "#34d399",             label: "Auto-replied"  },
+  flag_lead:          { icon: AlertCircle, color: "var(--sai-gold)",     label: "Lead flagged"  },
+  escalate_complaint: { icon: AlertCircle, color: "var(--sai-red)",      label: "Escalated"     },
+  ignore:             { icon: Bot,         color: "rgba(255,255,255,.5)",label: "Ignored"       },
 } as const;
 
 export default async function DashboardPage() {
@@ -113,74 +110,80 @@ export default async function DashboardPage() {
 
   /* ── Top metrics cards config ───────────────────────────────── */
   const metrics = [
-    { label: "Total Impressions", value: fmtNum(totals.impressions),     icon: Eye,               color: "text-sky-400",     bg: "bg-sky-500/10",     ...pctChange(totals.impressions, prevTotals.impressions) },
-    { label: "Engagements",       value: fmtNum(totals.engagements),     icon: Heart,             color: "text-indigo-400",     bg: "bg-red-500/10",     ...pctChange(totals.engagements, prevTotals.engagements) },
-    { label: "New Followers",     value: `+${fmtNum(totals.followers)}`, icon: Users,             color: "text-emerald-400", bg: "bg-emerald-500/10", ...pctChange(totals.followers,   prevTotals.followers)   },
-    { label: "Link Clicks",       value: fmtNum(totals.clicks),          icon: MousePointerClick, color: "text-violet-400",  bg: "bg-violet-500/10",  ...pctChange(totals.clicks,     prevTotals.clicks)      },
-    { label: "Est. Revenue",      value: fmtNaira(totals.revenue),       icon: DollarSign,        color: "text-emerald-400", bg: "bg-emerald-500/10", ...pctChange(totals.revenue,    prevTotals.revenue)     },
+    { label: "Impressions",   value: fmtNum(totals.impressions),     icon: Eye,               color: "var(--sai-indigo)", ...pctChange(totals.impressions, prevTotals.impressions) },
+    { label: "Engagements",   value: fmtNum(totals.engagements),     icon: Heart,             color: "var(--sai-violet)", ...pctChange(totals.engagements, prevTotals.engagements) },
+    { label: "New followers", value: `+${fmtNum(totals.followers)}`, icon: Users,             color: "#34d399",           ...pctChange(totals.followers,   prevTotals.followers)   },
+    { label: "Link clicks",   value: fmtNum(totals.clicks),          icon: MousePointerClick, color: "var(--sai-gold)",   ...pctChange(totals.clicks,     prevTotals.clicks)      },
+    { label: "Est. revenue",  value: fmtNaira(totals.revenue),       icon: DollarSign,        color: "#34d399",           ...pctChange(totals.revenue,    prevTotals.revenue)     },
   ];
 
   /* ── Render ─────────────────────────────────────────────────── */
   return (
-    <div className="max-w-7xl mx-auto space-y-6">
+    <div className="mx-auto max-w-6xl">
       {/* Page header */}
-      <div className="flex items-center justify-between">
+      <div className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Overview</h1>
-          <p className="text-muted-foreground text-sm mt-0.5">Last 30 days across all connected accounts</p>
+          <span className="font-data text-[11px] uppercase tracking-[0.22em] text-[var(--sai-indigo)]">Last 30 days</span>
+          <h1 className="font-display mt-1.5 text-[26px] font-semibold tracking-[-0.02em] text-white sm:text-[30px]">Overview</h1>
+          <p className="mt-1.5 text-sm text-white/50">Everything across your connected accounts, at a glance.</p>
         </div>
-        <div className="flex items-center gap-3">
-          <Badge variant="red" className="gap-1.5">
-            <span className={`w-2 h-2 rounded-full ${ghostActive ? "bg-green-400 animate-pulse" : "bg-muted-foreground"}`} />
-            Ghost Mode {ghostActive ? "Active" : "Inactive"}
-          </Badge>
-          <Link href="/dashboard/compose">
-            <Button variant="gradient" size="sm" className="gap-2">
-              <Zap className="w-4 h-4" />
-              New Post
-            </Button>
+        <div className="flex items-center gap-2.5">
+          <span
+            className="font-data inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[11px] uppercase tracking-wider"
+            style={{ color: ghostActive ? "#34d399" : "rgba(255,255,255,0.5)", background: ghostActive ? "color-mix(in srgb,#34d399 13%,transparent)" : "rgba(255,255,255,0.05)" }}
+          >
+            <span className="h-2 w-2 rounded-full" style={{ background: ghostActive ? "#34d399" : "rgba(255,255,255,0.4)" }} />
+            Ghost Mode {ghostActive ? "Active" : "Idle"}
+          </span>
+          <Link
+            href="/dashboard/create"
+            className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-[13px] font-semibold text-white transition-transform hover:scale-[1.03]"
+            style={{ background: "linear-gradient(135deg,#6366f1,#a855f7)", boxShadow: "0 0 26px -10px rgba(99,102,241,0.8)" }}
+          >
+            <Zap className="h-4 w-4" /> New post
           </Link>
         </div>
       </div>
 
       {/* Metrics row */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="mb-5 grid grid-cols-2 gap-4 lg:grid-cols-5">
         {metrics.map((m, i) => (
-          <div
-            key={i}
-            className="p-5 rounded-xl border border-border bg-card hover:border-white/10 hover:shadow-md transition-all"
-          >
-            <div className="flex items-center justify-between mb-3">
-              <div className={`w-9 h-9 rounded-lg ${m.bg} flex items-center justify-center`}>
-                <m.icon className={`w-4 h-4 ${m.color}`} />
-              </div>
-              <span className={`text-xs font-medium flex items-center gap-0.5 ${m.positive ? "text-green-400" : "text-indigo-400"}`}>
-                {m.positive ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                {m.change === "—" ? "" : m.change}
+          <div key={i} className="glass-panel rounded-2xl p-5">
+            <div className="flex items-center justify-between">
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg" style={{ background: `color-mix(in srgb, ${m.color} 16%, transparent)` }}>
+                <m.icon className="h-4 w-4" style={{ color: m.color }} />
               </span>
+              {m.change !== "—" && (
+                <span className="font-data flex items-center gap-0.5 text-[12px]" style={{ color: m.positive ? "#34d399" : "var(--sai-red)" }}>
+                  {m.positive ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+                  {m.change}
+                </span>
+              )}
             </div>
-            <div className="text-2xl font-bold mb-0.5">{m.value || "—"}</div>
-            <div className="text-xs text-muted-foreground">{m.label}</div>
+            <div className="font-display mt-3 text-2xl font-semibold text-white">{m.value || "—"}</div>
+            <div className="mt-0.5 text-[13px] text-white/45">{m.label}</div>
           </div>
         ))}
       </div>
 
       {/* Middle row */}
-      <div className="grid lg:grid-cols-3 gap-6">
+      <div className="grid gap-5 lg:grid-cols-3">
         {/* Platform breakdown */}
-        <div className="p-6 rounded-xl border border-border bg-card">
-          <h3 className="font-semibold mb-4">Platform Breakdown</h3>
+        <div className="glass-panel rounded-2xl p-6">
+          <h3 className="font-display text-[15px] font-semibold text-white">Platform breakdown</h3>
           {platforms.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No posts in the last 30 days.</p>
+            <p className="mt-4 text-sm text-white/40">No posts in the last 30 days.</p>
           ) : (
-            <div className="space-y-4">
+            <div className="mt-5 space-y-4">
               {platforms.map((p, i) => (
                 <div key={i}>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-xs font-bold text-muted-foreground">{p.name}</span>
-                    <span className="text-xs text-muted-foreground">{fmtNum(p.impressions)} impr.</span>
+                  <div className="mb-1.5 flex items-center justify-between text-[12.5px]">
+                    <span className="text-white/70">{p.name}</span>
+                    <span className="font-data text-white/40">{fmtNum(p.impressions)}</span>
                   </div>
-                  <Progress value={p.pct} className="h-1.5" />
+                  <div className="h-2 overflow-hidden rounded-full bg-white/[0.06]">
+                    <div className="h-full rounded-full" style={{ width: `${p.pct}%`, background: "linear-gradient(90deg,#6366f1,#a855f7)" }} />
+                  </div>
                 </div>
               ))}
             </div>
@@ -188,33 +191,29 @@ export default async function DashboardPage() {
         </div>
 
         {/* Top posts */}
-        <div className="lg:col-span-2 p-6 rounded-xl border border-border bg-card">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold">Top Performing Posts</h3>
-            <Link href="/dashboard/analytics" className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors">
-              View all
-            </Link>
+        <div className="glass-panel rounded-2xl p-6 lg:col-span-2">
+          <div className="mb-4 flex items-center justify-between">
+            <h3 className="font-display text-[15px] font-semibold text-white">Top performing posts</h3>
+            <Link href="/dashboard/analytics" className="text-[12.5px] text-[var(--sai-indigo)] transition-colors hover:text-indigo-300">View all</Link>
           </div>
           {(!posts || posts.length === 0) ? (
-            <p className="text-sm text-muted-foreground">No post data yet. Schedule your first post!</p>
+            <p className="text-sm text-white/40">No post data yet. Schedule your first post.</p>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-2">
               {posts.map((post, i) => (
-                <div key={i} className="flex items-center gap-4 p-3 rounded-lg hover:bg-accent/50 transition-colors">
-                  <div className="w-10 h-10 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center flex-shrink-0">
-                    <span className="text-sm font-bold gradient-text">{post.socially_score ?? "—"}</span>
+                <div key={i} className="flex items-center gap-4 rounded-xl p-3 transition-colors hover:bg-white/[0.03]">
+                  <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border border-[var(--sai-indigo)]/25 bg-[var(--sai-indigo)]/10">
+                    <span className="font-data text-[13px] font-bold sai-gradient-text">{post.socially_score ?? "—"}</span>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{post.content ?? "No content"}</p>
-                    <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                      <span>{platformLabel(post.platform)}</span>
-                      <span>•</span>
-                      <span>{fmtNum(post.impressions)} views</span>
-                      <span>•</span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm text-white/85">{post.content ?? "No content"}</p>
+                    <div className="mt-1 flex items-center gap-2 text-[12px] text-white/40">
+                      <span>{platformLabel(post.platform)}</span><span>·</span>
+                      <span>{fmtNum(post.impressions)} views</span><span>·</span>
                       <span>{post.engagements > 0 ? `${((post.engagements / Math.max(post.impressions, 1)) * 100).toFixed(1)}%` : "0%"} eng.</span>
                     </div>
                   </div>
-                  <span className="text-sm font-semibold text-emerald-400 flex-shrink-0">
+                  <span className="flex-shrink-0 text-sm font-semibold" style={{ color: "#34d399" }}>
                     {post.revenue_attributed > 0 ? fmtNaira(post.revenue_attributed) : "—"}
                   </span>
                 </div>
@@ -225,35 +224,33 @@ export default async function DashboardPage() {
       </div>
 
       {/* Bottom row */}
-      <div className="grid lg:grid-cols-2 gap-6">
+      <div className="mt-5 grid gap-5 lg:grid-cols-2">
         {/* Ghost Mode log */}
-        <div className="p-6 rounded-xl border border-border bg-card">
-          <div className="flex items-center justify-between mb-4">
+        <div className="glass-panel rounded-2xl p-6">
+          <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Ghost className="w-5 h-5 text-indigo-400" />
-              <h3 className="font-semibold">Ghost Mode Agent Log</h3>
+              <Ghost className="h-5 w-5 text-[var(--sai-violet)]" />
+              <h3 className="font-display text-[15px] font-semibold text-white">Ghost Mode log</h3>
             </div>
-            <Link href="/dashboard/ghost-mode" className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors">
-              Manage
-            </Link>
+            <Link href="/dashboard/ghost-mode" className="text-[12.5px] text-[var(--sai-indigo)] transition-colors hover:text-indigo-300">Manage</Link>
           </div>
           {(!acts || acts.length === 0) ? (
-            <p className="text-sm text-muted-foreground">No agent actions yet. Enable Ghost Mode to start.</p>
+            <p className="text-sm text-white/40">No agent actions yet. Deploy a bot to start.</p>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-2.5">
               {acts.map((entry) => {
                 const meta = ACTION_META[entry.action as keyof typeof ACTION_META] ?? ACTION_META.ignore;
                 const Icon = meta.icon;
                 return (
-                  <div key={entry.id} className="flex items-start gap-3 p-3 rounded-lg bg-muted/30 border border-border/50">
-                    <div className={`w-7 h-7 rounded-md ${meta.bg} flex items-center justify-center flex-shrink-0 mt-0.5`}>
-                      <Icon className={`w-3.5 h-3.5 ${meta.color}`} />
+                  <div key={entry.id} className="flex items-start gap-3 rounded-xl border border-white/[0.05] bg-white/[0.02] p-3">
+                    <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg" style={{ background: `color-mix(in srgb, ${meta.color} 16%, transparent)` }}>
+                      <Icon className="h-3.5 w-3.5" style={{ color: meta.color }} />
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs text-muted-foreground truncate">&ldquo;{entry.comment}&rdquo;</p>
-                      <p className={`text-xs font-medium mt-0.5 ${meta.color}`}>{meta.label}</p>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-[12.5px] text-white/55">&ldquo;{entry.comment}&rdquo;</p>
+                      <p className="mt-0.5 text-[12px] font-medium" style={{ color: meta.color }}>{meta.label}</p>
                     </div>
-                    <span className="text-xs text-muted-foreground flex-shrink-0">{timeAgo(entry.created_at)}</span>
+                    <span className="flex-shrink-0 text-[11px] text-white/35">{timeAgo(entry.created_at)}</span>
                   </div>
                 );
               })}
@@ -262,37 +259,32 @@ export default async function DashboardPage() {
         </div>
 
         {/* Trend predictor */}
-        <div className="p-6 rounded-xl border border-border bg-card">
-          <div className="flex items-center justify-between mb-4">
+        <div className="glass-panel rounded-2xl p-6">
+          <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-indigo-400" />
-              <h3 className="font-semibold">Trend Predictor</h3>
+              <TrendingUp className="h-5 w-5 text-[var(--sai-indigo)]" />
+              <h3 className="font-display text-[15px] font-semibold text-white">Trend predictor</h3>
             </div>
-            <Link href="/dashboard/trends" className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors">
-              View all
-            </Link>
+            <Link href="/dashboard/trends" className="text-[12.5px] text-[var(--sai-indigo)] transition-colors hover:text-indigo-300">View all</Link>
           </div>
           {(!trnds || trnds.length === 0) ? (
-            <p className="text-sm text-muted-foreground">No trends cached yet. Visit the Trends page to fetch them.</p>
+            <p className="text-sm text-white/40">No trends cached yet. Visit Trends to fetch them.</p>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-2.5">
               {trnds.map((trend, i) => (
-                <div key={i} className="p-4 rounded-lg border border-border bg-muted/20 hover:border-indigo-500/20 transition-colors group">
-                  <div className="flex items-start justify-between mb-2">
+                <div key={i} className="group rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 transition-colors hover:border-[var(--sai-indigo)]/25">
+                  <div className="mb-3 flex items-start justify-between">
                     <div>
-                      <p className="text-sm font-medium group-hover:text-foreground transition-colors">{trend.topic}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">{trend.category}</p>
+                      <p className="text-sm font-medium text-white">{trend.topic}</p>
+                      <p className="mt-0.5 text-[12px] text-white/40">{trend.category}</p>
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <span className="text-xs font-bold gradient-text">{trend.score}</span>
-                      <span className="text-xs text-green-400 font-medium">{trend.growth}</span>
+                      <span className="font-data text-[12px] font-bold sai-gradient-text">{trend.score}</span>
+                      <span className="text-[12px] font-medium" style={{ color: "#34d399" }}>{trend.growth}</span>
                     </div>
                   </div>
-                  <Link href="/dashboard/trends">
-                    <Button size="sm" variant="outline" className="w-full text-xs h-7 gap-1.5 hover:border-red-500/30 hover:text-indigo-400 transition-colors">
-                      <ArrowUpRight className="w-3 h-3" />
-                      Draft post from this trend
-                    </Button>
+                  <Link href="/dashboard/trends" className="flex items-center justify-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.03] py-1.5 text-[12px] text-white/70 transition-colors hover:bg-white/[0.07] hover:text-white">
+                    <ArrowUpRight className="h-3 w-3" /> Draft from this trend
                   </Link>
                 </div>
               ))}

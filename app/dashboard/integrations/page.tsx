@@ -26,7 +26,7 @@ const TOOLS: Tool[] = [
   { provider: "instagram", name: "Instagram", desc: "Schedule reels and posts.", category: "Social", icon: Camera, color: "#E1306C" },
 ];
 
-const CATEGORIES = ["Calendar", "Analytics", "Content", "Automation", "Social"];
+const CATEGORIES = ["Social", "Automation", "Analytics", "Content", "Calendar"];
 
 export default function IntegrationsPage() {
   const { success, error: toastError } = useToast();
