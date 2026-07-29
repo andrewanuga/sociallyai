@@ -13,17 +13,47 @@ create extension if not exists vector;
 create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   full_name text,
+  username text unique,                       -- Chosen during onboarding
   avatar_url text,
   brand_website text,
   brand_voice text,                          -- Extracted brand voice from URL
   niche text,                                -- e.g. "Tech / Startups"
   plan text not null default 'free'          -- free | basic | pro | advanced
     check (plan in ('free', 'basic', 'pro', 'advanced')),
+
+  -- ── Onboarding ──────────────────────────────────────────
+  persona text                               -- who they are using Socially as
+    check (persona in ('client', 'creator', 'marketer')),
+  posts_per_week int,                        -- desired posting cadence
+  -- Client
+  social_activity text,                      -- current state of their social presence
+  -- Creator
+  audience_range text,                       -- current viewer/follower range
+  scaling_goal text,                         -- how they want to grow
+  -- Marketer
+  conversion_rate text,                      -- current conversion rate band
+  business_type text,                        -- e.g. E-commerce, SaaS, Agency
+  onboarded boolean not null default false,
+  onboarded_at timestamptz,
+
   generations_used int not null default 0,
   generations_reset_at timestamptz default (now() + interval '1 month'),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+-- Migration: add onboarding columns to pre-existing profiles tables
+alter table public.profiles add column if not exists username text unique;
+alter table public.profiles add column if not exists persona text
+  check (persona in ('client', 'creator', 'marketer'));
+alter table public.profiles add column if not exists posts_per_week int;
+alter table public.profiles add column if not exists social_activity text;
+alter table public.profiles add column if not exists audience_range text;
+alter table public.profiles add column if not exists scaling_goal text;
+alter table public.profiles add column if not exists conversion_rate text;
+alter table public.profiles add column if not exists business_type text;
+alter table public.profiles add column if not exists onboarded boolean not null default false;
+alter table public.profiles add column if not exists onboarded_at timestamptz;
 
 -- Auto-create profile on signup
 create or replace function public.handle_new_user()

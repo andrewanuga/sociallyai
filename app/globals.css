@@ -357,6 +357,13 @@ html.sai-js [data-reveal] { opacity: 0; }
   * { scroll-behavior: auto !important; }
 }
 
+/* ── Onboarding step transition ─────────────────────── */
+@keyframes sai-step-in {
+  from { opacity: 0; transform: translateY(14px); filter: blur(6px); }
+  to   { opacity: 1; transform: translateY(0);    filter: blur(0);   }
+}
+.sai-step-in { animation: sai-step-in 0.5s var(--sai-ease); }
+
 /* ── Route-transition loader bar (indeterminate sweep) ── */
 @keyframes sai-loader-sweep {
   0%   { transform: translateX(-120%); }

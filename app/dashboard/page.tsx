@@ -24,6 +24,14 @@ export default async function DashboardPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
+  // New users must finish onboarding before entering the workspace.
+  const { data: onboardProfile } = await supabase
+    .from("profiles")
+    .select("onboarded")
+    .eq("id", user.id)
+    .single();
+  if (onboardProfile && !onboardProfile.onboarded) redirect("/onboarding");
+
   const d30 = daysAgoISO(30);
   const d60 = daysAgoISO(60);
   const now  = new Date().toISOString();
