@@ -383,3 +383,35 @@ create policy "Users manage own conversations"
   on public.agent_conversations for all using (auth.uid() = user_id);
 create policy "Users manage own agent messages"
   on public.agent_messages for all using (auth.uid() = user_id);
+
+-- ============================================================
+-- BILLING (Paystack)
+-- ============================================================
+-- Subscription state on the profile.
+alter table public.profiles add column if not exists paystack_customer_code text;
+alter table public.profiles add column if not exists paystack_subscription_code text;
+alter table public.profiles add column if not exists subscription_status text not null default 'inactive'
+  check (subscription_status in ('inactive','active','non-renewing','cancelled','trialing'));
+alter table public.profiles add column if not exists plan_renews_at timestamptz;
+
+-- Payment / invoice history.
+create table if not exists public.payments (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  reference text unique not null,               -- Paystack transaction reference
+  plan text,                                    -- free | basic | pro | advanced
+  amount numeric(14,2) not null default 0,      -- major units (₦)
+  currency text not null default 'NGN',
+  status text not null default 'pending'        -- pending | success | failed
+    check (status in ('pending','success','failed')),
+  channel text,                                 -- card | bank | ussd ...
+  paid_at timestamptz,
+  raw jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now()
+);
+create index if not exists payments_user on public.payments(user_id, created_at desc);
+
+alter table public.payments enable row level security;
+-- Users can read their own payments; writes happen server-side (service role).
+create policy "Users read own payments"
+  on public.payments for select using (auth.uid() = user_id);
