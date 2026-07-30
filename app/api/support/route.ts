@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getTransporter, MAIL_FROM } from "@/lib/mailer";
+import { cleanText, oneOf } from "@/lib/security/validate";
 
 // nodemailer needs the Node.js runtime (not edge).
 export const runtime = "nodejs";
@@ -16,13 +17,14 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { category, message } = await req.json();
-  const cat = CATEGORIES.includes(category) ? category : "other";
-  if (!message?.trim()) return NextResponse.json({ error: "Message is required." }, { status: 400 });
+  const body = await req.json();
+  const cat = oneOf(body.category, CATEGORIES, "other");
+  const message = cleanText(body.message, 4000);
+  if (!message) return NextResponse.json({ error: "Message is required." }, { status: 400 });
 
   // 1) Store the ticket.
   const { error } = await supabase.from("support_tickets").insert({
-    user_id: user.id, category: cat, message: message.trim(), email: user.email,
+    user_id: user.id, category: cat, message, email: user.email,
   });
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
@@ -36,7 +38,7 @@ export async function POST(req: NextRequest) {
         to: SUPPORT_EMAIL,
         replyTo: user.email ?? undefined,
         subject: `[Support · ${LABEL[cat]}] from ${user.email}`,
-        text: `Category: ${LABEL[cat]}\nFrom: ${user.email} (${user.id})\n\n${message.trim()}`,
+        text: `Category: ${LABEL[cat]}\nFrom: ${user.email} (${user.id})\n\n${message}`,
       });
     } catch { /* stored regardless */ }
   }
