@@ -4,11 +4,13 @@ import { useEffect, useState } from "react";
 import {
   Camera, Play, AtSign, Building2, Users, Hash, Ghost,
   MessagesSquare, Send, MessageCircle, Check, Plug, Loader2, X, KeyRound,
+  CalendarDays, LineChart, Table, FileText, Mail, Zap, Webhook,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/components/ui/toast";
 import { GlassCard, PageHeader, Pill } from "@/components/dashboard/ui";
 import { PLATFORM_LIST, CAPABILITY_LABEL, type PlatformId, type PlatformDef } from "@/lib/social/platforms";
+import { TOOL_LIST, type ToolId, type ToolDef } from "@/lib/social/tools";
 import type { SocialAccount } from "@/lib/social/types";
 
 const ICONS: Record<PlatformId, React.ComponentType<{ className?: string; style?: React.CSSProperties }>> = {
@@ -16,12 +18,21 @@ const ICONS: Record<PlatformId, React.ComponentType<{ className?: string; style?
   threads: Hash, snapchat: Ghost, reddit: MessagesSquare, telegram: Send, whatsapp: MessageCircle,
 };
 
+const TOOL_ICONS: Record<ToolId, React.ComponentType<{ className?: string; style?: React.CSSProperties }>> = {
+  google_calendar: CalendarDays, google_analytics: LineChart, google_sheets: Table,
+  slack: MessagesSquare, notion: FileText, discord: MessageCircle, mailchimp: Mail,
+  zapier: Zap, webhook: Webhook,
+};
+
 export default function IntegrationsPage() {
   const { success, error: toastError } = useToast();
   const [accounts, setAccounts] = useState<SocialAccount[]>([]);
+  const [tools, setTools] = useState<Record<string, string>>({}); // provider -> account_label
   const [userId, setUserId] = useState<string | null>(null);
   const [tokenFor, setTokenFor] = useState<PlatformDef | null>(null);
   const [tokenVal, setTokenVal] = useState("");
+  const [keyFor, setKeyFor] = useState<ToolDef | null>(null);
+  const [keyVal, setKeyVal] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
 
   const load = async () => {
@@ -30,8 +41,12 @@ export default function IntegrationsPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
       setUserId(user.id);
-      const { data } = await supabase.from("social_accounts").select("*").order("connected_at", { ascending: false });
-      if (data) setAccounts(data as SocialAccount[]);
+      const [{ data: accts }, { data: ints }] = await Promise.all([
+        supabase.from("social_accounts").select("*").order("connected_at", { ascending: false }),
+        supabase.from("integrations").select("provider, account_label, status").eq("status", "connected"),
+      ]);
+      if (accts) setAccounts(accts as SocialAccount[]);
+      if (ints) setTools(Object.fromEntries(ints.map((i) => [i.provider, i.account_label ?? "Connected"])));
     } catch { /* offline */ }
   };
   useEffect(() => { load(); }, []);
@@ -92,6 +107,34 @@ export default function IntegrationsPage() {
       if (error) { toastError("Couldn't disconnect", error.message); load(); }
       else success("Disconnected");
     }
+  };
+
+  // ── Tools (calendar, analytics, productivity) ──
+  const connectTool = (t: ToolDef) => {
+    if (t.connectType === "oauth") { window.location.href = `/api/tools/connect/${t.id}`; return; }
+    setKeyFor(t); setKeyVal("");
+  };
+  const submitKey = async () => {
+    if (!keyFor || !keyVal.trim()) return;
+    setBusy(keyFor.id);
+    try {
+      const res = await fetch(`/api/tools/connect/${keyFor.id}`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ value: keyVal.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Connection failed");
+      success(`${keyFor.name} connected`);
+      setKeyFor(null); setKeyVal(""); load();
+    } catch (e) { toastError("Couldn't connect", e instanceof Error ? e.message : undefined); }
+    finally { setBusy(null); }
+  };
+  const disconnectTool = async (t: ToolDef) => {
+    setTools((prev) => { const n = { ...prev }; delete n[t.id]; return n; });
+    try {
+      await fetch(`/api/tools/connect/${t.id}`, { method: "DELETE" });
+      success(`${t.name} disconnected`);
+    } catch { load(); }
   };
 
   const groups: Array<{ title: string; items: PlatformDef[] }> = [
@@ -165,6 +208,69 @@ export default function IntegrationsPage() {
           </div>
         </div>
       ))}
+
+      {/* ── Tools & analytics ── */}
+      <div className="mb-8">
+        <p className="font-data mb-3 text-[11px] uppercase tracking-[0.2em] text-[var(--fg-4)]">Tools & analytics</p>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {TOOL_LIST.map((t) => {
+            const Icon = TOOL_ICONS[t.id];
+            const label = tools[t.id];
+            const on = !!label;
+            return (
+              <GlassCard key={t.id} className="flex flex-col p-5">
+                <div className="flex items-start justify-between">
+                  <span className="flex h-11 w-11 items-center justify-center rounded-xl" style={{ background: `color-mix(in srgb, ${t.color} 16%, transparent)` }}>
+                    <Icon className="h-5 w-5" style={{ color: t.color }} />
+                  </span>
+                  {on && <Pill tone="green"><Check className="h-3 w-3" /> Connected</Pill>}
+                </div>
+                <h3 className="font-display mt-4 text-[15px] font-semibold text-[var(--fg)]">{t.name}</h3>
+                <div className="mt-1"><span className="rounded-md px-1.5 py-0.5 text-[10px]" style={{ background: "var(--panel-fill-2)", color: "var(--fg-3)" }}>{t.category}</span></div>
+                <p className="mt-2.5 flex-1 text-[12.5px] leading-relaxed text-[var(--fg-4)]">{t.desc}</p>
+                {on && <div className="mt-3 truncate rounded-lg border border-[var(--stroke)] bg-[var(--panel-fill)] px-2.5 py-1.5 text-[12px] text-[var(--fg-2)]">{label}</div>}
+                <button
+                  onClick={() => (on ? disconnectTool(t) : connectTool(t))}
+                  disabled={busy === t.id}
+                  className="mt-4 flex items-center justify-center gap-1.5 rounded-xl py-2.5 text-[13px] font-medium transition-colors disabled:opacity-60"
+                  style={on
+                    ? { background: "var(--panel-fill-2)", border: "1px solid var(--stroke)", color: "var(--fg)" }
+                    : { background: "linear-gradient(135deg,#6366f1,#a855f7)", color: "#fff" }}
+                >
+                  {busy === t.id ? <Loader2 className="h-4 w-4 animate-spin" /> : t.connectType === "oauth" ? <Plug className="h-4 w-4" /> : <KeyRound className="h-4 w-4" />}
+                  {on ? "Disconnect" : "Connect"}
+                </button>
+              </GlassCard>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* tool key/webhook modal (Mailchimp / Zapier / Webhooks) */}
+      {keyFor && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm" onClick={() => setKeyFor(null)}>
+          <div className="glass-panel w-full max-w-md rounded-2xl p-6" onClick={(e) => e.stopPropagation()} style={{ background: "var(--app-surface)" }}>
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="font-display text-[16px] font-semibold text-[var(--fg)]">Connect {keyFor.name}</h3>
+              <button onClick={() => setKeyFor(null)} className="text-[var(--fg-4)] hover:text-[var(--fg)]"><X className="h-5 w-5" /></button>
+            </div>
+            <p className="mb-3 text-[13px] text-[var(--fg-3)]">{keyFor.keySetup?.label}</p>
+            <input
+              value={keyVal}
+              onChange={(e) => setKeyVal(e.target.value)}
+              placeholder={keyFor.connectType === "webhook" ? "https://…" : "Paste key…"}
+              className="h-11 w-full rounded-xl border border-[var(--stroke)] bg-[var(--panel-fill)] px-3.5 text-sm text-[var(--fg)] outline-none placeholder:text-[var(--fg-4)] focus:border-[var(--sai-indigo)]/50"
+            />
+            {keyFor.keySetup?.docs && <a href={keyFor.keySetup.docs} target="_blank" rel="noreferrer" className="mt-2 inline-block text-[12px] text-[var(--sai-indigo)] hover:underline">Where do I get this?</a>}
+            <div className="mt-5 flex justify-end gap-2">
+              <button onClick={() => setKeyFor(null)} className="rounded-full border border-[var(--stroke)] bg-[var(--panel-fill)] px-4 py-2 text-[13px] text-[var(--fg-2)]">Cancel</button>
+              <button onClick={submitKey} disabled={!keyVal.trim() || busy === keyFor.id} className="rounded-full px-5 py-2 text-[13px] font-semibold text-white disabled:opacity-50" style={{ background: "linear-gradient(135deg,#6366f1,#a855f7)" }}>
+                {busy === keyFor.id ? <Loader2 className="h-4 w-4 animate-spin" /> : "Connect"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* token connect modal (Telegram / WhatsApp) */}
       {tokenFor && (
