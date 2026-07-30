@@ -26,8 +26,18 @@ const DEFAULT_RULES = [
 
 function Toggle({ on, onChange }: { on: boolean; onChange: () => void }) {
   return (
-    <button onClick={onChange} className="relative h-6 w-11 flex-shrink-0 rounded-full transition-colors" style={{ background: on ? "linear-gradient(135deg,#6366f1,#a855f7)" : "var(--stroke)" }}>
-      <span className="absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform" style={{ transform: on ? "translateX(22px)" : "translateX(2px)" }} />
+    <button
+      type="button"
+      role="switch"
+      aria-checked={on}
+      onClick={onChange}
+      className="relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sai-indigo)]/40"
+      style={{ background: on ? "linear-gradient(135deg,#6366f1,#a855f7)" : "var(--stroke)" }}
+    >
+      <span
+        className="pointer-events-none absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform duration-200"
+        style={{ transform: on ? "translateX(20px)" : "translateX(0)" }}
+      />
     </button>
   );
 }

@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   description: "The terms for using Socially AI.",
 };
 
-const CONTACT = "support@socially-ai.app";
+const CONTACT = "socially.ai.io@gmail.com";
 
 export default function TermsPage() {
   return (

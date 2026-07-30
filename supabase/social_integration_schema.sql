@@ -235,6 +235,20 @@ create table if not exists public.ai_message_memory (
 );
 create index if not exists ai_message_memory_user on public.ai_message_memory(user_id, created_at desc);
 
+-- ── SUPPORT TICKETS (Bugs / Feature / Help / Other) ─────────
+create table if not exists public.support_tickets (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  category text not null default 'help'             -- bug | feature | help | other
+    check (category in ('bug','feature','help','other')),
+  message text not null,
+  email text,                                       -- reply-to
+  status text not null default 'open'               -- open | resolved
+    check (status in ('open','resolved')),
+  created_at timestamptz not null default now()
+);
+create index if not exists support_tickets_user on public.support_tickets(user_id, created_at desc);
+
 -- ============================================================
 -- ROW-LEVEL SECURITY — users only touch their own rows
 -- ============================================================
@@ -248,6 +262,7 @@ alter table public.scheduled_messages  enable row level security;
 alter table public.social_trends       enable row level security;
 alter table public.ai_persona          enable row level security;
 alter table public.ai_message_memory   enable row level security;
+alter table public.support_tickets     enable row level security;
 
 create policy "own social_accounts"   on public.social_accounts   for all using (auth.uid() = user_id);
 create policy "own social_inbox"       on public.social_inbox       for all using (auth.uid() = user_id);
@@ -259,3 +274,4 @@ create policy "own scheduled_messages" on public.scheduled_messages for all usin
 create policy "own social_trends"      on public.social_trends      for all using (auth.uid() = user_id);
 create policy "own ai_persona"         on public.ai_persona         for all using (auth.uid() = user_id);
 create policy "own ai_message_memory"  on public.ai_message_memory  for all using (auth.uid() = user_id);
+create policy "own support_tickets"    on public.support_tickets    for all using (auth.uid() = user_id);

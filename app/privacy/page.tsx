@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   description: "How Socially AI collects, uses, and protects your data.",
 };
 
-const CONTACT = "privacy@socially-ai.app";
+const CONTACT = "socially.ai.io@gmail.com";
 
 export default function PrivacyPage() {
   return (

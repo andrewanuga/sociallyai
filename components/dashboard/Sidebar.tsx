@@ -6,7 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard, MessagesSquare, ListTodo, CalendarRange, Inbox,
   BarChart3, TrendingUp, Bot, Ghost, Plug, CreditCard, Settings,
-  LogOut, PanelLeftClose, PanelLeftOpen,
+  LifeBuoy, LogOut, PanelLeftClose, PanelLeftOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
@@ -45,6 +45,7 @@ const SECTIONS: { title: string; items: Item[] }[] = [
 ];
 
 const BOTTOM: Item[] = [
+  { href: "/dashboard/support", label: "Support", icon: LifeBuoy },
   { href: "/dashboard/billing", label: "Billing", icon: CreditCard },
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ];
