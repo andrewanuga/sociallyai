@@ -86,9 +86,10 @@ integration activates only once its keys are present. See the commented
 `.env.local.example` for every provider.
 
 ### 3. Database
-Run both SQL files in the Supabase SQL editor, in order:
+Run the SQL files in the Supabase SQL editor, in order:
 1. `supabase/schema.sql`
 2. `supabase/social_integration_schema.sql`
+3. `supabase/support.sql`
 
 Then add `http://localhost:3000/auth/callback` to **Authentication → URL Configuration → Redirect URLs**.
 
