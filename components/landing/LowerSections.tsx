@@ -385,7 +385,8 @@ export function SiteFooter() {
           <a href="#features" className="transition-colors hover:text-white">Features</a>
           <a href="#pricing" className="transition-colors hover:text-white">Pricing</a>
           <Link href="/login" className="transition-colors hover:text-white">Sign in</Link>
-          <Link href="/signup" className="transition-colors hover:text-white">Get started</Link>
+          <Link href="/privacy" className="transition-colors hover:text-white">Privacy</Link>
+          <Link href="/terms" className="transition-colors hover:text-white">Terms</Link>
         </div>
       </div>
       <p className="mx-auto mt-8 max-w-6xl text-center text-xs text-white/30 sm:text-left">

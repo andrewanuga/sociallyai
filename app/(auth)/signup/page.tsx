@@ -211,8 +211,8 @@ export default function SignupPage() {
 
         <p className="mt-4 text-center text-xs text-white/40">
           By signing up, you agree to our{" "}
-          <Link href="#" className="text-[var(--sai-indigo)] hover:underline">Terms</Link> and{" "}
-          <Link href="#" className="text-[var(--sai-indigo)] hover:underline">Privacy Policy</Link>.
+          <Link href="/terms" className="text-[var(--sai-indigo)] hover:underline">Terms</Link> and{" "}
+          <Link href="/privacy" className="text-[var(--sai-indigo)] hover:underline">Privacy Policy</Link>.
         </p>
       </div>
 
