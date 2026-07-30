@@ -17,12 +17,33 @@ const PLAN_META: { id: PlanId; icon: typeof Zap; features: string[]; popular?: b
 
 type Payment = { id: string; reference: string; plan: string | null; amount: number; status: string; created_at: string; paid_at: string | null };
 
+function UsageMeter({ label, used, limit }: { label: string; used: number; limit: number }) {
+  const pct = limit > 0 ? Math.min(100, Math.round((used / limit) * 100)) : (used > 0 ? 100 : 0);
+  const over = limit > 0 && used >= limit;
+  const bar = over ? "var(--sai-red)" : pct >= 80 ? "var(--sai-gold)" : "linear-gradient(90deg,#6366f1,#a855f7)";
+  return (
+    <div>
+      <div className="mb-1.5 flex items-center justify-between text-[13px]">
+        <span className="text-[var(--fg-2)]">{label}</span>
+        <span className="font-data text-[var(--fg-3)]">{used} / {limit === 0 ? "—" : limit}</span>
+      </div>
+      <div className="h-2 overflow-hidden rounded-full bg-[var(--panel-fill-2)]">
+        <div className="h-full rounded-full transition-[width] duration-500" style={{ width: `${pct}%`, background: bar }} />
+      </div>
+      <p className="mt-1 text-[11.5px]" style={{ color: over ? "var(--sai-red)" : "var(--fg-4)" }}>
+        {limit === 0 ? "Not on your plan — upgrade to unlock" : over ? "Limit reached — upgrade for more" : `${Math.max(0, limit - used)} remaining`}
+      </p>
+    </div>
+  );
+}
+
 export default function BillingPage() {
   const { success, error: toastError } = useToast();
   const [plan, setPlan] = useState<PlanId>("free");
   const [status, setStatus] = useState<string>("inactive");
   const [renews, setRenews] = useState<string | null>(null);
   const [invoices, setInvoices] = useState<Payment[]>([]);
+  const [usage, setUsage] = useState({ generations: 0, accounts: 0, bots: 0, resetAt: null as string | null });
   const [busy, setBusy] = useState<PlanId | null>(null);
   const [loaded, setLoaded] = useState(false);
 
@@ -31,11 +52,16 @@ export default function BillingPage() {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const [{ data: p }, { data: pay }] = await Promise.all([
-        supabase.from("profiles").select("plan, subscription_status, plan_renews_at").eq("id", user.id).single(),
+      const [{ data: p }, { data: pay }, { count: acctCount }, { count: botCount }] = await Promise.all([
+        supabase.from("profiles").select("plan, subscription_status, plan_renews_at, generations_used, generations_reset_at").eq("id", user.id).single(),
         supabase.from("payments").select("id, reference, plan, amount, status, created_at, paid_at").order("created_at", { ascending: false }).limit(12),
+        supabase.from("social_accounts").select("id", { count: "exact", head: true }).eq("status", "connected"),
+        supabase.from("social_bots").select("id", { count: "exact", head: true }).eq("status", "active"),
       ]);
-      if (p) { setPlan((p.plan as PlanId) ?? "free"); setStatus(p.subscription_status ?? "inactive"); setRenews(p.plan_renews_at ?? null); }
+      if (p) {
+        setPlan((p.plan as PlanId) ?? "free"); setStatus(p.subscription_status ?? "inactive"); setRenews(p.plan_renews_at ?? null);
+        setUsage({ generations: p.generations_used ?? 0, accounts: acctCount ?? 0, bots: botCount ?? 0, resetAt: p.generations_reset_at ?? null });
+      }
       if (pay) setInvoices(pay as Payment[]);
     } catch { /* offline */ }
     setLoaded(true);
@@ -95,6 +121,19 @@ export default function BillingPage() {
               Cancel / downgrade
             </button>
           )}
+        </div>
+      </GlassCard>
+
+      {/* Usage this cycle */}
+      <GlassCard className="mb-5 p-6">
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="font-display text-[15px] font-semibold text-[var(--fg)]">Usage this cycle</h3>
+          {usage.resetAt && <span className="text-[12px] text-[var(--fg-4)]">Resets {new Date(usage.resetAt).toLocaleDateString()}</span>}
+        </div>
+        <div className="grid gap-5 sm:grid-cols-3">
+          <UsageMeter label="AI generations" used={usage.generations} limit={current.generations} />
+          <UsageMeter label="Connected accounts" used={usage.accounts} limit={current.accounts} />
+          <UsageMeter label="Active bots" used={usage.bots} limit={current.bots} />
         </div>
       </GlassCard>
 
