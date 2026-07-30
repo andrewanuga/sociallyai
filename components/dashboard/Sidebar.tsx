@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -20,7 +21,7 @@ const SECTIONS: { title: string; items: Item[] }[] = [
       { href: "/dashboard/create", label: "Create", icon: MessagesSquare },
       { href: "/dashboard/tasks", label: "Tasks", icon: ListTodo },
       { href: "/dashboard/calendar", label: "Scheduler", icon: CalendarRange },
-      { href: "/dashboard/inbox", label: "Inbox", icon: Inbox, badge: 4 },
+      { href: "/dashboard/inbox", label: "Inbox", icon: Inbox },
     ],
   },
   {
@@ -57,6 +58,21 @@ export function Sidebar({
 }) {
   const pathname = usePathname();
   const router = useRouter();
+  const [inboxUnread, setInboxUnread] = useState(0);
+
+  // Live unread inbox count for the sidebar badge.
+  useEffect(() => {
+    (async () => {
+      try {
+        const supabase = createClient();
+        const { count } = await supabase
+          .from("social_inbox")
+          .select("id", { count: "exact", head: true })
+          .eq("is_read", false);
+        setInboxUnread(count ?? 0);
+      } catch { /* offline */ }
+    })();
+  }, [pathname]);
 
   const isActive = (href: string, exact?: boolean) =>
     exact ? pathname === href : pathname.startsWith(href) && href !== "/dashboard";
@@ -70,6 +86,7 @@ export function Sidebar({
 
   const Row = ({ item }: { item: Item }) => {
     const active = isActive(item.href, item.exact);
+    const badge = item.href === "/dashboard/inbox" ? (inboxUnread || undefined) : item.badge;
     return (
       <Link
         href={item.href}
@@ -92,18 +109,18 @@ export function Sidebar({
           style={active ? { color: "var(--sai-indigo)" } : undefined}
         />
         {!collapsed && <span className="flex-1 truncate">{item.label}</span>}
-        {!collapsed && item.badge && (
+        {!collapsed && badge && (
           <span
             className="flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[10.5px] font-semibold text-[var(--fg)]"
             style={{ background: "rgba(99,102,241,0.3)" }}
           >
-            {item.badge}
+            {badge}
           </span>
         )}
         {collapsed && (
           <span className="glass-panel pointer-events-none absolute left-full z-50 ml-3 whitespace-nowrap rounded-lg px-2.5 py-1.5 text-xs text-[var(--fg)] opacity-0 transition-opacity group-hover:opacity-100">
             {item.label}
-            {item.badge ? <span className="ml-1 text-[var(--sai-indigo)]">· {item.badge}</span> : null}
+            {badge ? <span className="ml-1 text-[var(--sai-indigo)]">· {badge}</span> : null}
           </span>
         )}
       </Link>
