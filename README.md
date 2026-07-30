@@ -1,255 +1,150 @@
-# SociallyAI
+# Socially AI
 
-> The AI-powered social media workspace built for the African creator economy.
+> Your personal social agent — the AI-powered social workspace built for the African creator economy.
 
-**SociallyAI** shifts social media management from *automation* (doing what you tell it) to *delegation* (owning goals autonomously). Powered by self-hosted Gemma AI, it eliminates per-token API costs and gives Nigerian and African businesses a world-class tool priced for their market.
+**Socially AI** shifts social media from *automation* (doing what you tell it) to *delegation* (owning goals autonomously). Powered by self-hosted **Llama 3.3 70B** via vLLM, it avoids per-token API fees and gives creators, clients, and marketers a world-class tool priced for their market.
 
 ---
 
-## What It Does
+## What it does
 
-Most social media tools tell you what happened. SociallyAI tells you what will happen — and often handles it before you open the app.
+Most tools tell you what happened. Socially AI tells you what will — and often handles it before you open the app.
 
 | Feature | What it means |
 |---|---|
-| **Ghost Mode™ Agent** | Deploys an AI that replies to comments in your voice, flags leads, and escalates complaints. You only see what matters. |
-| **ROI Pulse™** | Tracks the full funnel from post → click → landing page → revenue. Shows which posts actually made money. |
-| **Trend-to-Draft Engine** | Monitors trending topics in your niche and pre-writes 3 draft options the moment a trend spikes. |
-| **Predictive Socially Score** | Before you publish, AI predicts your engagement probability based on your history and current trends. |
-| **Smart Inbox Triage** | Sorts all DMs and comments into Leads, Complaints, and Fluff — so you spend 2 minutes on the 4 messages that matter. |
-| **Auto-Plug Loop** | When a post hits your engagement threshold, AI drops your product/newsletter link automatically in a reply. |
-| **Brand Voice from URL** | Paste your website URL → AI extracts your tone, vocabulary, and messaging in 60 seconds. Zero setup friction. |
-| **Psychological Frameworks** | Post with AIDA, PAS, Curiosity Hook, or Story Arc. Converts AI writing from "generic" to "converts". |
+| **Create (AI chat)** | A per-user agent that drafts posts, threads, captions, and replies in your voice — with image/video/file uploads for context. |
+| **Ghost Mode™ Agent** | Replies to surface-level comments in your voice, flags leads, escalates complaints. You only touch what matters. |
+| **Tasks (LIFO stack)** | A last-in, first-out task stack that keeps the newest work front-of-mind. |
+| **Scheduler** | A month calendar of everything scheduled across every connected account. |
+| **Smart Inbox** | One tab per connected account; messages arrive as a stack, AI-triaged into leads / complaints / questions / fluff. |
+| **Analytics** | Real per-post analytics with cross-post *referral* suggestions (creators) and per-campaign boards with improvement tips (marketers). |
+| **Trends** | Live web-search trends for your niche/persona, each referred to the right connected account. |
+| **Bots** | Real bots across connected accounts with a management system (assist vs. full-auto). |
+| **Personalization** | The agent stores past messages, learns your tone, and mirrors how you write. |
 
 ---
 
-## Tech Stack
+## Supported platforms
+
+**Publishing:** Instagram · YouTube · X (Twitter) · LinkedIn · Facebook · Threads · Snapchat · Reddit
+**Messaging & bots:** Telegram · WhatsApp — manage bots, message/reply when away, schedule messages, and summarize flagged groups.
+**Tools & analytics:** Google Calendar · Google Analytics · Google Sheets · Slack · Notion · Discord · Mailchimp · Zapier · Webhooks.
+
+---
+
+## Tech stack
 
 | Layer | Technology |
 |---|---|
-| **Framework** | Next.js 16 (App Router) |
-| **Language** | TypeScript |
-| **Styling** | Tailwind CSS v4 + custom animations |
-| **UI Components** | Radix UI primitives + custom design system |
-| **Animations** | Framer Motion |
-| **Auth** | Supabase Auth (email/password + Google OAuth) |
-| **Database** | Supabase (PostgreSQL + pgvector for AI memory) |
-| **AI Engine** | Gemma 9B/27B via vLLM (self-hosted) |
-| **Payments** | Paystack / Flutterwave |
-| **Background Jobs** | BullMQ + Redis |
-| **Real-time** | Supabase WebSockets |
-| **Theme** | Light + Dark mode via next-themes |
+| Framework | Next.js 16 (App Router) · TypeScript |
+| Styling | Tailwind CSS v4, CSS-variable theming (dark + blue-tinted light) |
+| Motion | GSAP (cinematic hero + scroll reveals), Framer Motion |
+| Auth & DB | Supabase (PostgreSQL + pgvector, RLS) |
+| AI | Llama 3.3 70B via vLLM (OpenAI-compatible), mock fallback in dev |
+| Payments | Paystack / Flutterwave |
+| Jobs | BullMQ + Redis |
 
 ---
 
-## Project Structure
+## Project structure
 
 ```
-socially-ai/
-├── app/
-│   ├── page.tsx                    # Landing page
-│   ├── layout.tsx                  # Root layout with ThemeProvider
-│   ├── globals.css                 # Tailwind v4 + CSS variables + animations
-│   ├── (auth)/
-│   │   ├── layout.tsx              # Auth shell layout
-│   │   ├── login/page.tsx          # Sign in
-│   │   └── signup/page.tsx         # Create account
-│   ├── auth/callback/route.ts      # Supabase OAuth callback
-│   └── dashboard/
-│       ├── layout.tsx              # Dashboard shell (collapsible sidebar)
-│       ├── page.tsx                # Overview / analytics overview
-│       ├── compose/page.tsx        # AI post composer
-│       ├── calendar/page.tsx       # Content calendar
-│       ├── inbox/page.tsx          # Smart inbox triage
-│       ├── ghost-mode/page.tsx     # Ghost Mode agent control
-│       ├── trends/page.tsx         # Trend predictor
-│       ├── analytics/page.tsx      # Full analytics
-│       └── settings/page.tsx       # Account settings
-│
-├── components/
-│   ├── landing/                    # All landing page sections
-│   │   ├── AnimatedBackground.tsx  # Blob / orb / grid effects
-│   │   ├── Navbar.tsx
-│   │   ├── Hero.tsx
-│   │   ├── Features.tsx
-│   │   ├── HowItWorks.tsx
-│   │   ├── ROIPulse.tsx
-│   │   ├── Comparison.tsx
-│   │   ├── Pricing.tsx
-│   │   ├── Testimonials.tsx
-│   │   ├── CTA.tsx
-│   │   └── Footer.tsx
-│   ├── dashboard/                  # Dashboard-specific components
-│   │   ├── Sidebar.tsx
-│   │   └── DashboardHeader.tsx
-│   ├── ui/                         # Reusable UI primitives
-│   │   ├── button.tsx
-│   │   ├── card.tsx
-│   │   ├── badge.tsx
-│   │   ├── input.tsx
-│   │   ├── label.tsx
-│   │   ├── textarea.tsx
-│   │   ├── switch.tsx
-│   │   ├── tabs.tsx
-│   │   ├── progress.tsx
-│   │   ├── separator.tsx
-│   │   ├── avatar.tsx
-│   │   └── select.tsx
-│   └── providers/
-│       └── ThemeProvider.tsx
-│
-├── lib/
-│   ├── utils.ts                    # cn() utility
-│   └── supabase/
-│       ├── client.ts               # Browser Supabase client
-│       └── server.ts               # Server Supabase client
-│
-└── middleware.ts                   # Auth route protection
+app/
+├── page.tsx                       # Cinematic landing (canvas scroll hero)
+├── (auth)/{login,signup}          # Auth
+├── onboarding/                    # Persona onboarding (client/creator/marketer)
+├── privacy/ · terms/              # Privacy Policy + Terms of Service
+├── dashboard/                     # Overview, Create, Tasks, Scheduler, Inbox,
+│                                  #   Analytics, Trends, Bots, Ghost Mode,
+│                                  #   Integrations, Billing, Settings
+└── api/
+    ├── ai/{chat,generate,score,trends,ghost}
+    ├── social/{connect,callback}/[platform]   # per-platform OAuth / token
+    ├── social/sync                            # pull posts + metrics
+    └── tools/{connect,callback}/[provider]    # calendar/analytics/tools OAuth
+
+lib/social/{platforms,tools,types,sync}.ts     # registries + sync worker
+supabase/schema.sql                            # core (profiles, posts, etc.)
+supabase/social_integration_schema.sql         # ALL social-integration tables
 ```
 
 ---
 
-## Getting Started
+## Getting started
 
-### Prerequisites
-
-- Node.js 18+
-- A [Supabase](https://supabase.com) project
-
-### 1. Clone and install
-
+### 1. Install
 ```bash
-git clone https://github.com/yourname/socially-ai.git
-cd socially-ai
 npm install
 ```
 
-### 2. Configure environment variables
-
+### 2. Environment
 ```bash
 cp .env.local.example .env.local
 ```
+Only Supabase is required for local dev. AI falls back to mocks, and each
+integration activates only once its keys are present. See the commented
+`.env.local.example` for every provider.
 
-Fill in your Supabase credentials:
+### 3. Database
+Run both SQL files in the Supabase SQL editor, in order:
+1. `supabase/schema.sql`
+2. `supabase/social_integration_schema.sql`
 
-```env
-NEXT_PUBLIC_SUPABASE_URL=https://xxxx.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
-NEXT_PUBLIC_APP_URL=http://localhost:3000
-```
+Then add `http://localhost:3000/auth/callback` to **Authentication → URL Configuration → Redirect URLs**.
 
-### 3. Set up Supabase Auth
-
-In your Supabase project:
-
-1. Go to **Authentication → URL Configuration**
-2. Add `http://localhost:3000/auth/callback` to **Redirect URLs**
-3. Enable **Google** as an OAuth provider (optional)
-
-### 4. Run the development server
-
+### 4. Run
 ```bash
 npm run dev
 ```
-
-Open [http://localhost:3000](http://localhost:3000)
-
----
-
-## Pricing Model
-
-| Tier | Price | Accounts | AI Engine | Key Feature |
-|---|---|---|---|---|
-| **Free** | ₦0/mo | 1 | Gemma 2B — 7 gen/week | Basic scheduling |
-| **Basic** | ₦5,000/mo | 3 | Gemma 9B — 100 gen/mo | Brand Voice + Trends |
-| **Pro** | ₦12,000/mo | 7 | Gemma 9B/27B — 500 gen/mo | Ghost Mode Agent + ROI Pulse |
-| **Advanced** | ₦25,000/mo | 15+ | Full Suite — 1,000 gen/mo | 3 Agents + White-label reports |
-
-**Why the pricing works:** SociallyAI self-hosts Gemma via vLLM, eliminating per-token API fees. This makes the ₦5k–₦25k range genuinely profitable while undercutting every USD-denominated competitor.
+Open http://localhost:3000
 
 ---
 
-## Platform Roadmap
+## Connecting platforms (production)
 
-### Phase 1 — MVP
-- X (Twitter), LinkedIn, Instagram
+Each platform needs a registered developer app (most require review/approval).
+- **OAuth callback:** `{APP_URL}/api/social/callback/<platform>`
+- **Tools callback:** `{APP_URL}/api/tools/callback/<provider>`
+- **Telegram/WhatsApp:** token-based — connect from **Integrations** by pasting a bot token / Cloud API token.
 
-### Phase 2 — Growth
-- TikTok, YouTube Shorts
-
-### Phase 3 — The Local Edge
-- WhatsApp Channels, Meta Threads
+Once connected, hit **Sync now** (or run the sync worker on a cron/queue) to pull posts, metrics, inbox, and campaigns into the dashboard.
 
 ---
 
-## AI Infrastructure
+## AI model
 
-### Model Tiering
-
-| Plan | Model | Purpose |
-|---|---|---|
-| Free | Gemma 2B | Lightweight captions, fast responses |
-| Basic | Gemma 9B | High-quality creative content |
-| Pro / Advanced | Gemma 27B | Complex threads, agents, memory |
-
-### Architecture
-
-```
-[ Next.js Dashboard (React) ]
-           │
-   Supabase WebSockets (real-time)
-           │
-[ Next.js API Routes / Supabase ]
-           │
-    BullMQ + Redis (queue)
-           │
-[ Background Worker Service ]
-           │
-    vLLM (OpenAI-compatible API)
-           │
-[ Gemma 9B / 27B on GPU server ]
-           │
-[ X / LinkedIn / Instagram APIs ]
-```
-
-### Deploying Gemma via vLLM
+Point `VLLM_SERVER_URL` at a self-hosted vLLM server **or** a hosted
+OpenAI-compatible endpoint (Together, Groq, Fireworks, DeepInfra):
 
 ```bash
 pip install vllm
 python -m vllm.entrypoints.openai.api_server \
-  --model google/gemma-9b \
-  --host 0.0.0.0 \
-  --port 8000
+  --model meta-llama/Llama-3.3-70B-Instruct --host 0.0.0.0 --port 8000
 ```
 
-Your vLLM server exposes `http://your-gpu-server:8000/v1/chat/completions` — compatible with any OpenAI SDK.
+Leave it empty in dev to use built-in mock responses.
 
 ---
 
-## Security
+## Pricing
 
-- Supabase Auth with JWT tokens — no passwords stored in app
-- Row-Level Security (RLS) on all user data tables
-- HTTPS-only in production
-- Social OAuth via official provider SDKs only
-- Rate limiting on all API routes
-- No storage of social platform credentials — OAuth tokens only
+| Tier | Price | Accounts | Highlights |
+|---|---|---|---|
+| Free | ₦0/mo | 1 | Scheduling + basic analytics |
+| Basic | ₦5,000/mo | 3 | Brand Voice + Trends |
+| Pro | ₦12,000/mo | 7 | Ghost Mode + ROI Pulse + Auto-Plug |
+| Advanced | ₦25,000/mo | 15+ | 3 agents + white-label reports + API |
 
 ---
 
-## Contributing
+## Security & privacy
 
-1. Fork the repo
-2. Create a feature branch: `git checkout -b feat/your-feature`
-3. Commit your changes
-4. Open a Pull Request
+- Supabase Auth (JWT); Row-Level Security on every user table.
+- OAuth tokens only — no social passwords stored.
+- [Privacy Policy](/privacy) and [Terms of Service](/terms) are shipped in-app (required for platform app review).
 
 ---
 
 ## License
 
-MIT License
-
----
-
-Built with love in Nigeria for the African creator economy.
+MIT · Built with care in Nigeria for the African creator economy.
