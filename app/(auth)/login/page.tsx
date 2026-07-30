@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, ArrowRight, Loader2 } from "lucide-react";
@@ -18,6 +18,14 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const { error: toastError } = useToast();
+
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("suspended") === "1") {
+      toastError("Account suspended", "Contact support if you think this is a mistake.");
+      window.history.replaceState({}, "", "/login");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();

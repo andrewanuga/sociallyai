@@ -79,9 +79,16 @@ export async function proxy(request: NextRequest) {
     url.pathname = "/login";
     return harden(NextResponse.redirect(url));
   }
-  if (isAdminRoute && user) {
+  if ((isDashboardRoute || isAdminRoute) && user) {
     const { data: profile } = await supabase.from("profiles").select("is_admin, suspended").eq("id", user.id).single();
-    if (!profile?.is_admin) {
+    // Suspended accounts are locked out of the whole app.
+    if (profile?.suspended) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/login";
+      url.searchParams.set("suspended", "1");
+      return harden(NextResponse.redirect(url));
+    }
+    if (isAdminRoute && !profile?.is_admin) {
       logSecurityEvent({ type: "admin_denied", ip, path: pathname, severity: "warning", user_id: user.id, email: user.email });
       const url = request.nextUrl.clone();
       url.pathname = "/dashboard";
