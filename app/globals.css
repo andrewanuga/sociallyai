@@ -338,6 +338,14 @@ html.light .sai-app {
   pointer-events: none;
 }
 
+/* .glass-panel forces position:relative for its ::before highlight, which would
+   otherwise beat Tailwind's absolute/fixed utilities in the cascade. Re-assert
+   them here with higher specificity so positioned glass elements (dropdowns,
+   tooltips, the collapse toggle) anchor correctly. */
+.glass-panel.absolute { position: absolute; }
+.glass-panel.fixed    { position: fixed; }
+.glass-panel.sticky   { position: sticky; }
+
 .glass-pill {
   background: var(--glass-bg, rgba(20, 20, 24, 0.6));
   backdrop-filter: blur(18px) saturate(1.5);

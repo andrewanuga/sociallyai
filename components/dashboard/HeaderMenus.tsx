@@ -52,7 +52,16 @@ export function NotificationsMenu() {
     } catch { /* offline */ }
     setLoaded(true);
   };
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+    // Real-time: refresh whenever the user's inbox changes.
+    const supabase = createClient();
+    const channel = supabase
+      .channel("sai-inbox-notifications")
+      .on("postgres_changes", { event: "*", schema: "public", table: "social_inbox" }, () => load())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, []);
 
   const markAll = async () => {
     setItems([]); setCount(0);

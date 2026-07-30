@@ -259,3 +259,11 @@ create policy "own scheduled_messages" on public.scheduled_messages for all usin
 create policy "own social_trends"      on public.social_trends      for all using (auth.uid() = user_id);
 create policy "own ai_persona"         on public.ai_persona         for all using (auth.uid() = user_id);
 create policy "own ai_message_memory"  on public.ai_message_memory  for all using (auth.uid() = user_id);
+
+-- ── Real-time: stream inbox changes to the notification bell ──
+do $$ begin
+  begin
+    alter publication supabase_realtime add table public.social_inbox;
+  exception when duplicate_object then null; when undefined_object then null;
+  end;
+end $$;
