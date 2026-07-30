@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Bell, Search, Menu, Plus, PanelLeft } from "lucide-react";
+import { Search, Menu, Plus, PanelLeft } from "lucide-react";
+import { NotificationsMenu, ProfileMenu } from "./HeaderMenus";
 
 export function DashboardHeader({
   onMobileMenuToggle,
@@ -12,9 +12,6 @@ export function DashboardHeader({
   onMobileMenuToggle?: () => void;
   onToggleSidebar?: () => void;
 }) {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-
   return (
     <header
       className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-[var(--stroke)] px-4 sm:px-6"
@@ -55,18 +52,8 @@ export function DashboardHeader({
           <Plus className="h-4 w-4" /> Create
         </Link>
 
-        <button className="relative flex h-9 w-9 items-center justify-center rounded-lg text-[var(--fg-2)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--fg)]">
-          <Bell className="h-[18px] w-[18px]" />
-          <span className="absolute right-2 top-2 h-2 w-2 rounded-full" style={{ background: "var(--sai-red)" }} />
-        </button>
-
-        <div
-          className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-[12px] font-bold text-[var(--fg)]"
-          style={{ background: "linear-gradient(135deg,#6366f1,#a855f7)" }}
-          suppressHydrationWarning
-        >
-          {mounted ? "U" : ""}
-        </div>
+        <NotificationsMenu />
+        <ProfileMenu />
       </div>
     </header>
   );
