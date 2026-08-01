@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import {
   ArrowUp, Sparkles, Copy, Check, RotateCcw, Paperclip, X,
-  FileText, Film, Bot, Eye, ChevronDown, Loader2, Image as ImageIcon,
+  FileText, Film, Bot, Eye, ChevronDown, Loader2, Image as ImageIcon, Edit2, MessageSquare,
 } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
 import { createClient } from "@/lib/supabase/client";
@@ -21,7 +21,7 @@ type Attachment = {
 };
 
 type Msg = {
-  id: number;
+  id: string | number;
   role: "user" | "assistant";
   content: string;
   model?: string;
@@ -70,7 +70,7 @@ export default function CreatePage() {
   const [messages, setMessages] = useState<Msg[]>([GREETING]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
-  const [copied, setCopied] = useState<number | null>(null);
+  const [copied, setCopied] = useState<string | number | null>(null);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [streamText, setStreamText] = useState("");
 
@@ -80,12 +80,61 @@ export default function CreatePage() {
   const [showModelPicker, setShowModelPicker] = useState(false);
   const [userDefaultModel, setUserDefaultModel] = useState<string>("");
 
+
+  const [chats, setChats] = useState<{ id: string; title: string }[]>([]);
+  const [currentChatId, setCurrentChatId] = useState<string | null>(null);
+  const [renamingChatId, setRenamingChatId] = useState<string | null>(null);
+  const [renameInput, setRenameInput] = useState("");
+
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const modelPickerRef = useRef<HTMLDivElement>(null);
   const idRef = useRef(1);
   const attIdRef = useRef(1);
+
+
+  const fetchChats = async () => {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const { data } = await supabase.from("chats").select("id, title").order("updated_at", { ascending: false });
+    if (data) setChats(data);
+  };
+
+  useEffect(() => {
+    fetchChats();
+  }, []);
+
+  const loadChat = async (chatId: string) => {
+    setCurrentChatId(chatId);
+    setMessages([GREETING]);
+    setBusy(true);
+    try {
+      const supabase = createClient();
+      const { data } = await supabase.from("chat_messages").select("*").eq("chat_id", chatId).order("created_at", { ascending: true });
+      if (data && data.length > 0) {
+        setMessages([GREETING, ...data.map((msg: any) => ({
+          id: msg.id,
+          role: msg.role,
+          content: msg.content,
+          model: msg.model,
+          attachments: msg.attachments || []
+        }))]);
+      }
+    } catch {
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const saveRename = async (id: string, newTitle: string) => {
+    setRenamingChatId(null);
+    if (!newTitle.trim()) return;
+    setChats((prev) => prev.map((c) => c.id === id ? { ...c, title: newTitle } : c));
+    const supabase = createClient();
+    await supabase.from("chats").update({ title: newTitle }).eq("id", id);
+  };
 
   /* ── Load user profile and models ───────────────────────────── */
   useEffect(() => {
@@ -236,6 +285,7 @@ export default function CreatePage() {
           })),
           model: selectedModel || undefined,
           stream: true,
+          chatId: currentChatId || undefined,
         }),
       });
 
@@ -245,6 +295,11 @@ export default function CreatePage() {
       }
 
       const contentType = res.headers.get("content-type") || "";
+      const newChatId = res.headers.get("x-chat-id");
+      if (newChatId && newChatId !== currentChatId) {
+        setCurrentChatId(newChatId);
+        fetchChats();
+      }
 
       if (contentType.includes("text/plain")) {
         // Streaming response
@@ -275,6 +330,10 @@ export default function CreatePage() {
       } else {
         // JSON response
         const data = await res.json();
+        if (data.chatId && data.chatId !== currentChatId) {
+          setCurrentChatId(data.chatId);
+          fetchChats();
+        }
         setMessages((prev) => [
           ...prev,
           {
@@ -301,6 +360,7 @@ export default function CreatePage() {
   };
 
   const reset = () => {
+    setCurrentChatId(null);
     setMessages([GREETING]);
     idRef.current = 1;
     setStreamText("");
@@ -308,8 +368,46 @@ export default function CreatePage() {
 
   /* ── Render ─────────────────────────────────────────────────── */
   return (
-    <div className="mx-auto flex h-[calc(100vh-8rem)] max-w-3xl flex-col">
-      {/* header */}
+    <div className="mx-auto flex h-[calc(100vh-8rem)] max-w-[1000px] gap-6">
+      {/* sidebar */}
+      <div className="hidden w-64 flex-col border-r border-[var(--stroke)] pr-6 md:flex">
+        <button
+          onClick={reset}
+          className="mb-6 flex w-full items-center justify-center gap-2 rounded-xl border border-[var(--stroke)] bg-[var(--panel-fill)] p-3 text-[13px] font-medium text-[var(--fg)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--fg)] shadow-sm"
+        >
+          <RotateCcw className="h-4 w-4" /> New chat
+        </button>
+        <div className="mb-2 px-2 text-[11px] font-bold uppercase tracking-wider text-[var(--fg-4)]">Recent Chats</div>
+        <div className="flex-1 space-y-1 overflow-y-auto pr-2">
+          {chats.map(c => (
+            <div key={c.id} className={`group flex items-center justify-between rounded-xl px-3 py-2.5 text-[13px] transition-colors ${currentChatId === c.id ? "bg-[var(--panel-fill-2)] text-[var(--fg)] font-medium" : "text-[var(--fg-3)] hover:bg-[var(--hover)] hover:text-[var(--fg-2)]"}`}>
+              {renamingChatId === c.id ? (
+                <input
+                  autoFocus
+                  value={renameInput}
+                  onChange={(e) => setRenameInput(e.target.value)}
+                  onBlur={() => saveRename(c.id, renameInput)}
+                  onKeyDown={(e) => e.key === "Enter" && saveRename(c.id, renameInput)}
+                  className="w-full bg-transparent outline-none"
+                />
+              ) : (
+                <>
+                  <button onClick={() => loadChat(c.id)} className="flex-1 truncate text-left flex items-center gap-2">
+                    <MessageSquare className="h-3.5 w-3.5 opacity-70" />
+                    <span className="truncate">{c.title}</span>
+                  </button>
+                  <button onClick={() => { setRenamingChatId(c.id); setRenameInput(c.title); }} className="opacity-0 transition-opacity group-hover:opacity-100 p-1 -mr-1 hover:bg-black/20 rounded">
+                    <Edit2 className="h-3.5 w-3.5 text-[var(--fg-4)] hover:text-[var(--fg)]" />
+                  </button>
+                </>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="flex min-w-0 flex-1 flex-col">
+        {/* header */}
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           <span
@@ -593,6 +691,7 @@ export default function CreatePage() {
         <p className="mt-2 text-center text-[11px] text-[var(--fg-4)]">
           Socially can draft and refine — always review before you post.
         </p>
+        </div>
       </div>
     </div>
   );

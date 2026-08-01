@@ -27,11 +27,12 @@ export async function POST(req: NextRequest) {
     if (!workspace) return new Response("Unauthorized", { status: 401 });
     const workspaceId = workspace.workspaceId;
 
-    const { messages, attachments, model, stream: wantsStream } = (await req.json()) as {
+    const { messages, attachments, model, stream: wantsStream, chatId: inputChatId } = (await req.json()) as {
       messages: InputMessage[];
       attachments?: Attachment[];
       model?: string;
       stream?: boolean;
+      chatId?: string;
     };
     if (!messages?.length) {
       return NextResponse.json({ error: "messages required" }, { status: 400 });
@@ -52,6 +53,29 @@ export async function POST(req: NextRequest) {
     const lastUserText = [...messages].reverse().find((m) => m.role === "user")?.content ?? "";
     const tone = await getPersonaTone(supabase, workspaceId);
     learnPersona(supabase, workspaceId, lastUserText); // fire-and-forget
+
+    // ── Database persistence: save user message ─────────────────
+    let activeChatId = inputChatId;
+    if (!activeChatId) {
+      // Create new chat
+      const title = lastUserText ? (lastUserText.slice(0, 40) + (lastUserText.length > 40 ? "..." : "")) : "New Chat";
+      const { data: newChat, error: chatErr } = await supabase
+        .from("chats")
+        .insert({ workspace_id: workspaceId, title })
+        .select("id")
+        .single();
+      if (!chatErr && newChat) activeChatId = newChat.id;
+    }
+
+    if (activeChatId) {
+      // Save user message
+      await supabase.from("chat_messages").insert({
+        chat_id: activeChatId,
+        role: "user",
+        content: lastUserText,
+        attachments: attachments || [],
+      });
+    }
 
     // ── Build attachment context ────────────────────────────────
     const imageDataUrls: string[] = [];
@@ -144,27 +168,68 @@ export async function POST(req: NextRequest) {
           temperature,
         });
 
-        return new Response(stream, {
-          headers: {
-            "Content-Type": "text/plain; charset=utf-8",
-            "Cache-Control": "no-cache",
-            "Transfer-Encoding": "chunked",
+        // Intercept stream to save assistant reply to DB
+        const reader = stream.getReader();
+        const encoder = new TextEncoder();
+        const decoder = new TextDecoder();
+        let fullResponse = "";
+
+        const interceptedStream = new ReadableStream({
+          async start(controller) {
+            try {
+              while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                fullResponse += decoder.decode(value, { stream: true });
+                controller.enqueue(value);
+              }
+              // Save final response
+              if (activeChatId && fullResponse) {
+                await supabase.from("chat_messages").insert({
+                  chat_id: activeChatId,
+                  role: "assistant",
+                  content: fullResponse,
+                  model: selectedModel,
+                });
+              }
+            } catch (err) {
+              controller.error(err);
+            } finally {
+              controller.close();
+            }
           },
         });
+
+        const headers: Record<string, string> = {
+          "Content-Type": "text/plain; charset=utf-8",
+          "Cache-Control": "no-cache",
+          "Transfer-Encoding": "chunked",
+        };
+        if (activeChatId) headers["X-Chat-Id"] = activeChatId;
+
+        return new Response(interceptedStream, { headers });
       } catch (err) {
         console.error("[Chat stream fallback]", err);
         // Fall through to non-streaming
       }
     }
 
-    // ── Non-streaming response ──────────────────────────────────
     const result = await callAI(aiMessages, {
       agent: "chat",
       model: selectedModel,
       temperature,
     });
 
-    return NextResponse.json({ reply: result.content, model: result.model });
+    if (activeChatId) {
+      await supabase.from("chat_messages").insert({
+        chat_id: activeChatId,
+        role: "assistant",
+        content: result.content,
+        model: result.model,
+      });
+    }
+
+    return NextResponse.json({ reply: result.content, model: result.model, chatId: activeChatId });
   } catch (err) {
     console.error("[/api/ai/chat]", err);
 
