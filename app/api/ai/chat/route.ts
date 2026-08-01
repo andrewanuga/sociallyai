@@ -172,8 +172,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ reply: mockReply("", false, []) });
     }
 
+    const errorMessage = err instanceof Error ? err.message : "The agent hit a snag. Try again.";
+
     return NextResponse.json(
-      { error: "The agent hit a snag. Try again." },
+      { error: errorMessage },
       { status: 500 },
     );
   }

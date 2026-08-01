@@ -79,8 +79,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ content: result.content, model: result.model });
   } catch (err) {
     console.error("[/api/ai/generate]", err);
+    const errorMessage = err instanceof Error ? err.message : "Generation failed. Please try again.";
     return NextResponse.json(
-      { error: "Generation failed. Please try again." },
+      { error: errorMessage },
       { status: 500 },
     );
   }

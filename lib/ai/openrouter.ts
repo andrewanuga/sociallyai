@@ -105,8 +105,15 @@ export async function callAI(
 
   if (!res.ok) {
     const errText = await res.text();
+    let errorMsg = `OpenRouter error ${res.status}: ${errText}`;
+    try {
+      const parsed = JSON.parse(errText);
+      if (parsed.error && parsed.error.message) {
+        errorMsg = parsed.error.message;
+      }
+    } catch {}
     console.error(`[OpenRouter] ${options.agent} error ${res.status}:`, errText);
-    throw new Error(`OpenRouter error ${res.status}: ${errText}`);
+    throw new Error(errorMsg);
   }
 
   const data = await res.json();
@@ -161,7 +168,14 @@ export async function callAIStream(
 
   if (!res.ok) {
     const errText = await res.text();
-    throw new Error(`OpenRouter stream error ${res.status}: ${errText}`);
+    let errorMsg = `OpenRouter stream error ${res.status}: ${errText}`;
+    try {
+      const parsed = JSON.parse(errText);
+      if (parsed.error && parsed.error.message) {
+        errorMsg = parsed.error.message;
+      }
+    } catch {}
+    throw new Error(errorMsg);
   }
 
   // Transform SSE into a plain text stream
