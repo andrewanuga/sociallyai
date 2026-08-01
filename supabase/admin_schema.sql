@@ -77,5 +77,5 @@ exception when duplicate_object then null;
 end $$;
 
 -- ── Bootstrap: make yourself an admin (replace the email) ────
--- update public.profiles set is_admin = true
---   where id = (select id from auth.users where email = 'you@example.com');
+update public.profiles set is_admin = true
+  where id in (select id from auth.users where email in ('socially.ai.io@gmail.com', 'adakoleandrew21@gmail.com'));
