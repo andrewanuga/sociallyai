@@ -82,7 +82,7 @@ interface GhostResult {
 /* ── Log to database ──────────────────────────────────────────── */
 
 async function logAction(
-  supabase: ReturnType<typeof createClient> extends Promise<infer T> ? T : never,
+  supabase: any,
   userId: string,
   comment: string,
   result: GhostResult,

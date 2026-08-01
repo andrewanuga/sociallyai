@@ -72,7 +72,7 @@ export async function POST(req: NextRequest) {
     );
 
     // Deduct from user's generation quota
-    await supabase.rpc("decrement_generations", { user_id: user.id }).catch(() => {});
+    await supabase.rpc("decrement_generations", { user_id: user.id });
 
     return NextResponse.json({ content: result.content, model: result.model });
   } catch (err) {
