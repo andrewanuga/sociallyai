@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useTheme } from "next-themes";
 import Link from "next/link";
 import {
   User, Palette, Bot, CreditCard, Bell, Save, Loader2,
   ShieldAlert, Check, Sun, Moon, Monitor, Sparkles,
+  Search, Eye, Zap, Crown, Gift, ChevronDown, ChevronUp,
+  ExternalLink,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/components/ui/toast";
@@ -20,17 +22,34 @@ const TABS = [
 ] as const;
 type Tab = (typeof TABS)[number]["id"];
 
-const AI_MODELS = [
-  { id: "llama-3.3-70b", label: "Llama 3.3 70B", note: "Self-hosted · private" },
-  { id: "llama-3.1-8b", label: "Llama 3.1 8B", note: "Faster, lighter" },
-  { id: "mixtral-8x7b", label: "Mixtral 8x7B", note: "Balanced" },
-];
-
 const FONTS = [
   { id: "inter", label: "Inter", stack: '"Inter", var(--font-geist-sans), system-ui, sans-serif' },
   { id: "general-sans", label: "General Sans", stack: '"General Sans", var(--font-geist-sans), sans-serif' },
   { id: "geist", label: "Geist", stack: "var(--font-geist-sans), system-ui, sans-serif" },
 ];
+
+/* ── Model types (from API) ───────────────────────────────────── */
+
+interface ModelInfo {
+  id: string;
+  name: string;
+  provider: string;
+  description: string;
+  tier?: "free" | "budget" | "standard" | "premium";
+  supportsVision: boolean;
+  contextWindow: string;
+  bestFor?: string[];
+  pricing?: { prompt: string; completion: string } | null;
+  available?: boolean;
+}
+
+interface TierMeta {
+  label: string;
+  color: string;
+  description: string;
+}
+
+/* ── Shared component styles ──────────────────────────────────── */
 
 const inputCls =
   "h-11 w-full rounded-xl border border-[var(--stroke)] bg-[var(--panel-fill)] px-3.5 text-sm text-[var(--fg)] placeholder:text-[var(--fg-4)] focus:border-[var(--sai-indigo)]/50 focus:outline-none focus:ring-2 focus:ring-[var(--sai-indigo)]/20";
@@ -63,6 +82,37 @@ function Field({ label, children, hint }: { label: string; children: React.React
   );
 }
 
+/* ── Tier badge component ─────────────────────────────────────── */
+
+function TierBadge({ tier, tiers }: { tier: string; tiers: Record<string, TierMeta> }) {
+  const meta = tiers[tier];
+  if (!meta) return null;
+  const Icon = tier === "premium" ? Crown : tier === "free" ? Gift : tier === "standard" ? Sparkles : Zap;
+  return (
+    <span
+      className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider"
+      style={{ background: `${meta.color}20`, color: meta.color }}
+    >
+      <Icon className="h-2.5 w-2.5" /> {meta.label}
+    </span>
+  );
+}
+
+/* ── Format pricing ───────────────────────────────────────────── */
+
+function formatPrice(priceStr: string): string {
+  const price = parseFloat(priceStr);
+  if (price === 0) return "Free";
+  if (price < 0.000001) return "<$0.01/M";
+  // Price is per-token, convert to per-million-tokens
+  const perMillion = price * 1_000_000;
+  if (perMillion < 0.01) return "<$0.01/M";
+  if (perMillion < 1) return `$${perMillion.toFixed(2)}/M`;
+  return `$${perMillion.toFixed(1)}/M`;
+}
+
+/* ── Main page ────────────────────────────────────────────────── */
+
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
   const { success, error: toastError } = useToast();
@@ -72,11 +122,20 @@ export default function SettingsPage() {
 
   const [form, setForm] = useState({
     full_name: "", username: "", niche: "", brand_website: "",
-    ai_model: "llama-3.3-70b", ai_unfiltered: false, ai_temperature: 0.7,
+    ai_model: "google/gemini-2.5-flash", ai_unfiltered: false, ai_temperature: 0.7,
     font_pref: "inter", plan: "free",
   });
   const [notif, setNotif] = useState({ leads: true, trends: true, agentActions: false, reports: true });
 
+  // Model data
+  const [recommendedModels, setRecommendedModels] = useState<ModelInfo[]>([]);
+  const [allModels, setAllModels] = useState<ModelInfo[]>([]);
+  const [tiers, setTiers] = useState<Record<string, TierMeta>>({});
+  const [modelsLoading, setModelsLoading] = useState(false);
+  const [modelSearch, setModelSearch] = useState("");
+  const [showAllModels, setShowAllModels] = useState(false);
+
+  /* ── Load profile ───────────────────────────────────────────── */
   useEffect(() => {
     (async () => {
       try {
@@ -90,7 +149,7 @@ export default function SettingsPage() {
             ...f,
             full_name: data.full_name ?? "", username: data.username ?? "",
             niche: data.niche ?? "", brand_website: data.brand_website ?? "",
-            ai_model: data.ai_model ?? "llama-3.3-70b", ai_unfiltered: !!data.ai_unfiltered,
+            ai_model: data.ai_model ?? "google/gemini-2.5-flash", ai_unfiltered: !!data.ai_unfiltered,
             ai_temperature: Number(data.ai_temperature ?? 0.7),
             font_pref: data.font_pref ?? "inter", plan: data.plan ?? "free",
           }));
@@ -98,6 +157,38 @@ export default function SettingsPage() {
       } catch { /* offline */ }
     })();
   }, []);
+
+  /* ── Load models when AI tab is opened ──────────────────────── */
+  useEffect(() => {
+    if (tab !== "ai") return;
+    let cancelled = false;
+    setModelsLoading(true);
+
+    fetch("/api/ai/models")
+      .then((r) => r.json())
+      .then((data) => {
+        if (cancelled) return;
+        setRecommendedModels(data.recommended || []);
+        setAllModels(data.all || []);
+        setTiers(data.tiers || {});
+      })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setModelsLoading(false); });
+
+    return () => { cancelled = true; };
+  }, [tab]);
+
+  /* ── Filter all models by search ────────────────────────────── */
+  const filteredAllModels = useMemo(() => {
+    if (!modelSearch.trim()) return allModels;
+    const q = modelSearch.toLowerCase();
+    return allModels.filter(
+      (m) =>
+        m.name.toLowerCase().includes(q) ||
+        m.provider.toLowerCase().includes(q) ||
+        m.id.toLowerCase().includes(q),
+    );
+  }, [allModels, modelSearch]);
 
   const applyFont = (id: string) => {
     const f = FONTS.find((x) => x.id === id);
@@ -120,6 +211,11 @@ export default function SettingsPage() {
     success("Settings saved");
     setSaving(false);
   };
+
+  /* ── Helpers ────────────────────────────────────────────────── */
+
+  const selectedModelInfo = recommendedModels.find((m) => m.id === form.ai_model)
+    || allModels.find((m) => m.id === form.ai_model);
 
   return (
     <div className="mx-auto max-w-5xl">
@@ -204,26 +300,200 @@ export default function SettingsPage() {
             </>
           )}
 
+          {/* ── AI TAB ─────────────────────────────────────────── */}
           {tab === "ai" && (
             <>
+              {/* Current model display */}
               <GlassCard className="p-6">
-                <p className="font-display text-[15px] font-semibold text-[var(--fg)]">Model</p>
-                <p className="mt-1 text-[13px] text-[var(--fg-3)]">The engine powering your agent.</p>
-                <div className="mt-4 space-y-2.5">
-                  {AI_MODELS.map((m) => (
-                    <button
-                      key={m.id}
-                      onClick={() => setForm({ ...form, ai_model: m.id })}
-                      className="flex w-full items-center justify-between rounded-xl border p-3.5 text-left transition-colors"
-                      style={{ borderColor: form.ai_model === m.id ? "rgba(99,102,241,0.6)" : "var(--stroke)", background: form.ai_model === m.id ? "rgba(99,102,241,0.1)" : "var(--panel-fill)" }}
-                    >
-                      <div><span className="text-[14px] font-medium text-[var(--fg)]">{m.label}</span><span className="ml-2 text-[12px] text-[var(--fg-4)]">{m.note}</span></div>
-                      {form.ai_model === m.id && <Check className="h-4 w-4 text-[var(--sai-indigo)]" />}
-                    </button>
-                  ))}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-display text-[15px] font-semibold text-[var(--fg)]">AI Model</p>
+                    <p className="mt-1 text-[13px] text-[var(--fg-3)]">
+                      Powers all your agents — Create, Ghost Mode, Trends, Scoring
+                    </p>
+                  </div>
+                  <a
+                    href="https://openrouter.ai"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 rounded-full border border-[var(--stroke)] bg-[var(--panel-fill)] px-3 py-1.5 text-[11px] text-[var(--fg-3)] transition-colors hover:text-[var(--fg-2)]"
+                  >
+                    Powered by OpenRouter <ExternalLink className="h-3 w-3" />
+                  </a>
                 </div>
+
+                {/* Selected model card */}
+                {selectedModelInfo && (
+                  <div
+                    className="mt-4 rounded-xl border p-4"
+                    style={{ borderColor: "rgba(99,102,241,0.5)", background: "rgba(99,102,241,0.08)" }}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <div
+                          className="flex h-8 w-8 items-center justify-center rounded-lg"
+                          style={{ background: "linear-gradient(135deg,#6366f1,#a855f7)" }}
+                        >
+                          <Bot className="h-4 w-4 text-white" />
+                        </div>
+                        <div>
+                          <p className="text-[14px] font-semibold text-[var(--fg)]">{selectedModelInfo.name}</p>
+                          <p className="text-[11px] text-[var(--fg-3)]">{selectedModelInfo.provider} · {selectedModelInfo.contextWindow} context</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {selectedModelInfo.supportsVision && (
+                          <span className="flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-medium text-emerald-400">
+                            <Eye className="h-2.5 w-2.5" /> Vision
+                          </span>
+                        )}
+                        {selectedModelInfo.tier && <TierBadge tier={selectedModelInfo.tier} tiers={tiers} />}
+                      </div>
+                    </div>
+                    {selectedModelInfo.pricing && (
+                      <div className="mt-3 flex gap-4 border-t border-[var(--stroke)] pt-3">
+                        <span className="text-[11px] text-[var(--fg-4)]">
+                          Input: <span className="text-[var(--fg-2)]">{formatPrice(selectedModelInfo.pricing.prompt)}</span>
+                        </span>
+                        <span className="text-[11px] text-[var(--fg-4)]">
+                          Output: <span className="text-[var(--fg-2)]">{formatPrice(selectedModelInfo.pricing.completion)}</span>
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
               </GlassCard>
 
+              {/* Recommended models */}
+              <GlassCard className="p-6">
+                <p className="font-display text-[15px] font-semibold text-[var(--fg)]">Recommended Models</p>
+                <p className="mt-1 text-[13px] text-[var(--fg-3)]">Curated for social media content creation. Pick one that fits your budget and quality needs.</p>
+
+                {modelsLoading ? (
+                  <div className="mt-6 flex items-center justify-center gap-2 text-[13px] text-[var(--fg-3)]">
+                    <Loader2 className="h-4 w-4 animate-spin" /> Loading models…
+                  </div>
+                ) : (
+                  <div className="mt-4 space-y-2">
+                    {recommendedModels.map((model) => (
+                      <button
+                        key={model.id}
+                        onClick={() => setForm({ ...form, ai_model: model.id })}
+                        className="group flex w-full items-start gap-3 rounded-xl border p-3.5 text-left transition-all hover:border-[rgba(99,102,241,0.4)]"
+                        style={{
+                          borderColor: form.ai_model === model.id ? "rgba(99,102,241,0.6)" : "var(--stroke)",
+                          background: form.ai_model === model.id ? "rgba(99,102,241,0.08)" : "var(--panel-fill)",
+                        }}
+                      >
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-[14px] font-medium text-[var(--fg)]">{model.name}</span>
+                            <span className="text-[11px] text-[var(--fg-4)]">{model.provider}</span>
+                            {model.tier && <TierBadge tier={model.tier} tiers={tiers} />}
+                            {model.supportsVision && (
+                              <span className="flex items-center gap-0.5 text-[10px] text-emerald-400">
+                                <Eye className="h-2.5 w-2.5" /> Vision
+                              </span>
+                            )}
+                          </div>
+                          <p className="mt-1 text-[12px] text-[var(--fg-3)] line-clamp-1">{model.description}</p>
+                          <div className="mt-1.5 flex items-center gap-3">
+                            <span className="text-[10px] text-[var(--fg-4)]">{model.contextWindow} context</span>
+                            {model.pricing && (
+                              <span className="text-[10px] text-[var(--fg-4)]">
+                                {formatPrice(model.pricing.prompt)} input · {formatPrice(model.pricing.completion)} output
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex-shrink-0 pt-1">
+                          {form.ai_model === model.id && (
+                            <Check className="h-4 w-4 text-[var(--sai-indigo)]" />
+                          )}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </GlassCard>
+
+              {/* Browse all models */}
+              <GlassCard className="p-6">
+                <button
+                  onClick={() => setShowAllModels(!showAllModels)}
+                  className="flex w-full items-center justify-between"
+                >
+                  <div>
+                    <p className="font-display text-[15px] font-semibold text-[var(--fg)]">Browse All Models</p>
+                    <p className="mt-1 text-[13px] text-[var(--fg-3)]">
+                      {allModels.length > 0 ? `${allModels.length} models available via OpenRouter` : "Expand to browse"}
+                    </p>
+                  </div>
+                  {showAllModels
+                    ? <ChevronUp className="h-5 w-5 text-[var(--fg-3)]" />
+                    : <ChevronDown className="h-5 w-5 text-[var(--fg-3)]" />}
+                </button>
+
+                {showAllModels && (
+                  <div className="mt-4">
+                    {/* Search */}
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--fg-4)]" />
+                      <input
+                        value={modelSearch}
+                        onChange={(e) => setModelSearch(e.target.value)}
+                        placeholder="Search models… (e.g. claude, gpt, gemini)"
+                        className={`${inputCls} pl-9`}
+                      />
+                    </div>
+
+                    {/* Model list */}
+                    <div className="mt-3 max-h-[400px] space-y-1.5 overflow-y-auto">
+                      {filteredAllModels.slice(0, 50).map((model) => (
+                        <button
+                          key={model.id}
+                          onClick={() => setForm({ ...form, ai_model: model.id })}
+                          className="flex w-full items-center justify-between rounded-lg border px-3 py-2.5 text-left transition-colors hover:border-[rgba(99,102,241,0.4)]"
+                          style={{
+                            borderColor: form.ai_model === model.id ? "rgba(99,102,241,0.6)" : "var(--stroke)",
+                            background: form.ai_model === model.id ? "rgba(99,102,241,0.08)" : "transparent",
+                          }}
+                        >
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-[13px] font-medium text-[var(--fg)]">{model.name}</span>
+                              <span className="text-[10px] text-[var(--fg-4)]">{model.provider}</span>
+                              {model.supportsVision && (
+                                <Eye className="h-3 w-3 text-emerald-400" />
+                              )}
+                            </div>
+                            {model.pricing && (
+                              <span className="text-[10px] text-[var(--fg-4)]">
+                                {formatPrice(model.pricing.prompt)} / {formatPrice(model.pricing.completion)}
+                              </span>
+                            )}
+                          </div>
+                          {form.ai_model === model.id && (
+                            <Check className="h-3.5 w-3.5 flex-shrink-0 text-[var(--sai-indigo)]" />
+                          )}
+                        </button>
+                      ))}
+                      {filteredAllModels.length > 50 && (
+                        <p className="py-2 text-center text-[11px] text-[var(--fg-4)]">
+                          Showing 50 of {filteredAllModels.length} — refine your search
+                        </p>
+                      )}
+                      {filteredAllModels.length === 0 && modelSearch && (
+                        <p className="py-6 text-center text-[13px] text-[var(--fg-3)]">
+                          No models matching &quot;{modelSearch}&quot;
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </GlassCard>
+
+              {/* Raw language mode */}
               <GlassCard className="p-6">
                 <div className="flex items-start justify-between gap-4">
                   <div>
@@ -244,6 +514,7 @@ export default function SettingsPage() {
                 )}
               </GlassCard>
 
+              {/* Creativity slider */}
               <GlassCard className="p-6">
                 <div className="flex items-center justify-between">
                   <p className="font-display text-[15px] font-semibold text-[var(--fg)]">Creativity</p>
