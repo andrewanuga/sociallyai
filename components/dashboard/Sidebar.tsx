@@ -186,6 +186,7 @@ export function Sidebar({
 
       {/* Collapse toggle */}
       <button
+        type="button"
         onClick={onToggle}
         aria-label="Toggle sidebar"
         className="glass-panel absolute -right-3 top-[70px] z-50 flex h-6 w-6 items-center justify-center rounded-full text-[var(--fg-2)] transition-colors hover:text-[var(--fg)]"

@@ -17,12 +17,17 @@ export default function DashboardLayout({
 
   // Persist collapsed preference.
   useEffect(() => {
-    const saved = localStorage.getItem("sai-sidebar-collapsed");
-    if (saved) setCollapsed(saved === "1");
+    try {
+      const saved = localStorage.getItem("sai-sidebar-collapsed");
+      if (saved) setCollapsed(saved === "1");
+    } catch (e) {}
   }, []);
+  
   const toggle = () =>
     setCollapsed((c) => {
-      localStorage.setItem("sai-sidebar-collapsed", c ? "0" : "1");
+      try {
+        localStorage.setItem("sai-sidebar-collapsed", c ? "0" : "1");
+      } catch (e) {}
       return !c;
     });
 
