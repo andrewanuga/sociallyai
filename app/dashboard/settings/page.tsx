@@ -137,6 +137,11 @@ export default function SettingsPage() {
   const [modelSearch, setModelSearch] = useState("");
   const [showAllModels, setShowAllModels] = useState(false);
 
+  // Password update state
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [updatingPassword, setUpdatingPassword] = useState(false);
+
   /* ── Load profile ───────────────────────────────────────────── */
   useEffect(() => {
     (async () => {
@@ -214,6 +219,29 @@ export default function SettingsPage() {
     setSaving(false);
   };
 
+  const handleUpdatePassword = async () => {
+    if (!password || !confirmPassword) return;
+    if (password !== confirmPassword) {
+      toastError("Passwords don't match", "Please ensure both fields match.");
+      return;
+    }
+    if (password.length < 6) {
+      toastError("Password too short", "Password must be at least 6 characters.");
+      return;
+    }
+    setUpdatingPassword(true);
+    const supabase = createClient();
+    const { error } = await supabase.auth.updateUser({ password });
+    setUpdatingPassword(false);
+    if (error) {
+      toastError("Failed to update password", error.message);
+    } else {
+      success("Password updated successfully");
+      setPassword("");
+      setConfirmPassword("");
+    }
+  };
+
   /* ── Helpers ────────────────────────────────────────────────── */
 
   const selectedModelInfo = recommendedModels.find((m) => m.id === form.ai_model)
@@ -256,12 +284,36 @@ export default function SettingsPage() {
         {/* panel */}
         <div className="space-y-5">
           {tab === "profile" && (
-            <GlassCard className="space-y-5 p-6">
+            <div className="space-y-5">
+              <GlassCard className="space-y-5 p-6">
               <Field label="Full name"><input className={inputCls} value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} /></Field>
               <Field label="Username"><input className={inputCls} value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} placeholder="yourhandle" /></Field>
               <Field label="Niche" hint="Used to sharpen trend detection and drafts."><input className={inputCls} value={form.niche} onChange={(e) => setForm({ ...form, niche: e.target.value })} placeholder="e.g. Fintech / Startups" /></Field>
               <Field label="Brand website" hint="We can extract your voice from this."><input className={inputCls} value={form.brand_website} onChange={(e) => setForm({ ...form, brand_website: e.target.value })} placeholder="https://…" /></Field>
             </GlassCard>
+            
+            <GlassCard className="p-6">
+              <p className="font-display text-[15px] font-semibold text-[var(--fg)] mb-4">Security</p>
+              <div className="space-y-4">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <Field label="New Password">
+                    <input type="password" placeholder="••••••••" className={inputCls} value={password} onChange={e => setPassword(e.target.value)} />
+                  </Field>
+                  <Field label="Confirm Password">
+                    <input type="password" placeholder="••••••••" className={inputCls} value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} />
+                  </Field>
+                </div>
+                <button
+                  onClick={handleUpdatePassword}
+                  disabled={updatingPassword || !password || !confirmPassword}
+                  className="inline-flex h-9 items-center justify-center rounded-lg bg-[var(--stroke)] px-4 text-xs font-semibold text-[var(--fg)] transition-colors hover:bg-[var(--fg-4)] disabled:opacity-50"
+                >
+                  {updatingPassword ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : null}
+                  Update Password
+                </button>
+              </div>
+            </GlassCard>
+          </div>
           )}
 
           {tab === "appearance" && (
