@@ -1,28 +1,40 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import {
   ArrowUp, Sparkles, Copy, Check, RotateCcw, Paperclip, X,
-  FileText, Film,
+  FileText, Film, Bot, Eye, ChevronDown, Loader2, Image as ImageIcon,
 } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
+import { createClient } from "@/lib/supabase/client";
+
+/* ── Types ────────────────────────────────────────────────────── */
 
 type Attachment = {
   id: number;
   type: "image" | "video" | "file";
   name: string;
   mime: string;
-  preview?: string; // object URL for image/video
-  dataUrl?: string; // base64 for images
-  content?: string; // extracted text for text-like files
+  preview?: string;
+  dataUrl?: string;
+  content?: string;
 };
 
 type Msg = {
   id: number;
   role: "user" | "assistant";
   content: string;
+  model?: string;
   attachments?: { type: Attachment["type"]; name: string; preview?: string }[];
 };
+
+interface ModelOption {
+  id: string;
+  name: string;
+  provider: string;
+  supportsVision: boolean;
+  tier?: string;
+}
 
 const MAX_MB = 25;
 
@@ -31,14 +43,27 @@ const SUGGESTIONS = [
   "Turn this blog into a LinkedIn post",
   "3 hooks for a Reel on productivity",
   "Reply to a tough customer comment",
+  "Write a bio that stops the scroll",
+  "5 content ideas for this week",
 ];
 
 const GREETING: Msg = {
   id: 0,
   role: "assistant",
   content:
-    "Hey — I'm your Socially agent. Tell me what you're working on and I'll draft it in your voice. Try a suggestion below, or just start typing.",
+    "Hey — I'm your Socially agent. Tell me what you're working on and I'll draft it in your voice.\n\nAttach images or documents for context, pick your AI model below, and I'll handle the rest. ✨",
 };
+
+/* ── Model display name helper ────────────────────────────────── */
+
+function modelDisplayName(id: string, models: ModelOption[]): string {
+  const found = models.find((m) => m.id === id);
+  if (found) return found.name;
+  const parts = id.split("/");
+  return parts[parts.length - 1].replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+/* ── Main component ───────────────────────────────────────────── */
 
 export default function CreatePage() {
   const { error: toastError } = useToast();
@@ -47,11 +72,84 @@ export default function CreatePage() {
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState<number | null>(null);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
+  const [streamText, setStreamText] = useState("");
+
+  // Model selection
+  const [selectedModel, setSelectedModel] = useState<string>("");
+  const [models, setModels] = useState<ModelOption[]>([]);
+  const [showModelPicker, setShowModelPicker] = useState(false);
+  const [userDefaultModel, setUserDefaultModel] = useState<string>("");
+
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const modelPickerRef = useRef<HTMLDivElement>(null);
   const idRef = useRef(1);
   const attIdRef = useRef(1);
 
+  /* ── Load user profile and models ───────────────────────────── */
+  useEffect(() => {
+    (async () => {
+      try {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("ai_model")
+            .eq("id", user.id)
+            .single();
+          if (profile?.ai_model) {
+            setSelectedModel(profile.ai_model);
+            setUserDefaultModel(profile.ai_model);
+          }
+        }
+      } catch { /* offline */ }
+
+      // Load models
+      try {
+        const res = await fetch("/api/ai/models");
+        const data = await res.json();
+        const recommended = (data.recommended || []).map((m: ModelOption & Record<string, unknown>) => ({
+          id: m.id,
+          name: m.name,
+          provider: m.provider,
+          supportsVision: m.supportsVision,
+          tier: m.tier,
+        }));
+        setModels(recommended);
+      } catch { /* offline */ }
+    })();
+  }, []);
+
+  /* ── Close model picker on outside click ────────────────────── */
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (modelPickerRef.current && !modelPickerRef.current.contains(e.target as Node)) {
+        setShowModelPicker(false);
+      }
+    }
+    if (showModelPicker) {
+      document.addEventListener("mousedown", handleClick);
+      return () => document.removeEventListener("mousedown", handleClick);
+    }
+  }, [showModelPicker]);
+
+  /* ── Auto-scroll ────────────────────────────────────────────── */
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+  }, [messages, busy, streamText]);
+
+  /* ── Auto-resize textarea ───────────────────────────────────── */
+  useEffect(() => {
+    const ta = textareaRef.current;
+    if (ta) {
+      ta.style.height = "auto";
+      ta.style.height = `${Math.min(ta.scrollHeight, 160)}px`;
+    }
+  }, [input]);
+
+  /* ── File handling ──────────────────────────────────────────── */
   const readFile = (file: File) =>
     new Promise<string>((res, rej) => {
       const r = new FileReader();
@@ -101,14 +199,16 @@ export default function CreatePage() {
   const removeAttachment = (id: number) =>
     setAttachments((prev) => prev.filter((a) => a.id !== id));
 
-  useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-  }, [messages, busy]);
+  /* ── Check if current model supports vision ─────────────────── */
+  const currentModelInfo = models.find((m) => m.id === selectedModel);
+  const hasVision = currentModelInfo?.supportsVision ?? true;
+  const hasImageAttachments = attachments.some((a) => a.type === "image");
 
-  const send = async (text?: string) => {
+  /* ── Send message ───────────────────────────────────────────── */
+  const send = useCallback(async (text?: string) => {
     const content = (text ?? input).trim();
     if ((!content && attachments.length === 0) || busy) return;
-    const sending = attachments;
+    const sending = [...attachments];
     const userMsg: Msg = {
       id: idRef.current++,
       role: "user",
@@ -120,6 +220,8 @@ export default function CreatePage() {
     setInput("");
     setAttachments([]);
     setBusy(true);
+    setStreamText("");
+
     try {
       const res = await fetch("/api/ai/chat", {
         method: "POST",
@@ -132,18 +234,65 @@ export default function CreatePage() {
             type: a.type, name: a.name, mime: a.mime,
             content: a.content, dataUrl: a.dataUrl,
           })),
+          stream: true,
         }),
       });
-      if (!res.ok) throw new Error((await res.json()).error || "Request failed");
-      const { reply } = await res.json();
-      setMessages((prev) => [...prev, { id: idRef.current++, role: "assistant", content: reply }]);
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({ error: "Request failed" }));
+        throw new Error(errData.error || "Request failed");
+      }
+
+      const contentType = res.headers.get("content-type") || "";
+
+      if (contentType.includes("text/plain")) {
+        // Streaming response
+        const reader = res.body?.getReader();
+        const decoder = new TextDecoder();
+        let full = "";
+
+        if (reader) {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            const chunk = decoder.decode(value, { stream: true });
+            full += chunk;
+            setStreamText(full);
+          }
+        }
+
+        setStreamText("");
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: idRef.current++,
+            role: "assistant",
+            content: full || "No response received.",
+            model: selectedModel || undefined,
+          },
+        ]);
+      } else {
+        // JSON response
+        const data = await res.json();
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: idRef.current++,
+            role: "assistant",
+            content: data.reply || data.error || "Something went wrong.",
+            model: data.model || selectedModel || undefined,
+          },
+        ]);
+      }
     } catch (e) {
       toastError("Agent unavailable", e instanceof Error ? e.message : "Try again.");
     } finally {
       setBusy(false);
+      setStreamText("");
     }
-  };
+  }, [input, attachments, busy, messages, selectedModel, toastError]);
 
+  /* ── Copy and reset ─────────────────────────────────────────── */
   const copy = (m: Msg) => {
     navigator.clipboard?.writeText(m.content);
     setCopied(m.id);
@@ -153,14 +302,19 @@ export default function CreatePage() {
   const reset = () => {
     setMessages([GREETING]);
     idRef.current = 1;
+    setStreamText("");
   };
 
+  /* ── Render ─────────────────────────────────────────────────── */
   return (
     <div className="mx-auto flex h-[calc(100vh-8rem)] max-w-3xl flex-col">
       {/* header */}
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl" style={{ background: "color-mix(in srgb, var(--sai-indigo) 16%, transparent)" }}>
+          <span
+            className="flex h-9 w-9 items-center justify-center rounded-xl"
+            style={{ background: "color-mix(in srgb, var(--sai-indigo) 16%, transparent)" }}
+          >
             <Sparkles className="h-5 w-5 text-[var(--sai-indigo)]" />
           </span>
           <div>
@@ -168,7 +322,10 @@ export default function CreatePage() {
             <p className="text-[12px] text-[var(--fg-3)]">Your personal Socially agent</p>
           </div>
         </div>
-        <button onClick={reset} className="flex items-center gap-1.5 rounded-full border border-[var(--stroke)] bg-[var(--panel-fill)] px-3 py-1.5 text-[12px] text-[var(--fg-2)] hover:bg-[var(--hover)]">
+        <button
+          onClick={reset}
+          className="flex items-center gap-1.5 rounded-full border border-[var(--stroke)] bg-[var(--panel-fill)] px-3 py-1.5 text-[12px] text-[var(--fg-2)] hover:bg-[var(--hover)]"
+        >
           <RotateCcw className="h-3.5 w-3.5" /> New chat
         </button>
       </div>
@@ -179,15 +336,14 @@ export default function CreatePage() {
           {messages.map((m) => (
             <div key={m.id} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
               <div
-                className={`group relative max-w-[85%] rounded-2xl px-4 py-3 text-[14px] leading-relaxed ${
-                  m.role === "user" ? "text-[var(--fg)]" : "text-[var(--fg)]"
-                }`}
+                className={`group relative max-w-[85%] rounded-2xl px-4 py-3 text-[14px] leading-relaxed text-[var(--fg)]`}
                 style={
                   m.role === "user"
                     ? { background: "linear-gradient(135deg,#6366f1,#a855f7)" }
                     : { background: "var(--panel-fill-2)", border: "1px solid var(--panel-fill-2)" }
                 }
               >
+                {/* Attachments */}
                 {m.attachments && m.attachments.length > 0 && (
                   <div className="mb-2 flex flex-wrap gap-2">
                     {m.attachments.map((a, k) => (
@@ -205,7 +361,27 @@ export default function CreatePage() {
                     ))}
                   </div>
                 )}
-                <p className="whitespace-pre-wrap">{m.content}</p>
+
+                {/* Content with basic markdown rendering */}
+                <div className="whitespace-pre-wrap">
+                  {m.content.split(/(\*\*.*?\*\*)/).map((part, i) =>
+                    part.startsWith("**") && part.endsWith("**") ? (
+                      <strong key={i}>{part.slice(2, -2)}</strong>
+                    ) : (
+                      <span key={i}>{part}</span>
+                    ),
+                  )}
+                </div>
+
+                {/* Model badge for AI responses */}
+                {m.role === "assistant" && m.id !== 0 && m.model && (
+                  <div className="mt-2 flex items-center gap-1 text-[10px] text-[var(--fg-4)]">
+                    <Bot className="h-2.5 w-2.5" />
+                    {modelDisplayName(m.model, models)}
+                  </div>
+                )}
+
+                {/* Copy button */}
                 {m.role === "assistant" && m.id !== 0 && (
                   <button
                     onClick={() => copy(m)}
@@ -218,12 +394,38 @@ export default function CreatePage() {
               </div>
             </div>
           ))}
-          {busy && (
+
+          {/* Streaming text */}
+          {busy && streamText && (
             <div className="flex justify-start">
-              <div className="flex gap-1.5 rounded-2xl border border-[var(--stroke)] bg-[var(--panel-fill-2)] px-4 py-3.5">
-                {[0, 1, 2].map((i) => (
-                  <span key={i} className="h-1.5 w-1.5 animate-bounce rounded-full bg-white/50" style={{ animationDelay: `${i * 0.15}s` }} />
-                ))}
+              <div
+                className="relative max-w-[85%] rounded-2xl px-4 py-3 text-[14px] leading-relaxed text-[var(--fg)]"
+                style={{ background: "var(--panel-fill-2)", border: "1px solid var(--panel-fill-2)" }}
+              >
+                <div className="whitespace-pre-wrap">{streamText}</div>
+                <span className="inline-block h-4 w-0.5 animate-pulse bg-[var(--sai-indigo)]" />
+              </div>
+            </div>
+          )}
+
+          {/* Typing indicator (no stream text yet) */}
+          {busy && !streamText && (
+            <div className="flex justify-start">
+              <div className="flex items-center gap-2 rounded-2xl border border-[var(--stroke)] bg-[var(--panel-fill-2)] px-4 py-3.5">
+                <div className="flex gap-1.5">
+                  {[0, 1, 2].map((i) => (
+                    <span
+                      key={i}
+                      className="h-1.5 w-1.5 animate-bounce rounded-full bg-white/50"
+                      style={{ animationDelay: `${i * 0.15}s` }}
+                    />
+                  ))}
+                </div>
+                <span className="text-[11px] text-[var(--fg-4)]">
+                  {selectedModel
+                    ? `${modelDisplayName(selectedModel, models)} is thinking…`
+                    : "Thinking…"}
+                </span>
               </div>
             </div>
           )}
@@ -251,10 +453,20 @@ export default function CreatePage() {
         {attachments.length > 0 && (
           <div className="mb-2 flex flex-wrap gap-2">
             {attachments.map((a) => (
-              <div key={a.id} className="group relative flex items-center gap-2 rounded-xl border border-[var(--stroke)] bg-[var(--panel-fill-2)] py-1.5 pl-1.5 pr-2.5">
+              <div
+                key={a.id}
+                className="group relative flex items-center gap-2 rounded-xl border border-[var(--stroke)] bg-[var(--panel-fill-2)] py-1.5 pl-1.5 pr-2.5"
+              >
                 {a.type === "image" && a.preview ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={a.preview} alt="" className="h-8 w-8 rounded-lg object-cover" />
+                  <div className="relative">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={a.preview} alt="" className="h-8 w-8 rounded-lg object-cover" />
+                    {hasVision && (
+                      <span className="absolute -right-1 -top-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-emerald-500" title="AI will analyze this image">
+                        <Eye className="h-2 w-2 text-white" />
+                      </span>
+                    )}
+                  </div>
                 ) : (
                   <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--panel-fill-2)]">
                     {a.type === "video" ? <Film className="h-4 w-4 text-[var(--sai-violet)]" /> : <FileText className="h-4 w-4 text-[var(--sai-indigo)]" />}
@@ -266,10 +478,18 @@ export default function CreatePage() {
                 </button>
               </div>
             ))}
+
+            {/* Vision indicator */}
+            {hasImageAttachments && hasVision && (
+              <span className="flex items-center gap-1 self-center rounded-full bg-emerald-500/15 px-2 py-1 text-[10px] font-medium text-emerald-400">
+                <Eye className="h-3 w-3" /> AI will analyze images
+              </span>
+            )}
           </div>
         )}
 
         <div className="glass-panel flex items-end gap-2 rounded-2xl p-2">
+          {/* File attach */}
           <input
             ref={fileRef}
             type="file"
@@ -285,7 +505,66 @@ export default function CreatePage() {
           >
             <Paperclip className="h-5 w-5" />
           </button>
+
+          {/* Model picker */}
+          <div className="relative" ref={modelPickerRef}>
+            <button
+              onClick={() => setShowModelPicker(!showModelPicker)}
+              title="Select AI model"
+              className="flex h-10 items-center gap-1.5 rounded-xl border border-[var(--stroke)] bg-[var(--panel-fill)] px-2.5 text-[11px] text-[var(--fg-2)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--fg)]"
+            >
+              <Bot className="h-3.5 w-3.5 text-[var(--sai-indigo)]" />
+              <span className="max-w-[100px] truncate">
+                {selectedModel ? modelDisplayName(selectedModel, models) : "Model"}
+              </span>
+              <ChevronDown className="h-3 w-3" />
+            </button>
+
+            {showModelPicker && (
+              <div
+                className="absolute bottom-full left-0 z-50 mb-2 w-[280px] overflow-hidden rounded-xl border border-[var(--stroke)] bg-[var(--panel-fill)] shadow-2xl"
+                style={{ backdropFilter: "blur(20px)" }}
+              >
+                <div className="border-b border-[var(--stroke)] p-3">
+                  <p className="text-[12px] font-semibold text-[var(--fg)]">Select Model</p>
+                  <p className="mt-0.5 text-[10px] text-[var(--fg-4)]">Powered by OpenRouter</p>
+                </div>
+                <div className="max-h-[300px] overflow-y-auto p-1.5">
+                  {models.map((model) => (
+                    <button
+                      key={model.id}
+                      onClick={() => {
+                        setSelectedModel(model.id);
+                        setShowModelPicker(false);
+                      }}
+                      className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left transition-colors hover:bg-[var(--hover)]"
+                      style={selectedModel === model.id ? { background: "rgba(99,102,241,0.12)" } : undefined}
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[12px] font-medium text-[var(--fg)]">{model.name}</span>
+                          {model.supportsVision && <Eye className="h-2.5 w-2.5 text-emerald-400" />}
+                        </div>
+                        <span className="text-[10px] text-[var(--fg-4)]">{model.provider}</span>
+                      </div>
+                      {selectedModel === model.id && (
+                        <Check className="h-3.5 w-3.5 flex-shrink-0 text-[var(--sai-indigo)]" />
+                      )}
+                    </button>
+                  ))}
+                  {models.length === 0 && (
+                    <div className="flex items-center justify-center gap-2 py-6 text-[12px] text-[var(--fg-3)]">
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" /> Loading…
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Text input */}
           <textarea
+            ref={textareaRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => {
@@ -298,6 +577,8 @@ export default function CreatePage() {
             placeholder="Ask your agent to draft, refine, or repurpose…"
             className="max-h-40 flex-1 resize-none bg-transparent px-3 py-2.5 text-[14px] text-[var(--fg)] placeholder:text-[var(--fg-4)] focus:outline-none"
           />
+
+          {/* Send button */}
           <button
             onClick={() => send()}
             disabled={(!input.trim() && attachments.length === 0) || busy}
@@ -307,6 +588,7 @@ export default function CreatePage() {
             <ArrowUp className="h-5 w-5" />
           </button>
         </div>
+
         <p className="mt-2 text-center text-[11px] text-[var(--fg-4)]">
           Socially can draft and refine — always review before you post.
         </p>
