@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CreditCard, Check, Zap, Crown, Rocket, Shield, ArrowUpRight, AlertCircle, Loader2 } from "lucide-react";
+import { CreditCard, Check, Zap, Crown, Rocket, Shield, ArrowUpRight, AlertCircle, Loader2, Users } from "lucide-react";
 import { GlassCard, PageHeader, Pill } from "@/components/dashboard/ui";
 import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/components/ui/toast";
@@ -9,10 +9,11 @@ import { fmtNaira } from "@/lib/dashboard/helpers";
 import { PLANS, type PlanId } from "@/lib/billing/plans";
 
 const PLAN_META: { id: PlanId; icon: typeof Zap; features: string[]; popular?: boolean }[] = [
-  { id: "free", icon: Zap, features: ["1 social account", "Basic scheduling", "7 AI generations/week"] },
-  { id: "basic", icon: Shield, features: ["3 social accounts", "Brand Voice setup", "Trend Discovery", "100 AI generations/month"] },
-  { id: "pro", icon: Rocket, popular: true, features: ["7 social accounts", "1 Ghost Mode Agent", "ROI Pulse tracking", "Auto-Plug Loop", "500 AI generations/month", "2 team seats"] },
-  { id: "advanced", icon: Crown, features: ["15+ social accounts", "3 Autonomous Agents", "Smart Inbox Triage", "White-label reports", "API access", "5 team seats"] },
+  { id: "free", icon: Zap, features: ["1 social account", "Basic scheduling", "7 AI generations/week", "0 team seats"] },
+  { id: "basic", icon: Shield, features: ["3 social accounts", "Brand Voice setup", "Trend Discovery", "100 AI generations/month", "3 team seats"] },
+  { id: "pro", icon: Rocket, popular: true, features: ["7 social accounts", "1 Ghost Mode Agent", "ROI Pulse tracking", "Auto-Plug Loop", "500 AI generations/month", "5 team seats"] },
+  { id: "advanced", icon: Crown, features: ["15+ social accounts", "3 Autonomous Agents", "Smart Inbox Triage", "White-label reports", "API access", "10 team seats"] },
+  { id: "teams_infinity", icon: Users, features: ["Unlimited team seats", "50 social accounts", "10 Autonomous Agents", "Custom API integration", "Priority support"] },
 ];
 
 type Payment = { id: string; reference: string; plan: string | null; amount: number; status: string; created_at: string; paid_at: string | null };
@@ -43,7 +44,7 @@ export default function BillingPage() {
   const [status, setStatus] = useState<string>("inactive");
   const [renews, setRenews] = useState<string | null>(null);
   const [invoices, setInvoices] = useState<Payment[]>([]);
-  const [usage, setUsage] = useState({ generations: 0, accounts: 0, bots: 0, resetAt: null as string | null });
+  const [usage, setUsage] = useState({ generations: 0, accounts: 0, bots: 0, collaborators: 0, resetAt: null as string | null });
   const [busy, setBusy] = useState<PlanId | null>(null);
   const [loaded, setLoaded] = useState(false);
 
@@ -52,15 +53,16 @@ export default function BillingPage() {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const [{ data: p }, { data: pay }, { count: acctCount }, { count: botCount }] = await Promise.all([
+      const [{ data: p }, { data: pay }, { count: acctCount }, { count: botCount }, { count: collabCount }] = await Promise.all([
         supabase.from("profiles").select("plan, subscription_status, plan_renews_at, generations_used, generations_reset_at").eq("id", user.id).single(),
         supabase.from("payments").select("id, reference, plan, amount, status, created_at, paid_at").order("created_at", { ascending: false }).limit(12),
-        supabase.from("social_accounts").select("id", { count: "exact", head: true }).eq("status", "connected"),
-        supabase.from("social_bots").select("id", { count: "exact", head: true }).eq("status", "active"),
+        supabase.from("social_accounts").select("id", { count: "exact", head: true }).eq("status", "connected").eq("user_id", user.id),
+        supabase.from("social_bots").select("id", { count: "exact", head: true }).eq("status", "active").eq("user_id", user.id),
+        supabase.from("workspace_members").select("id", { count: "exact", head: true }).eq("workspace_id", user.id),
       ]);
       if (p) {
         setPlan((p.plan as PlanId) ?? "free"); setStatus(p.subscription_status ?? "inactive"); setRenews(p.plan_renews_at ?? null);
-        setUsage({ generations: p.generations_used ?? 0, accounts: acctCount ?? 0, bots: botCount ?? 0, resetAt: p.generations_reset_at ?? null });
+        setUsage({ generations: p.generations_used ?? 0, accounts: acctCount ?? 0, bots: botCount ?? 0, collaborators: collabCount ?? 0, resetAt: p.generations_reset_at ?? null });
       }
       if (pay) setInvoices(pay as Payment[]);
     } catch { /* offline */ }
@@ -130,10 +132,11 @@ export default function BillingPage() {
           <h3 className="font-display text-[15px] font-semibold text-[var(--fg)]">Usage this cycle</h3>
           {usage.resetAt && <span className="text-[12px] text-[var(--fg-4)]">Resets {new Date(usage.resetAt).toLocaleDateString()}</span>}
         </div>
-        <div className="grid gap-5 sm:grid-cols-3">
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           <UsageMeter label="AI generations" used={usage.generations} limit={current.generations} />
           <UsageMeter label="Connected accounts" used={usage.accounts} limit={current.accounts} />
           <UsageMeter label="Active bots" used={usage.bots} limit={current.bots} />
+          <UsageMeter label="Collaborators" used={usage.collaborators} limit={current.collaborators} />
         </div>
       </GlassCard>
 
