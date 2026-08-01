@@ -1,16 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { getActiveWorkspace } from "@/lib/workspace";
 
 export async function GET(req: NextRequest) {
   try {
     const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const workspace = await getActiveWorkspace(supabase);
+    if (!workspace) return new Response("Unauthorized", { status: 401 });
+    const workspaceId = workspace.workspaceId;
 
     const { searchParams } = new URL(req.url);
     const period = searchParams.get("period") || "30d";
@@ -25,7 +22,7 @@ export async function GET(req: NextRequest) {
       .select(
         "id, content, platform, impressions, engagements, followers_gained, link_clicks, revenue_attributed, posted_at"
       )
-      .eq("user_id", user.id)
+      .eq("user_id", workspaceId)
       .gte("posted_at", since.toISOString())
       .order("posted_at", { ascending: false });
 

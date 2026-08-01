@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { getActiveWorkspace } from "@/lib/workspace";
 import { syncAccount } from "@/lib/social/sync";
 
 /**
@@ -8,13 +9,15 @@ import { syncAccount } from "@/lib/social/sync";
  */
 export async function POST() {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const workspace = await getActiveWorkspace(supabase);
+  if (!workspace) return new Response("Unauthorized", { status: 401 });
+  const workspaceId = workspace.workspaceId;
 
   const { data: accounts } = await supabase
     .from("social_accounts")
     .select("id, user_id, platform, external_id, access_token")
-    .eq("status", "connected");
+    .eq("status", "connected")
+    .eq("user_id", workspaceId);
 
   if (!accounts?.length) {
     return NextResponse.json({ synced: 0, accounts: 0, message: "No connected accounts to sync." });

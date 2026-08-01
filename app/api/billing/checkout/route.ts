@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { getActiveWorkspace } from "@/lib/workspace";
 import { PLANS, isPlan, toKobo } from "@/lib/billing/plans";
 
 /** Start a Paystack checkout for a plan; returns an authorization_url to redirect to. */
@@ -8,12 +9,21 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user?.email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  const workspace = await getActiveWorkspace(supabase);
+  if (!workspace || !user) return new Response("Unauthorized", { status: 401 });
+  
+  if (workspace.role === "member") {
+    return NextResponse.json({ error: "Only admins or managers can change the plan." }, { status: 403 });
+  }
+
+  const workspaceId = workspace.workspaceId;
+
   const { plan } = await req.json();
   if (!isPlan(plan)) return NextResponse.json({ error: "Unknown plan" }, { status: 400 });
 
   // Downgrade to Free needs no payment.
   if (plan === "free") {
-    await supabase.from("profiles").update({ plan: "free", subscription_status: "cancelled" }).eq("id", user.id);
+    await supabase.from("profiles").update({ plan: "free", subscription_status: "cancelled" }).eq("id", workspaceId);
     return NextResponse.json({ free: true });
   }
 
@@ -35,7 +45,7 @@ export async function POST(req: NextRequest) {
         // If a subscription plan code exists, Paystack uses it (and its amount).
         ...(planCode ? { plan: planCode } : {}),
         callback_url: `${origin}/api/billing/verify`,
-        metadata: { user_id: user.id, plan },
+        metadata: { user_id: workspaceId, plan },
       }),
     });
     const data = await res.json();

@@ -1,16 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { getActiveWorkspace } from "@/lib/workspace";
 
 export async function POST(req: NextRequest) {
   try {
     const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const workspace = await getActiveWorkspace(supabase);
+    if (!workspace) return new Response("Unauthorized", { status: 401 });
+    const workspaceId = workspace.workspaceId;
 
     const body = await req.json();
     const { content, platforms, scheduledAt, score } = body;
@@ -24,7 +21,7 @@ export async function POST(req: NextRequest) {
 
     // Insert scheduled post for each platform
     const posts = platforms.map((platform: string) => ({
-      user_id: user.id,
+      user_id: workspaceId,
       content,
       platform,
       scheduled_at: scheduledAt || new Date().toISOString(),
@@ -52,13 +49,9 @@ export async function POST(req: NextRequest) {
 export async function GET(req: NextRequest) {
   try {
     const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const workspace = await getActiveWorkspace(supabase);
+    if (!workspace) return new Response("Unauthorized", { status: 401 });
+    const workspaceId = workspace.workspaceId;
 
     const { searchParams } = new URL(req.url);
     const month = searchParams.get("month");
@@ -67,7 +60,7 @@ export async function GET(req: NextRequest) {
     let query = supabase
       .from("scheduled_posts")
       .select("*")
-      .eq("user_id", user.id)
+      .eq("user_id", workspaceId)
       .order("scheduled_at", { ascending: true });
 
     if (month && year) {
