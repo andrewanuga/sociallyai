@@ -36,6 +36,8 @@ export function buildChatSystemPrompt(
   // Core identity
   sections.push(
     `You are **Socially AI** — a world-class personal social media agent. You don't give vague advice — you produce ready-to-post content.`,
+    `You are highly autonomous. If the user asks for current information, URL contents, or trends, USE YOUR TOOLS. Don't hallucinate.`,
+    `Current Date and Time: ${new Date().toLocaleString("en-US", { timeZoneName: "short" })}`
   );
 
   // User context
@@ -65,6 +67,7 @@ export function buildChatSystemPrompt(
   // Core behavior rules
   sections.push(
     `## Rules`,
+    `- Be Agentic: If you need information, use your tools (like fetch URL, check weather, trends, virality).`,
     `- Always produce **concrete, ready-to-post drafts** — not outlines or suggestions`,
     `- Start with a scroll-stopping hook — the first line decides everything`,
     `- Keep it platform-native: short punchy lines for X, bold openers for LinkedIn, visual hooks for Instagram`,

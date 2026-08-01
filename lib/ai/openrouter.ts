@@ -33,12 +33,15 @@ export interface AICallOptions {
   jsonMode?: boolean;
   /** Stream the response (returns ReadableStream instead of string) */
   stream?: boolean;
+  /** Optional tools array for function calling */
+  tools?: any[];
 }
 
 export interface AIResponse {
   content: string;
   model: string;
   usage?: { prompt_tokens: number; completion_tokens: number; total_tokens: number };
+  tool_calls?: any[];
 }
 
 /* ── Constants ────────────────────────────────────────────────── */
@@ -85,6 +88,10 @@ export async function callAI(
     stream: false,
   };
 
+  if (options.tools && options.tools.length > 0) {
+    body.tools = options.tools;
+  }
+
   // JSON mode — only if the model supports it
   if (options.jsonMode) {
     body.response_format = { type: "json_object" };
@@ -123,6 +130,7 @@ export async function callAI(
     content: choice?.message?.content?.trim() || "",
     model: data.model || model,
     usage: data.usage,
+    tool_calls: choice?.message?.tool_calls,
   };
 }
 

@@ -6,6 +6,7 @@ import { getActiveWorkspace } from "@/lib/workspace";
 import { buildChatSystemPrompt } from "@/lib/ai/prompts";
 import { RECOMMENDED_MODELS } from "@/lib/ai/models";
 import type { ChatMessage } from "@/lib/ai/openrouter";
+import { AI_TOOLS, executeTool } from "@/lib/ai/tools";
 
 /* ── Types ────────────────────────────────────────────────────── */
 
@@ -101,7 +102,23 @@ export async function POST(req: NextRequest) {
     const modelInfo = RECOMMENDED_MODELS.find((m) => m.id === selectedModel);
     const canDoVision = modelInfo ? modelInfo.supportsVision : true; // assume true for unknown models
 
-    // ── Build system prompt ─────────────────────────────────────
+    // ── Inject past chat context ────────────────────────────────
+    let pastChatsContext = "";
+    if (activeChatId) {
+      const { data: pastMsgs } = await supabase
+        .from("chat_messages")
+        .select("role, content")
+        .eq("chat_id", activeChatId)
+        .order("created_at", { ascending: false })
+        .limit(10);
+        
+      if (pastMsgs && pastMsgs.length > 0) {
+        pastMsgs.reverse();
+        pastChatsContext = "\n\n--- Past Conversation Context ---\n" + 
+          pastMsgs.map(m => `${m.role.toUpperCase()}: ${m.content}`).join("\n");
+      }
+    }
+
     const attachSummary = attachmentLines.length
       ? attachmentLines.join("\n")
       : null;
@@ -116,7 +133,7 @@ export async function POST(req: NextRequest) {
       },
       tone,
       attachSummary,
-    );
+    ) + pastChatsContext;
 
     // ── Build messages array for OpenRouter ─────────────────────
     const aiMessages: ChatMessage[] = [
@@ -159,77 +176,92 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ reply });
     }
 
-    // ── Streaming response ──────────────────────────────────────
-    if (wantsStream) {
-      try {
-        const stream = await callAIStream(aiMessages, {
-          agent: "chat",
-          model: selectedModel,
-          temperature,
-        });
+    // ── Agentic Tool Calling Loop ───────────────────────────────
+    // ── Agentic Tool Calling Loop ───────────────────────────────
+    let loopCount = 0;
+    const MAX_LOOPS = 4;
+    let finalContent = "";
+    let finalModel = selectedModel;
 
-        // Intercept stream to save assistant reply to DB
-        const reader = stream.getReader();
-        const encoder = new TextEncoder();
-        const decoder = new TextDecoder();
-        let fullResponse = "";
+    while (loopCount < MAX_LOOPS) {
+      loopCount++;
+      const res = await callAI(aiMessages, {
+        agent: "chat",
+        model: selectedModel,
+        temperature,
+        tools: AI_TOOLS,
+      });
 
-        const interceptedStream = new ReadableStream({
-          async start(controller) {
-            try {
-              while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-                fullResponse += decoder.decode(value, { stream: true });
-                controller.enqueue(value);
-              }
-              // Save final response
-              if (activeChatId && fullResponse) {
-                await supabase.from("chat_messages").insert({
-                  chat_id: activeChatId,
-                  role: "assistant",
-                  content: fullResponse,
-                  model: selectedModel,
-                });
-              }
-            } catch (err) {
-              controller.error(err);
-            } finally {
-              controller.close();
-            }
-          },
-        });
+      finalModel = res.model;
 
-        const headers: Record<string, string> = {
-          "Content-Type": "text/plain; charset=utf-8",
-          "Cache-Control": "no-cache",
-          "Transfer-Encoding": "chunked",
-        };
-        if (activeChatId) headers["X-Chat-Id"] = activeChatId;
+      if (res.tool_calls && res.tool_calls.length > 0) {
+        // Model called a tool
+        const toolCall = res.tool_calls[0]; // execute first tool
+        const name = toolCall.function?.name;
+        const args = toolCall.function?.arguments ? JSON.parse(toolCall.function.arguments) : {};
+        
+        // Push the assistant's tool call intent
+        aiMessages.push({ role: "assistant", content: `[Called tool: ${name} with args: ${JSON.stringify(args)}]` });
 
-        return new Response(interceptedStream, { headers });
-      } catch (err) {
-        console.error("[Chat stream fallback]", err);
-        // Fall through to non-streaming
+        // Execute it
+        const toolResult = await executeTool(name, args);
+
+        // Push the tool result as system/user observation
+        aiMessages.push({ role: "system", content: `Tool '${name}' returned: ${toolResult}` });
+      } else {
+        // No tools called, we have our final text
+        finalContent = res.content;
+        break;
       }
     }
 
-    const result = await callAI(aiMessages, {
-      agent: "chat",
-      model: selectedModel,
-      temperature,
-    });
+    if (!finalContent && loopCount >= MAX_LOOPS) {
+      finalContent = "I reached my maximum number of thinking steps and had to stop. Please try asking again in a different way.";
+    }
 
+    // Save final assistant message to db
     if (activeChatId) {
       await supabase.from("chat_messages").insert({
         chat_id: activeChatId,
         role: "assistant",
-        content: result.content,
-        model: result.model,
+        content: finalContent,
+        model: finalModel,
       });
     }
 
-    return NextResponse.json({ reply: result.content, model: result.model, chatId: activeChatId });
+    // ── Return Response ──────────────────────────────────────────
+    if (!wantsStream) {
+      return NextResponse.json({ reply: finalContent, model: finalModel, chatId: activeChatId });
+    }
+
+    // The UI expects a ReadableStream. We can wrap the final generated text in one chunk.
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream({
+      start(controller) {
+        // We can chunk it out to make it look like a stream visually
+        const words = finalContent.split(" ");
+        let i = 0;
+        const interval = setInterval(() => {
+          if (i < words.length) {
+            controller.enqueue(encoder.encode(words[i] + " "));
+            i++;
+          } else {
+            clearInterval(interval);
+            controller.close();
+          }
+        }, 10);
+      }
+    });
+
+    return new Response(stream, {
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+        "Cache-Control": "no-cache",
+        Connection: "keep-alive",
+        "X-Chat-Id": activeChatId || "",
+      },
+    });
+
   } catch (err) {
     console.error("[/api/ai/chat]", err);
 
