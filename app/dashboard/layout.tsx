@@ -6,6 +6,7 @@ import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { FloatingAiAssistant } from "@/components/ui/glowing-ai-chat-assistant";
 import { cn } from "@/lib/utils";
 import { WorkspaceProvider } from "@/components/dashboard/WorkspaceProvider";
+import { GlobalBanner } from "@/components/dashboard/GlobalBanner";
 
 export default function DashboardLayout({
   children,
@@ -64,6 +65,7 @@ export default function DashboardLayout({
           collapsed ? "md:pl-[68px]" : "md:pl-[248px]"
         )}
       >
+        <GlobalBanner />
         <DashboardHeader
           onMobileMenuToggle={() => setMobileOpen((v) => !v)}
           onToggleSidebar={toggle}
