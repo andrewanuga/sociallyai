@@ -13,7 +13,7 @@ const PLAN_META: { id: PlanId; icon: typeof Zap; features: string[]; popular?: b
   { id: "basic", icon: Shield, features: ["3 social accounts", "Brand Voice setup", "Trend Discovery", "100 AI generations/month", "3 team seats"] },
   { id: "pro", icon: Rocket, popular: true, features: ["7 social accounts", "1 Ghost Mode Agent", "ROI Pulse tracking", "Auto-Plug Loop", "500 AI generations/month", "5 team seats"] },
   { id: "advanced", icon: Crown, features: ["15+ social accounts", "3 Autonomous Agents", "Smart Inbox Triage", "White-label reports", "API access", "10 team seats"] },
-  { id: "teams_infinity", icon: Users, features: ["Unlimited team seats", "50 social accounts", "10 Autonomous Agents", "Custom API integration", "Priority support"] },
+  { id: "team", icon: Users, features: ["Unlimited team seats", "50 social accounts", "10 Autonomous Agents", "Custom API integration", "Priority support"] },
 ];
 
 type Payment = { id: string; reference: string; plan: string | null; amount: number; status: string; created_at: string; paid_at: string | null };

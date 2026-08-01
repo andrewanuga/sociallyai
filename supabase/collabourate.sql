@@ -3,10 +3,10 @@
 -- Run this in the Supabase SQL editor to bootstrap teams
 -- ============================================================
 
--- 1. Add teams_infinity to the plan enum in profiles
+-- 1. Add team to the plan enum in profiles
 ALTER TABLE public.profiles DROP CONSTRAINT IF EXISTS profiles_plan_check;
 ALTER TABLE public.profiles ADD CONSTRAINT profiles_plan_check 
-  CHECK (plan IN ('free', 'basic', 'pro', 'advanced', 'teams_infinity'));
+  CHECK (plan IN ('free', 'basic', 'pro', 'advanced', 'team'));
 
 -- 2. Create workspace_members table
 CREATE TABLE IF NOT EXISTS public.workspace_members (
