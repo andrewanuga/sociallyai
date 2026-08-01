@@ -38,11 +38,11 @@ export async function GET() {
     // Filter to only chat-capable models with reasonable pricing
     const allModels = liveModels
       .filter((m) => {
-        // Skip models with no pricing
-        if (!m.pricing?.prompt) return false;
-        // Skip very expensive models (> $0.10 per 1K tokens)
+        // Only allow free models until billing is upgraded
+        if (!m.pricing?.prompt || !m.pricing?.completion) return false;
         const promptPrice = parseFloat(m.pricing.prompt);
-        if (promptPrice > 0.1) return false;
+        const completionPrice = parseFloat(m.pricing.completion);
+        if (promptPrice > 0 || completionPrice > 0) return false;
         return true;
       })
       .map((m) => ({
