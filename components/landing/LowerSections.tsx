@@ -255,19 +255,20 @@ const PLANS = [
   { name: "Basic", price: "₦5,000", desc: "For building your presence", accounts: "3 accounts", features: ["Everything in Free", "Website-to-Voice", "Copywriting frameworks", "Trend discovery", "Performance predictions"], cta: "Get Basic", highlight: false },
   { name: "Pro", price: "₦12,000", desc: "For automating growth", accounts: "7 accounts", features: ["Everything in Basic", "1 Ghost Mode™ Agent", "Auto-Plug loop", "Trend-to-Draft", "ROI Pulse", "2 team seats"], cta: "Start Pro", highlight: true, badge: "Most popular" },
   { name: "Advanced", price: "₦25,000", desc: "For agencies at scale", accounts: "15+ accounts", features: ["Everything in Pro", "3 Autonomous Agents", "Smart Inbox Triage", "White-label reports", "API access", "5 team seats"], cta: "Get Advanced", highlight: false, badge: "For agencies" },
+  { name: "Team Plan", price: "₦150,000", desc: "For ultimate collaboration", accounts: "50+ accounts", features: ["Unlimited team seats", "10 Autonomous Agents", "Custom API integration", "Priority support", "White-label reports", "Auto-Plug loop"], cta: "Get Team", highlight: false, badge: "No limits" },
 ];
 
 export function Pricing() {
   const ref = useGsapReveal<HTMLElement>();
   return (
     <section id="pricing" ref={ref} className="relative px-5 py-28 sm:py-32">
-      <div className="mx-auto max-w-6xl">
+      <div className="mx-auto max-w-[90rem]">
         <SectionHead
           eyebrow="Built for the African market"
           title={<>A full marketing team.<br /><span className="sai-gradient-text">For less.</span></>}
           sub="No hidden fees. No USD surprises. Paystack, Flutterwave, and all Nigerian cards."
         />
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
           {PLANS.map((p) => (
             <div
               key={p.name}
