@@ -12,7 +12,7 @@ export default function UpdatePasswordPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const { toastSuccess, toastError } = useToast();
+  const { success, error: toastError } = useToast();
   const supabase = createClient();
 
   const handleUpdate = async (e: React.FormEvent) => {
@@ -37,7 +37,7 @@ export default function UpdatePasswordPage() {
     if (error) {
       toastError("Failed to update password", error.message);
     } else {
-      toastSuccess("Password updated!", "Your password has been changed successfully.");
+      success("Password updated!", "Your password has been changed successfully.");
       router.push("/dashboard");
     }
   };

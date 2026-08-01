@@ -10,7 +10,7 @@ export default function ResetPasswordPage() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const { toastSuccess, toastError } = useToast();
+  const { success, error: toastError } = useToast();
   const supabase = createClient();
 
   const handleReset = async (e: React.FormEvent) => {
@@ -27,7 +27,7 @@ export default function ResetPasswordPage() {
       toastError("Failed to send reset link", error.message);
     } else {
       setSubmitted(true);
-      toastSuccess("Reset link sent!", "Check your email for the password reset link.");
+      success("Reset link sent!", "Check your email for the password reset link.");
     }
   };
 
