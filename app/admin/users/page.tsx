@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Search, Ban, CircleCheck, Loader2 } from "lucide-react";
+import { Search, Ban, CircleCheck, Loader2, ChevronRight } from "lucide-react";
 import { GlassCard, PageHeader, Pill } from "@/components/dashboard/ui";
 import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/components/ui/toast";
 import { PLAN_ORDER, type PlanId } from "@/lib/billing/plans";
+import { updateUserPlan, toggleUserSuspension } from "./actions";
+import Link from "next/link";
 
 type Row = {
   id: string; full_name: string | null; username: string | null; persona: string | null;
@@ -42,13 +44,7 @@ export default function AdminUsers() {
     const next = !r.suspended;
     setRows((prev) => prev.map((x) => (x.id === r.id ? { ...x, suspended: next } : x)));
     try {
-      const supabase = createClient();
-      const { error } = await supabase.from("profiles").update({
-        suspended: next, suspended_at: next ? new Date().toISOString() : null,
-      }).eq("id", r.id);
-      if (error) throw error;
-      // Log the admin action (best-effort; RLS lets admins insert? events are service-role only, so ignore failure).
-      await supabase.from("security_events").insert({ type: "account_suspended", user_id: r.id, severity: "warning", detail: `${next ? "Suspended" : "Reinstated"} ${r.full_name ?? r.id}` }).then(() => {}, () => {});
+      await toggleUserSuspension(r.id, next, r.full_name);
       success(next ? "Account suspended" : "Account reinstated");
     } catch (e) {
       setRows((prev) => prev.map((x) => (x.id === r.id ? { ...x, suspended: r.suspended } : x)));
@@ -59,9 +55,7 @@ export default function AdminUsers() {
   const changePlan = async (r: Row, plan: PlanId) => {
     setRows((prev) => prev.map((x) => (x.id === r.id ? { ...x, plan } : x)));
     try {
-      const supabase = createClient();
-      const { error } = await supabase.from("profiles").update({ plan }).eq("id", r.id);
-      if (error) throw error;
+      await updateUserPlan(r.id, plan);
       success("Plan updated");
     } catch (e) {
       toastError("Couldn't change plan", e instanceof Error ? e.message : undefined); load();
@@ -93,19 +87,22 @@ export default function AdminUsers() {
           <div className="max-h-[calc(100vh-260px)] overflow-y-auto">
             {filtered.map((r) => (
               <div key={r.id} className="grid grid-cols-[1.6fr_1fr_1fr_1fr_auto] items-center gap-3 border-b border-[var(--stroke)] px-4 py-3 last:border-0" style={r.suspended ? { opacity: 0.6 } : undefined}>
-                <div className="flex min-w-0 items-center gap-2.5">
+                <Link href={`/admin/users/${r.id}`} className="flex min-w-0 items-center gap-2.5 hover:opacity-70 transition-opacity">
                   <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-white" style={{ background: "linear-gradient(135deg,#6366f1,#a855f7)" }}>{initials(r)}</span>
                   <div className="min-w-0">
                     <p className="flex items-center gap-1.5 truncate text-[13.5px] font-medium text-[var(--fg)]">{r.full_name || "—"} {r.is_admin && <Pill tone="red">admin</Pill>} {r.suspended && <Pill tone="muted">suspended</Pill>}</p>
                     <p className="truncate text-[12px] text-[var(--fg-4)]">{r.username ? `@${r.username}` : r.id.slice(0, 8)}</p>
                   </div>
-                </div>
+                </Link>
                 <span className="text-[12.5px] capitalize text-[var(--fg-3)]">{r.persona ?? "—"}</span>
                 <select value={r.plan} onChange={(e) => changePlan(r, e.target.value as PlanId)} className="w-fit rounded-lg border border-[var(--stroke)] bg-[var(--panel-fill)] px-2 py-1 text-[12.5px] capitalize text-[var(--fg)] focus:outline-none">
                   {PLAN_ORDER.map((p) => <option key={p} value={p}>{p}</option>)}
                 </select>
                 <span className="text-[12px] text-[var(--fg-4)]">{new Date(r.created_at).toLocaleDateString()}</span>
-                <div className="flex justify-end">
+                <div className="flex justify-end gap-2">
+                  <Link href={`/admin/users/${r.id}`} className="flex h-8 w-8 items-center justify-center rounded-full border border-[var(--stroke)] text-[var(--fg-4)] hover:text-[var(--fg)] transition-colors">
+                    <ChevronRight className="h-4 w-4" />
+                  </Link>
                   <button onClick={() => toggleSuspend(r)} disabled={busy === r.id || r.is_admin}
                     className="flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12px] transition-colors disabled:opacity-40"
                     style={r.suspended ? { borderColor: "rgba(52,211,153,0.4)", color: "#34d399" } : { borderColor: "color-mix(in srgb, var(--sai-red) 40%, transparent)", color: "var(--sai-red)" }}>

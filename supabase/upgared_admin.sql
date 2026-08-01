@@ -45,3 +45,19 @@ insert into public.feature_flags (key, is_enabled, description) values
   ('auto_scheduler', true, 'Toggle the ability to auto-schedule posts'),
   ('competitor_spy', true, 'Toggle the competitor analysis tools')
 on conflict (key) do nothing;
+
+-- ── Global Admin RLS Overrides for Impersonation ──────────────
+-- These policies allow admins to read and manage all user data,
+-- enabling the "Impersonation" feature.
+
+do $$ 
+declare
+  t text;
+begin
+  for t in select table_name from information_schema.tables where table_schema = 'public' and table_type = 'BASE TABLE' loop
+    begin
+      execute format('create policy "admins manage %I" on public.%I for all using (public.is_admin(auth.uid()))', t, t);
+    exception when duplicate_object then null;
+    end;
+  end loop;
+end $$;
