@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { callAI, isConfigured } from "@/lib/ai/openrouter";
+import { getActiveWorkspace } from "@/lib/workspace";
 import { buildScorePrompt } from "@/lib/ai/prompts";
 
 /* ── Types ────────────────────────────────────────────────────── */
@@ -18,8 +19,9 @@ interface ScoreResponse {
 export async function POST(req: NextRequest) {
   try {
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const workspace = await getActiveWorkspace(supabase);
+    if (!workspace) return new Response("Unauthorized", { status: 401 });
+    const workspaceId = workspace.workspaceId;
 
     const { content, platform } = await req.json();
     if (!content) {
@@ -30,7 +32,7 @@ export async function POST(req: NextRequest) {
     const { data: profile } = await supabase
       .from("profiles")
       .select("ai_model")
-      .eq("id", user.id)
+      .eq("id", workspaceId)
       .single();
 
     // ── No API key → mock ───────────────────────────────────────

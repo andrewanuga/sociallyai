@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { learnPersona, getPersonaTone } from "@/lib/social/persona";
 import { callAI, callAIStream, isConfigured, buildMultimodalContent } from "@/lib/ai/openrouter";
+import { getActiveWorkspace } from "@/lib/workspace";
 import { buildChatSystemPrompt } from "@/lib/ai/prompts";
 import { RECOMMENDED_MODELS } from "@/lib/ai/models";
 import type { ChatMessage } from "@/lib/ai/openrouter";
@@ -22,8 +23,9 @@ type Attachment = {
 export async function POST(req: NextRequest) {
   try {
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const workspace = await getActiveWorkspace(supabase);
+    if (!workspace) return new Response("Unauthorized", { status: 401 });
+    const workspaceId = workspace.workspaceId;
 
     const { messages, attachments, stream: wantsStream } = (await req.json()) as {
       messages: InputMessage[];
@@ -38,7 +40,7 @@ export async function POST(req: NextRequest) {
     const { data: profile } = await supabase
       .from("profiles")
       .select("full_name, persona, niche, brand_voice, ai_model, ai_unfiltered, ai_temperature")
-      .eq("id", user.id)
+      .eq("id", workspaceId)
       .single();
 
     const unfiltered = !!profile?.ai_unfiltered;
@@ -47,8 +49,8 @@ export async function POST(req: NextRequest) {
 
     // ── Personalization: learned writing style ──────────────────
     const lastUserText = [...messages].reverse().find((m) => m.role === "user")?.content ?? "";
-    const tone = await getPersonaTone(supabase, user.id);
-    learnPersona(supabase, user.id, lastUserText); // fire-and-forget
+    const tone = await getPersonaTone(supabase, workspaceId);
+    learnPersona(supabase, workspaceId, lastUserText); // fire-and-forget
 
     // ── Build attachment context ────────────────────────────────
     const imageDataUrls: string[] = [];

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { callAI, isConfigured } from "@/lib/ai/openrouter";
-import { buildTrendsPrompt } from "@/lib/ai/prompts";
+import { getActiveWorkspace } from "@/lib/workspace";
+import { buildTrendsPrompt, TREND_TOPICS } from "@/lib/ai/prompts";
 
 /* ── Types ────────────────────────────────────────────────────── */
 
@@ -47,8 +48,9 @@ async function webSearch(query: string): Promise<string> {
 export async function GET(req: NextRequest) {
   try {
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const workspace = await getActiveWorkspace(supabase);
+    if (!workspace) return new Response("Unauthorized", { status: 401 });
+    const workspaceId = workspace.workspaceId;
 
     const { searchParams } = new URL(req.url);
     const niche = searchParams.get("niche") || "general";
@@ -56,8 +58,8 @@ export async function GET(req: NextRequest) {
     // Get user's model preference
     const { data: profile } = await supabase
       .from("profiles")
-      .select("ai_model, niche")
-      .eq("id", user.id)
+      .select("ai_model")
+      .eq("id", workspaceId)
       .single();
 
     const userNiche = niche !== "general" ? niche : profile?.niche || "general";

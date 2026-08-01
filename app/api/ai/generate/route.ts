@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { callAI, isConfigured } from "@/lib/ai/openrouter";
+import { getActiveWorkspace } from "@/lib/workspace";
 import { buildGeneratePrompt } from "@/lib/ai/prompts";
 
 /* ── Types ────────────────────────────────────────────────────── */
@@ -20,8 +21,9 @@ export async function POST(req: NextRequest) {
   try {
     // Auth guard
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const workspace = await getActiveWorkspace(supabase);
+    if (!workspace) return new Response("Unauthorized", { status: 401 });
+    const workspaceId = workspace.workspaceId;
 
     const body: GenerateBody = await req.json();
     const { prompt, platform, framework, tone, context, type = "caption" } = body;
@@ -36,8 +38,8 @@ export async function POST(req: NextRequest) {
     // Get user's model preference
     const { data: profile } = await supabase
       .from("profiles")
-      .select("ai_model")
-      .eq("id", user.id)
+      .select("ai_model, ai_temperature")
+      .eq("id", workspaceId)
       .single();
 
     // Build the generation prompt
@@ -72,7 +74,7 @@ export async function POST(req: NextRequest) {
     );
 
     // Deduct from user's generation quota
-    await supabase.rpc("decrement_generations", { user_id: user.id });
+    const { error: dbError } = await supabase.rpc("decrement_generations", { user_id: workspaceId });
 
     return NextResponse.json({ content: result.content, model: result.model });
   } catch (err) {

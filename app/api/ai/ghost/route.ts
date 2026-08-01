@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { callAI, isConfigured } from "@/lib/ai/openrouter";
+import { getActiveWorkspace } from "@/lib/workspace";
 import { buildGhostSystemPrompt } from "@/lib/ai/prompts";
 
 /* ── POST /api/ai/ghost ───────────────────────────────────────── */
@@ -8,8 +9,9 @@ import { buildGhostSystemPrompt } from "@/lib/ai/prompts";
 export async function POST(req: NextRequest) {
   try {
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const workspace = await getActiveWorkspace(supabase);
+    if (!workspace) return new Response("Unauthorized", { status: 401 });
+    const workspaceId = workspace.workspaceId;
 
     const { comment, brandVoice, platform, mode = "reply" } = await req.json();
     if (!comment) {
@@ -20,13 +22,13 @@ export async function POST(req: NextRequest) {
     const { data: profile } = await supabase
       .from("profiles")
       .select("ai_model")
-      .eq("id", user.id)
+      .eq("id", workspaceId)
       .single();
 
     // ── No API key → mock ───────────────────────────────────────
     if (!isConfigured()) {
       const result = mockGhost(comment);
-      await logAction(supabase, user.id, comment, result, platform);
+      await logAction(supabase, workspaceId, comment, result, platform);
       return NextResponse.json(result);
     }
 
@@ -61,7 +63,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Log agent action
-    await logAction(supabase, user.id, comment, result, platform);
+    await logAction(supabase, workspaceId, comment, result, platform);
 
     return NextResponse.json({ ...result, model: aiResult.model });
   } catch (err) {
