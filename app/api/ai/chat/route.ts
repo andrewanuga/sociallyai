@@ -27,9 +27,10 @@ export async function POST(req: NextRequest) {
     if (!workspace) return new Response("Unauthorized", { status: 401 });
     const workspaceId = workspace.workspaceId;
 
-    const { messages, attachments, stream: wantsStream } = (await req.json()) as {
+    const { messages, attachments, model, stream: wantsStream } = (await req.json()) as {
       messages: InputMessage[];
       attachments?: Attachment[];
+      model?: string;
       stream?: boolean;
     };
     if (!messages?.length) {
@@ -72,7 +73,7 @@ export async function POST(req: NextRequest) {
     }
 
     // ── Check if selected model supports vision ─────────────────
-    const selectedModel = userModel || undefined;
+    const selectedModel = model || userModel || undefined;
     const modelInfo = RECOMMENDED_MODELS.find((m) => m.id === selectedModel);
     const canDoVision = modelInfo ? modelInfo.supportsVision : true; // assume true for unknown models
 

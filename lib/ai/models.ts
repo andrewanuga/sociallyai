@@ -153,8 +153,8 @@ export const RECOMMENDED_MODELS: RecommendedModel[] = [
   },
   // — Budget tier —
   {
-    id: "meta-llama/llama-4-maverick",
-    name: "Llama 4 Maverick",
+    id: "meta-llama/llama-3.3-70b-instruct",
+    name: "Llama 3.3 70B",
     provider: "Meta",
     description: "Open-source powerhouse with strong capabilities",
     tier: "budget",
@@ -194,9 +194,9 @@ export const RECOMMENDED_MODELS: RecommendedModel[] = [
     bestFor: ["free", "experimentation"],
   },
   {
-    id: "poolside/laguna-s-2.1:free",
-    name: "Laguna S 2.1 (Free)",
-    provider: "Poolside",
+    id: "meta-llama/llama-3.2-3b-instruct:free",
+    name: "Llama 3.2 3B (Free)",
+    provider: "Meta",
     description: "Free fast model for testing",
     tier: "free",
     supportsVision: false,

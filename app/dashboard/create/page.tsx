@@ -234,6 +234,7 @@ export default function CreatePage() {
             type: a.type, name: a.name, mime: a.mime,
             content: a.content, dataUrl: a.dataUrl,
           })),
+          model: selectedModel || undefined,
           stream: true,
         }),
       });
