@@ -204,7 +204,7 @@ export async function POST(req: NextRequest) {
         aiMessages.push({ role: "assistant", content: `[Called tool: ${name} with args: ${JSON.stringify(args)}]` });
 
         // Execute it
-        const toolResult = await executeTool(name, args);
+        const toolResult = await executeTool(name, args, { supabase, workspaceId });
 
         // Push the tool result as system/user observation
         aiMessages.push({ role: "system", content: `Tool '${name}' returned: ${toolResult}` });
