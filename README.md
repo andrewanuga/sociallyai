@@ -40,7 +40,7 @@ Most tools tell you what happened. Socially AI tells you what will — and often
 | Styling | Tailwind CSS v4, CSS-variable theming (dark + blue-tinted light) |
 | Motion | GSAP (cinematic hero + scroll reveals), Framer Motion |
 | Auth & DB | Supabase (PostgreSQL + pgvector, RLS) |
-| AI | Llama 3.3 70B via vLLM (OpenAI-compatible), mock fallback in dev |
+| AI | OpenRouter (200+ models: GPT-4o, Claude, Gemini, Llama, etc.) |
 | Payments | Paystack / Flutterwave |
 | Jobs | BullMQ + Redis |
 
@@ -114,16 +114,41 @@ Once connected, hit **Sync now** (or run the sync worker on a cron/queue) to pul
 
 ## AI model
 
-Point `VLLM_SERVER_URL` at a self-hosted vLLM server **or** a hosted
-OpenAI-compatible endpoint (Together, Groq, Fireworks, DeepInfra):
+Socially AI uses **OpenRouter** to access 200+ AI models. Each agent
+(Create, Ghost Mode, Trends, Scoring) can use a different model,
+and users choose their preferred model in **Settings → AI**.
+
+### Setup
+
+1. Sign up at [openrouter.ai](https://openrouter.ai)
+2. Create an API key at [openrouter.ai/keys](https://openrouter.ai/keys)
+3. Add to your `.env`:
 
 ```bash
-pip install vllm
-python -m vllm.entrypoints.openai.api_server \
-  --model meta-llama/Llama-3.3-70B-Instruct --host 0.0.0.0 --port 8000
+OPENROUTER_API_KEY=sk-or-v1-xxxxxxxxxxxxx
+OPENROUTER_DEFAULT_MODEL=google/gemini-2.5-flash
 ```
 
-Leave it empty in dev to use built-in mock responses.
+### Recommended models
+
+| Tier | Model | Best for |
+|------|-------|----------|
+| Free | `google/gemini-2.0-flash-exp:free` | Testing, zero cost |
+| Budget | `deepseek/deepseek-chat-v3-0324` | Extremely cheap, solid quality |
+| Standard | `google/gemini-2.5-flash` | Fast + affordable (default) |
+| Premium | `anthropic/claude-sonnet-4` | Best writing quality |
+| Premium | `openai/gpt-4o` | Best multimodal/vision |
+
+### Per-agent personalization
+
+Each AI agent is tuned for its task:
+- **Create Agent** — higher creativity (temp 0.7), vision-capable
+- **Content Generator** — structured output (temp 0.8), framework-aware
+- **Ghost Mode** — conservative (temp 0.4), JSON output
+- **Content Scorer** — analytical (temp 0.3), JSON output
+- **Trend Analyst** — creative + contextual (temp 0.7)
+
+Leave `OPENROUTER_API_KEY` empty in dev to use built-in mock responses.
 
 ---
 
