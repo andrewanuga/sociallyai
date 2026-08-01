@@ -3,10 +3,11 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Bell, Check, Settings, CreditCard, LifeBuoy, LogOut, UserRound } from "lucide-react";
+import { Bell, Check, Settings, CreditCard, LifeBuoy, LogOut, UserRound, Users, ChevronDown, CheckCircle2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/components/ui/toast";
 import { timeAgo } from "@/lib/dashboard/helpers";
+import { useWorkspace } from "./WorkspaceProvider";
 
 function useClickOutside(onClose: () => void) {
   const ref = useRef<HTMLDivElement>(null);
@@ -121,6 +122,56 @@ export function NotificationsMenu() {
           <Link href="/dashboard/inbox" onClick={() => setOpen(false)} className="block border-t border-[var(--stroke)] px-4 py-2.5 text-center text-[12.5px] font-medium text-[var(--sai-indigo)] hover:bg-[var(--hover)]">
             Open inbox
           </Link>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Workspace menu ──────────────────────────────────────────────── */
+export function WorkspaceMenu() {
+  const { workspaces, activeWorkspace, setActiveWorkspace } = useWorkspace();
+  const [open, setOpen] = useState(false);
+  const ref = useClickOutside(() => setOpen(false));
+
+  if (!activeWorkspace || workspaces.length <= 1) return null;
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="flex h-9 items-center gap-1.5 rounded-lg border border-[var(--stroke)] bg-[var(--panel-fill)] px-2.5 text-[13px] font-medium text-[var(--fg-2)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--fg)]"
+      >
+        <Users className="h-[15px] w-[15px] text-[var(--sai-indigo)]" />
+        <span className="max-w-[100px] truncate sm:max-w-[140px]">{activeWorkspace.name}</span>
+        <ChevronDown className="h-[14px] w-[14px] opacity-60" />
+      </button>
+
+      {open && (
+        <div className="glass-panel absolute right-0 top-11 z-50 w-[240px] overflow-hidden rounded-2xl" style={{ background: "var(--app-surface)" }}>
+          <div className="border-b border-[var(--stroke)] px-4 py-2.5">
+            <p className="text-[12px] font-semibold uppercase tracking-wider text-[var(--fg-4)]">Switch Workspace</p>
+          </div>
+          <div className="max-h-[300px] overflow-y-auto p-1.5">
+            {workspaces.map((w) => (
+              <button
+                key={w.id}
+                onClick={() => {
+                  setActiveWorkspace(w.id);
+                  setOpen(false);
+                }}
+                className={`flex w-full items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-left text-[13px] transition-colors ${
+                  activeWorkspace.id === w.id ? "bg-[var(--hover)] text-[var(--fg)]" : "text-[var(--fg-2)] hover:bg-[var(--hover)] hover:text-[var(--fg)]"
+                }`}
+              >
+                <div className="flex flex-col overflow-hidden">
+                  <span className="truncate font-medium">{w.name}</span>
+                  <span className="text-[11px] text-[var(--fg-4)] capitalize">{w.role}</span>
+                </div>
+                {activeWorkspace.id === w.id && <CheckCircle2 className="h-4 w-4 text-[var(--sai-indigo)]" />}
+              </button>
+            ))}
+          </div>
         </div>
       )}
     </div>

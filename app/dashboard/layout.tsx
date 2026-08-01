@@ -5,6 +5,7 @@ import { Sidebar } from "@/components/dashboard/Sidebar";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { FloatingAiAssistant } from "@/components/ui/glowing-ai-chat-assistant";
 import { cn } from "@/lib/utils";
+import { WorkspaceProvider } from "@/components/dashboard/WorkspaceProvider";
 
 export default function DashboardLayout({
   children,
@@ -26,6 +27,7 @@ export default function DashboardLayout({
     });
 
   return (
+    <WorkspaceProvider>
     <div className="sai-app min-h-screen">
       {/* Mobile overlay */}
       {mobileOpen && (
@@ -66,5 +68,6 @@ export default function DashboardLayout({
 
       <FloatingAiAssistant />
     </div>
+    </WorkspaceProvider>
   );
 }

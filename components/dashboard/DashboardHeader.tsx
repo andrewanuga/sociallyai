@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Search, Menu, Plus, PanelLeft } from "lucide-react";
-import { NotificationsMenu, ProfileMenu } from "./HeaderMenus";
+import { NotificationsMenu, ProfileMenu, WorkspaceMenu } from "./HeaderMenus";
 
 export function DashboardHeader({
   onMobileMenuToggle,
@@ -52,6 +52,7 @@ export function DashboardHeader({
           <Plus className="h-4 w-4" /> Create
         </Link>
 
+        <WorkspaceMenu />
         <NotificationsMenu />
         <ProfileMenu />
       </div>
