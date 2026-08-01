@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { callAI, isConfigured } from "@/lib/ai/openrouter";
 import { getActiveWorkspace } from "@/lib/workspace";
-import { buildTrendsPrompt, TREND_TOPICS } from "@/lib/ai/prompts";
+import { buildTrendsPrompt } from "@/lib/ai/prompts";
 
 /* ── Types ────────────────────────────────────────────────────── */
 
@@ -58,7 +58,7 @@ export async function GET(req: NextRequest) {
     // Get user's model preference
     const { data: profile } = await supabase
       .from("profiles")
-      .select("ai_model")
+      .select("ai_model, niche")
       .eq("id", workspaceId)
       .single();
 
