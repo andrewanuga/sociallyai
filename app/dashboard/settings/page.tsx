@@ -7,16 +7,18 @@ import {
   User, Palette, Bot, CreditCard, Bell, Save, Loader2,
   ShieldAlert, Check, Sun, Moon, Monitor, Sparkles,
   Search, Eye, Zap, Crown, Gift, ChevronDown, ChevronUp,
-  ExternalLink,
+  ExternalLink, Users, Trash2, Mail, UserPlus
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/components/ui/toast";
 import { GlassCard, PageHeader, Pill } from "@/components/dashboard/ui";
+import { TeamSettingsTab } from "@/components/dashboard/TeamSettingsTab";
 
 const TABS = [
   { id: "profile", label: "Profile", icon: User },
   { id: "appearance", label: "Appearance", icon: Palette },
   { id: "ai", label: "AI", icon: Bot },
+  { id: "team", label: "Team", icon: Users },
   { id: "billing", label: "Billing", icon: CreditCard },
   { id: "notifications", label: "Notifications", icon: Bell },
 ] as const;
@@ -528,6 +530,10 @@ export default function SettingsPage() {
                 <div className="mt-1 flex justify-between text-[11px] text-[var(--fg-4)]"><span>Precise</span><span>Balanced</span><span>Wild</span></div>
               </GlassCard>
             </>
+          )}
+
+          {tab === "team" && (
+            <TeamSettingsTab plan={form.plan} />
           )}
 
           {tab === "billing" && (
