@@ -6,7 +6,7 @@ export async function getActiveWorkspace(supabase: SupabaseClient) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const activeWorkspaceId = cookieStore.get("socially_active_workspace")?.value;
 
   if (!activeWorkspaceId || activeWorkspaceId === user.id) {
