@@ -23,89 +23,168 @@ export interface NormalizedPost {
 
 type Account = {
   id: string; user_id: string; platform: PlatformId;
-  external_id: string; access_token: string | null;
+  external_id: string; access_token: string | null; refresh_token?: string | null;
+  token_expires_at?: string | null;
   handle?: string | null;
 };
 
-/** Fetch profile metadata (followers) for one account. */
-async function fetchProfile(acc: Account): Promise<{ followers?: number; avatar_url?: string; handle?: string }> {
+/** Refresh an expired Google OAuth token using the refresh_token. */
+async function refreshGoogleToken(acc: Account, supabase: SupabaseClient): Promise<string | null> {
+  if (!acc.refresh_token) return acc.access_token;
   try {
-    if (acc.access_token) {
+    const r = await fetch("https://oauth2.googleapis.com/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        client_id: process.env.GOOGLE_CLIENT_ID!,
+        client_secret: process.env.GOOGLE_CLIENT_SECRET!,
+        refresh_token: acc.refresh_token,
+        grant_type: "refresh_token",
+      }),
+    });
+    const d = await r.json();
+    if (d.access_token) {
+      const expiresAt = new Date(Date.now() + (d.expires_in - 60) * 1000).toISOString();
+      await supabase.from("social_accounts").update({
+        access_token: d.access_token,
+        token_expires_at: expiresAt,
+      }).eq("id", acc.id);
+      return d.access_token;
+    }
+  } catch (e) {
+    console.error("[sync] Google token refresh failed:", e);
+  }
+  return acc.access_token;
+}
+
+/** Get a valid access token, refreshing if expired. */
+async function getValidToken(acc: Account, supabase: SupabaseClient): Promise<string | null> {
+  if (!acc.access_token) return null;
+  // Check if token is expired (with 5 min buffer)
+  if (acc.token_expires_at) {
+    const expiresAt = new Date(acc.token_expires_at).getTime();
+    const now = Date.now();
+    if (expiresAt - now < 5 * 60 * 1000) {
+      // Token is expired or expiring soon
+      if (acc.platform === "youtube" || acc.platform === "x") {
+        return await refreshGoogleToken(acc, supabase);
+      }
+    }
+  }
+  return acc.access_token;
+}
+
+/** Fetch profile metadata (followers) for one account. */
+async function fetchProfile(acc: Account, token: string | null): Promise<{ followers?: number; avatar_url?: string; handle?: string; display_name?: string }> {
+  try {
+    if (token) {
       switch (acc.platform) {
         case "x": {
           const r = await fetch(
             `https://api.twitter.com/2/users/${acc.external_id}?user.fields=public_metrics,profile_image_url,username`,
-          { headers: { Authorization: `Bearer ${acc.access_token}` } }
-        );
-        const d = await r.json();
-        if (d.data) {
-          return {
-            followers: d.data.public_metrics?.followers_count,
-            avatar_url: d.data.profile_image_url,
-            handle: d.data.username,
-          };
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+          const d = await r.json();
+          if (d.data) {
+            return {
+              followers: d.data.public_metrics?.followers_count,
+              avatar_url: d.data.profile_image_url,
+              handle: d.data.username,
+            };
+          }
+          break;
         }
-        break;
-      }
-      case "youtube": {
-        const r = await fetch(
-          `https://www.googleapis.com/youtube/v3/channels?part=statistics,snippet&id=${acc.external_id}`,
-          { headers: { Authorization: `Bearer ${acc.access_token}` } }
-        );
-        const d = await r.json();
-        if (d.items?.[0]) {
-          return {
-            followers: Number(d.items[0].statistics?.subscriberCount),
-            avatar_url: d.items[0].snippet?.thumbnails?.default?.url,
-            handle: d.items[0].snippet?.customUrl || d.items[0].snippet?.title,
-          };
+        case "youtube": {
+          // Use mine=true instead of id= so it always fetches the authenticated user's channel
+          const r = await fetch(
+            `https://www.googleapis.com/youtube/v3/channels?part=statistics,snippet&mine=true`,
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+          const d = await r.json();
+          if (d.items?.[0]) {
+            return {
+              followers: Number(d.items[0].statistics?.subscriberCount),
+              avatar_url: d.items[0].snippet?.thumbnails?.default?.url,
+              handle: d.items[0].snippet?.customUrl || `@${d.items[0].snippet?.title}`,
+              display_name: d.items[0].snippet?.title,
+            };
+          }
+          break;
         }
-        break;
-      }
-      case "facebook": {
-        const r = await fetch(
-          `https://graph.facebook.com/v19.0/${acc.external_id}?fields=followers_count,picture,name&access_token=${acc.access_token}`
-        );
-        const d = await r.json();
-        if (d.id) {
-          return {
-            followers: d.followers_count,
-            avatar_url: d.picture?.data?.url,
-            handle: d.name,
-          };
+        case "facebook": {
+          // Try fetching personal profile data — pages_read_engagement gives us posts
+          // Personal profile followers_count is not available in Graph API v19+
+          // We get the profile picture and name at minimum
+          const r = await fetch(
+            `https://graph.facebook.com/v19.0/${acc.external_id}?fields=name,picture&access_token=${token}`
+          );
+          const d = await r.json();
+          if (d.id) {
+            return {
+              // Facebook personal profiles don't expose follower counts via API
+              // Only Facebook Pages (with page access tokens) can get fan_count
+              avatar_url: d.picture?.data?.url,
+              handle: d.name,
+              display_name: d.name,
+            };
+          }
+          break;
         }
-        break;
-      }
-      case "instagram": {
-        const r = await fetch(
-          `https://graph.facebook.com/v19.0/${acc.external_id}?fields=followers_count,profile_picture_url,username&access_token=${acc.access_token}`
-        );
-        const d = await r.json();
-        if (d.id) {
-          return {
-            followers: d.followers_count,
-            avatar_url: d.profile_picture_url,
-            handle: d.username,
-          };
+        case "instagram": {
+          // Instagram Basic Display API - check if we have a proper IG Business account
+          // The external_id may be a FB Page ID or IG User ID
+          const r = await fetch(
+            `https://graph.facebook.com/v19.0/${acc.external_id}?fields=id,name,followers_count,profile_picture_url&access_token=${token}`
+          );
+          const d = await r.json();
+          if (d.id && !d.error) {
+            return {
+              followers: d.followers_count,
+              avatar_url: d.profile_picture_url,
+              display_name: d.name,
+            };
+          }
+          break;
         }
-        break;
+        case "threads": {
+          const r = await fetch(
+            `https://graph.threads.net/v1.0/me?fields=id,username,name,threads_profile_picture_url,threads_biography,follower_count&access_token=${token}`
+          );
+          const d = await r.json();
+          if (d.id) {
+            return {
+              followers: d.follower_count,
+              avatar_url: d.threads_profile_picture_url,
+              handle: d.username,
+              display_name: d.name,
+            };
+          }
+          break;
+        }
+        case "telegram": {
+          // Use Telegram Bot API to get chat member count
+          const r = await fetch(`https://api.telegram.org/bot${token}/getMe`);
+          const d = await r.json();
+          if (d.ok) {
+            return {
+              handle: `@${d.result.username}`,
+              display_name: d.result.first_name,
+            };
+          }
+          break;
+        }
       }
     }
-  }
-} catch {
+  } catch {
     // API failed, proceed to fallback
   }
 
   // Fallback: Web Scraper for platforms without official API or if token failed
   if (acc.handle) {
     try {
-      if (acc.platform === "instagram") {
-        const html = await (await fetch(`https://www.instagram.com/${acc.handle}/`)).text();
-        const match = html.match(/meta content="([\d.,kmKM]+) Followers/i);
-        if (match) return { followers: parseScrapedNumber(match[1]), handle: acc.handle };
-      }
       if (acc.platform === "youtube") {
-        const html = await (await fetch(`https://www.youtube.com/${acc.handle}`)).text();
+        const r = await fetch(`https://www.youtube.com/${acc.handle}`);
+        const html = await r.text();
         const match = html.match(/"subscriberCountText".*?"simpleText":"(.*?)"/i);
         if (match) {
           const subs = match[1].replace(/[^\d.,kmKM]/g, '');
@@ -129,14 +208,14 @@ function parseScrapedNumber(str: string): number {
 }
 
 /** Fetch recent posts + metrics for one account. Returns [] when unavailable. */
-async function fetchPosts(acc: Account): Promise<NormalizedPost[]> {
-  if (!acc.access_token) return [];
+async function fetchPosts(acc: Account, token: string | null): Promise<NormalizedPost[]> {
+  if (!token) return [];
   try {
     switch (acc.platform) {
       case "x": {
         const r = await fetch(
           `https://api.twitter.com/2/users/${acc.external_id}/tweets?max_results=20&tweet.fields=public_metrics,created_at`,
-          { headers: { Authorization: `Bearer ${acc.access_token}` } }
+          { headers: { Authorization: `Bearer ${token}` } }
         );
         const d = await r.json();
         return (d.data ?? []).map((t: Record<string, unknown>) => {
@@ -152,23 +231,32 @@ async function fetchPosts(acc: Account): Promise<NormalizedPost[]> {
         try {
           const search = await fetch(
             `https://www.googleapis.com/youtube/v3/search?part=snippet&forMine=true&type=video&maxResults=20`,
-            { headers: { Authorization: `Bearer ${acc.access_token}` } }
+            { headers: { Authorization: `Bearer ${token}` } }
           );
           const s = await search.json();
-          const ids = (s.items ?? []).map((i: Record<string, Record<string, string>>) => i.id?.videoId).filter(Boolean);
-          if (ids.length) {
-            const stats = await fetch(
-              `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics&id=${ids.join(",")}`,
-              { headers: { Authorization: `Bearer ${acc.access_token}` } }
-            );
-            const v = await stats.json();
-            return (v.items ?? []).map((i: Record<string, Record<string, string>>) => ({
-              external_id: String(i.id), content: i.snippet?.title ?? null, posted_at: i.snippet?.publishedAt,
-              video_views: Number(i.statistics?.viewCount ?? 0), likes: Number(i.statistics?.likeCount ?? 0),
-              comments: Number(i.statistics?.commentCount ?? 0),
-            }));
+          if (s.error) {
+            console.error("[sync] YouTube search error:", s.error);
+          } else {
+            const ids = (s.items ?? []).map((i: Record<string, Record<string, string>>) => i.id?.videoId).filter(Boolean);
+            if (ids.length) {
+              const stats = await fetch(
+                `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics&id=${ids.join(",")}`,
+                { headers: { Authorization: `Bearer ${token}` } }
+              );
+              const v = await stats.json();
+              if (!v.error) {
+                return (v.items ?? []).map((i: Record<string, Record<string, string>>) => ({
+                  external_id: String(i.id), content: i.snippet?.title ?? null, posted_at: i.snippet?.publishedAt,
+                  video_views: Number(i.statistics?.viewCount ?? 0), likes: Number(i.statistics?.likeCount ?? 0),
+                  comments: Number(i.statistics?.commentCount ?? 0),
+                  impressions: Number(i.statistics?.viewCount ?? 0), // viewCount as impressions for YouTube
+                }));
+              }
+            }
           }
-        } catch {}
+        } catch (e) {
+          console.error("[sync] YouTube API error:", e);
+        }
         // Fallback to RSS if API fails
         if (acc.external_id) {
           try {
@@ -185,32 +273,69 @@ async function fetchPosts(acc: Account): Promise<NormalizedPost[]> {
       }
       case "facebook": {
         const r = await fetch(
-          `https://graph.facebook.com/v19.0/${acc.external_id}/posts?fields=message,created_time,insights.metric(post_impressions,post_engaged_users)&access_token=${acc.access_token}`
+          `https://graph.facebook.com/v19.0/${acc.external_id}/posts?fields=message,created_time&limit=20&access_token=${token}`
         );
         const d = await r.json();
+        if (d.error) {
+          console.error("[sync] Facebook posts error:", d.error);
+          return [];
+        }
         return (d.data ?? []).map((p: Record<string, unknown>) => ({
           external_id: String(p.id), content: (p.message as string) ?? null, posted_at: String(p.created_time),
+          impressions: 0, likes: 0, comments: 0,
         }));
       }
-      // instagram, linkedin, threads, snapchat, reddit — implement as each app
-      // is approved; the Graph/API shapes differ per platform.
+      case "instagram": {
+        // Get Instagram media
+        const r = await fetch(
+          `https://graph.facebook.com/v19.0/${acc.external_id}/media?fields=id,caption,timestamp,like_count,comments_count,impressions&limit=20&access_token=${token}`
+        );
+        const d = await r.json();
+        if (d.error) {
+          console.error("[sync] Instagram media error:", d.error);
+          return [];
+        }
+        return (d.data ?? []).map((p: Record<string, unknown>) => ({
+          external_id: String(p.id), content: (p.caption as string) ?? null, posted_at: String(p.timestamp),
+          impressions: Number(p.impressions ?? 0), likes: Number(p.like_count ?? 0), comments: Number(p.comments_count ?? 0),
+        }));
+      }
+      case "threads": {
+        const r = await fetch(
+          `https://graph.threads.net/v1.0/me/threads?fields=id,text,timestamp,like_count,reply_count&limit=20&access_token=${token}`
+        );
+        const d = await r.json();
+        if (d.error) {
+          console.error("[sync] Threads error:", d.error);
+          return [];
+        }
+        return (d.data ?? []).map((p: Record<string, unknown>) => ({
+          external_id: String(p.id), content: (p.text as string) ?? null, posted_at: String(p.timestamp),
+          likes: Number(p.like_count ?? 0), comments: Number(p.reply_count ?? 0), impressions: 0,
+        }));
+      }
       default:
         return [];
     }
-  } catch {
+  } catch (e) {
+    console.error(`[sync] fetchPosts error for ${acc.platform}:`, e);
     return [];
   }
 }
 
 /** Sync a single account: upsert posts + metrics, stamp last_synced_at. */
 export async function syncAccount(acc: Account, supabase: SupabaseClient): Promise<number> {
+  // 0. Refresh token if expired
+  const token = await getValidToken(acc, supabase);
+
   // 1. Fetch Profile info (followers)
-  const profile = await fetchProfile(acc);
-  if (profile.followers !== undefined) {
+  const profile = await fetchProfile(acc, token);
+  if (profile.followers !== undefined || profile.display_name || profile.avatar_url) {
     await supabase.from("social_accounts").update({
-      followers: profile.followers,
+      ...(profile.followers !== undefined && { followers: profile.followers }),
       ...(profile.avatar_url && { avatar_url: profile.avatar_url }),
       ...(profile.handle && { handle: profile.handle }),
+      ...(profile.display_name && { display_name: profile.display_name }),
       last_synced_at: new Date().toISOString()
     }).eq("id", acc.id);
   } else {
@@ -218,7 +343,7 @@ export async function syncAccount(acc: Account, supabase: SupabaseClient): Promi
   }
 
   // 2. Fetch Posts
-  const posts = await fetchPosts(acc);
+  const posts = await fetchPosts(acc, token);
   if (posts.length) {
     const rows = posts.map((p) => ({
       user_id: acc.user_id, account_id: acc.id, platform: acc.platform,
@@ -230,8 +355,6 @@ export async function syncAccount(acc: Account, supabase: SupabaseClient): Promi
       engagement_rate: p.impressions ? Number(((((p.likes ?? 0) + (p.comments ?? 0) + (p.shares ?? 0)) / p.impressions) * 100).toFixed(3)) : 0,
       synced_at: new Date().toISOString(),
     }));
-    // Requires a unique index on (account_id, external_id) for clean upserts;
-    // falls back to insert-ignore semantics otherwise.
     await supabase.from("social_posts").upsert(rows, { onConflict: "account_id,external_id" });
   }
 

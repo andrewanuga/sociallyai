@@ -15,7 +15,7 @@ export async function POST() {
 
   const { data: accounts } = await supabase
     .from("social_accounts")
-    .select("id, user_id, platform, external_id, access_token, handle")
+    .select("id, user_id, platform, external_id, access_token, refresh_token, token_expires_at, handle")
     .eq("status", "connected")
     .eq("user_id", workspaceId);
 

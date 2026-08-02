@@ -1,0 +1,8 @@
+Due to cost considerations, we will gradually restrict access to rsshub.app for some feed readers.
+
+Please note that rsshub.app is intended for testing purposes only and should not be used as a production RSS source.
+
+For stable and long-term usage, we strongly recommend self-hosting RSSHub.
+Official deployment guide: https://docs.rsshub.app/deploy/
+
+Thank you for your understanding.
