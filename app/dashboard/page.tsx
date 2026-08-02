@@ -28,7 +28,7 @@ export default async function DashboardPage() {
     { data: leads },
     { data: campaigns },
   ] = await Promise.all([
-    supabase.from("social_accounts").select("platform, followers, status"),
+    supabase.from("social_accounts").select("id, platform, handle, display_name, avatar_url, followers, status"),
     supabase.from("social_posts")
       .select("platform, impressions, likes, comments, shares, followers_gained, revenue")
       .gte("posted_at", d30),
@@ -130,6 +130,35 @@ export default async function DashboardPage() {
           </div>
         ))}
       </div>
+
+      {connectedCount > 0 && (
+        <div className="mb-5">
+          <h3 className="font-display mb-4 text-[15px] font-semibold text-[var(--fg)]">Connected accounts</h3>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {(accounts ?? []).filter(a => a.status === "connected").map((acc) => (
+              <Link key={acc.id} href={`/dashboard/accounts/${acc.id}`} className="glass-panel group flex items-center gap-4 rounded-2xl p-4 transition-colors hover:border-[var(--sai-indigo)]/40 hover:bg-[var(--hover)]">
+                <div className="relative h-12 w-12 flex-shrink-0">
+                  {acc.avatar_url ? (
+                    <img src={acc.avatar_url} alt="" className="h-full w-full rounded-full object-cover ring-2 ring-[var(--panel-fill)]" />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center rounded-full bg-[var(--panel-fill-2)] text-[15px] font-bold text-[var(--fg-3)]">
+                      {(acc.display_name || acc.handle || "?").slice(0, 1).toUpperCase()}
+                    </div>
+                  )}
+                  <div className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--panel-fill)] text-[10px] shadow-sm">
+                    {acc.platform.slice(0, 1).toUpperCase()}
+                  </div>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-[var(--fg)]">{acc.display_name || acc.handle}</p>
+                  <p className="text-[12px] text-[var(--fg-4)]">{fmtNum(acc.followers)} followers</p>
+                </div>
+                <ArrowUpRight className="h-4 w-4 text-[var(--fg-4)] opacity-0 transition-all group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:opacity-100" />
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="grid gap-5 lg:grid-cols-3">
         <div className="glass-panel rounded-2xl p-6">

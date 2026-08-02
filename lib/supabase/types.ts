@@ -161,3 +161,15 @@ export interface Trend {
   fetched_at: string;
   expires_at: string;
 }
+
+export interface SocialAccountMetric {
+  id: string;
+  account_id: string;
+  date: string;
+  followers: number;
+  impressions: number;
+  engagements: number;
+  ai_suggestions: { title: string; desc: string; type: "growth" | "warning" | "content" }[] | null;
+  ai_generated_at: string | null;
+  created_at: string;
+}
