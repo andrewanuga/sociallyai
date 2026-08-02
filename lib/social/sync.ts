@@ -29,12 +29,12 @@ type Account = {
 
 /** Fetch profile metadata (followers) for one account. */
 async function fetchProfile(acc: Account): Promise<{ followers?: number; avatar_url?: string; username?: string }> {
-  if (!acc.access_token) return {};
   try {
-    switch (acc.platform) {
-      case "x": {
-        const r = await fetch(
-          `https://api.twitter.com/2/users/${acc.external_id}?user.fields=public_metrics,profile_image_url,username`,
+    if (acc.access_token) {
+      switch (acc.platform) {
+        case "x": {
+          const r = await fetch(
+            `https://api.twitter.com/2/users/${acc.external_id}?user.fields=public_metrics,profile_image_url,username`,
           { headers: { Authorization: `Bearer ${acc.access_token}` } }
         );
         const d = await r.json();
@@ -76,11 +76,47 @@ async function fetchProfile(acc: Account): Promise<{ followers?: number; avatar_
         }
         break;
       }
+      case "instagram": {
+        const r = await fetch(
+          `https://graph.facebook.com/v19.0/${acc.external_id}?fields=followers_count,profile_picture_url,username&access_token=${acc.access_token}`
+        );
+        const d = await r.json();
+        if (d.id) {
+          return {
+            followers: d.followers_count,
+            avatar_url: d.profile_picture_url,
+            username: d.username,
+          };
+        }
+        break;
+      }
     }
-  } catch {
-    // skip
   }
+} catch {
+    // API failed, proceed to fallback
+  }
+
+  // Fallback: Web Scraper for platforms without official API or if token failed
+  if (acc.username) {
+    try {
+      if (acc.platform === "instagram") {
+        const html = await (await fetch(`https://www.instagram.com/${acc.username}/`)).text();
+        const match = html.match(/meta content="([\d.,kmKM]+) Followers/i);
+        if (match) return { followers: parseScrapedNumber(match[1]), username: acc.username };
+      }
+    } catch {
+      // Scrape failed
+    }
+  }
+
   return {};
+}
+
+function parseScrapedNumber(str: string): number {
+  str = str.replace(/,/g, '').toLowerCase();
+  if (str.endsWith('k')) return parseFloat(str) * 1000;
+  if (str.endsWith('m')) return parseFloat(str) * 1000000;
+  return parseInt(str);
 }
 
 /** Fetch recent posts + metrics for one account. Returns [] when unavailable. */
