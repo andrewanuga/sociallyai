@@ -87,7 +87,7 @@ export default function AdminUsers() {
           <div className="max-h-[calc(100vh-260px)] overflow-y-auto">
             {filtered.map((r) => (
               <div key={r.id} className="grid grid-cols-[1.6fr_1fr_1fr_1fr_auto] items-center gap-3 border-b border-[var(--stroke)] px-4 py-3 last:border-0" style={r.suspended ? { opacity: 0.6 } : undefined}>
-                <Link href={`/admin/users/${r.id}`} className="flex min-w-0 items-center gap-2.5 hover:opacity-70 transition-opacity">
+                <Link prefetch={false} href={`/admin/users/${r.id}`} className="flex min-w-0 items-center gap-2.5 hover:opacity-70 transition-opacity">
                   <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-white" style={{ background: "linear-gradient(135deg,#6366f1,#a855f7)" }}>{initials(r)}</span>
                   <div className="min-w-0">
                     <p className="flex items-center gap-1.5 truncate text-[13.5px] font-medium text-[var(--fg)]">{r.full_name || "—"} {r.is_admin && <Pill tone="red">admin</Pill>} {r.suspended && <Pill tone="muted">suspended</Pill>}</p>
@@ -100,7 +100,7 @@ export default function AdminUsers() {
                 </select>
                 <span className="text-[12px] text-[var(--fg-4)]">{new Date(r.created_at).toLocaleDateString()}</span>
                 <div className="flex justify-end gap-2">
-                  <Link href={`/admin/users/${r.id}`} className="flex h-8 w-8 items-center justify-center rounded-full border border-[var(--stroke)] text-[var(--fg-4)] hover:text-[var(--fg)] transition-colors">
+                  <Link prefetch={false} href={`/admin/users/${r.id}`} className="flex h-8 w-8 items-center justify-center rounded-full border border-[var(--stroke)] text-[var(--fg-4)] hover:text-[var(--fg)] transition-colors">
                     <ChevronRight className="h-4 w-4" />
                   </Link>
                   <button onClick={() => toggleSuspend(r)} disabled={busy === r.id || r.is_admin}
