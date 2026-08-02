@@ -151,7 +151,7 @@ async function handleInstagramInteraction(
   const { data: account } = await supabase
     .from("social_accounts")
     .select("user_id, auth_data")
-    .eq("platform_account_id", accountId)
+    .eq("external_id", accountId)
     .limit(1)
     .single();
 
