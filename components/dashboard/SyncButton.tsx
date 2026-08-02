@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { RefreshCw, Loader2 } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
@@ -9,6 +9,19 @@ export function SyncButton() {
   const router = useRouter();
   const { success, error: toastError } = useToast();
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    // Auto-sync silently on page load
+    const silentSync = async () => {
+      try {
+        const res = await fetch("/api/social/sync", { method: "POST" });
+        if (res.ok) router.refresh();
+      } catch (e) {
+        // silently fail on auto-sync
+      }
+    };
+    silentSync();
+  }, [router]);
 
   const sync = async () => {
     setBusy(true);
