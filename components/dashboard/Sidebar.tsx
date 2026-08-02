@@ -130,61 +130,59 @@ export function Sidebar({
 
   return (
     <aside
-      className={cn(
-        "fixed left-0 top-0 z-40 flex h-full flex-col border-r border-[var(--stroke)] transition-[width] duration-300",
-        collapsed ? "w-[68px]" : "w-[248px]"
-      )}
+      className="fixed left-0 top-0 z-40 flex h-full border-r border-[var(--stroke)]"
       style={{ background: "var(--app-surface)", backdropFilter: "blur(20px)" }}
     >
-      {/* Brand */}
-      <div className={cn("flex h-16 flex-shrink-0 items-center border-b border-[var(--stroke)] px-4", collapsed ? "justify-center" : "gap-2.5")}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/logo.png" alt="" width={26} height={23} className="h-[24px] w-auto" style={{ filter: "drop-shadow(0 0 10px rgba(99,102,241,0.4))" }} />
-        {!collapsed && (
-          <span className="font-display text-[16px] font-semibold text-[var(--fg)]">
-            Socially<span className="text-[var(--sai-indigo)]"> AI</span>
-          </span>
+      <div
+        className={cn(
+          "flex h-full flex-col transition-[width,padding] duration-300 ease-in-out",
+          collapsed ? "w-0 overflow-hidden" : "w-[248px]"
         )}
-      </div>
-
-      {/* Nav */}
-      <nav className="flex-1 overflow-y-auto px-2.5 py-4">
-        {SECTIONS.map((sec) => (
-          <div key={sec.title} className="mb-4">
-            {!collapsed && (
-              <p className="font-data mb-1.5 px-2.5 text-[10px] uppercase tracking-[0.2em] text-[var(--fg-4)]">
-                {sec.title}
-              </p>
-            )}
-            {collapsed && <div className="mx-auto mb-2 h-px w-6 bg-[var(--stroke)]" />}
-            <div className="space-y-0.5">
-              {sec.items.map((item) => <Row key={item.href} item={item} />)}
-            </div>
-          </div>
-        ))}
-      </nav>
-
-      {/* Bottom */}
-      <div className="space-y-0.5 border-t border-[var(--stroke)] px-2.5 py-3">
-        {BOTTOM.map((item) => <Row key={item.href} item={item} />)}
-        <button
-          onClick={logout}
-          className={cn(
-            "group relative flex w-full items-center gap-3 rounded-xl px-2.5 py-2.5 text-[13.5px] font-medium text-[var(--fg-2)] transition-colors hover:text-[var(--sai-red)]",
-            collapsed && "justify-center px-2"
-          )}
-        >
-          <LogOut className="h-[18px] w-[18px] flex-shrink-0" />
-          {!collapsed && <span>Sign out</span>}
-          {collapsed && (
-            <span className="glass-panel pointer-events-none absolute left-full z-50 ml-3 whitespace-nowrap rounded-lg px-2.5 py-1.5 text-xs text-[var(--fg)] opacity-0 transition-opacity group-hover:opacity-100">
-              Sign out
+      >
+        <div className={cn("flex h-16 flex-shrink-0 items-center border-b border-[var(--stroke)] px-4", collapsed ? "justify-center opacity-0" : "gap-2.5 opacity-100 transition-opacity delay-100 duration-200")}>
+          <img src="/logo.png" alt="" width={26} height={23} className="h-[24px] w-auto" style={{ filter: "drop-shadow(0 0 10px rgba(99,102,241,0.4))" }} />
+          {!collapsed && (
+            <span className="font-display text-[16px] font-semibold text-[var(--fg)]">
+              Socially<span className="text-[var(--sai-indigo)]"> AI</span>
             </span>
           )}
-        </button>
+        </div>
+
+        <nav className="flex-1 overflow-y-auto px-2.5 py-4">
+          {SECTIONS.map((sec) => (
+            <div key={sec.title} className="mb-4">
+              {!collapsed && (
+                <p className="font-data mb-1.5 px-2.5 text-[10px] uppercase tracking-[0.2em] text-[var(--fg-4)]">
+                  {sec.title}
+                </p>
+              )}
+              {collapsed && <div className="mx-auto mb-2 h-px w-6 bg-[var(--stroke)]" />}
+              <div className="space-y-0.5">
+                {sec.items.map((item) => <Row key={item.href} item={item} />)}
+              </div>
+            </div>
+          ))}
+        </nav>
+
+        <div className="space-y-0.5 border-t border-[var(--stroke)] px-2.5 py-3">
+          {BOTTOM.map((item) => <Row key={item.href} item={item} />)}
+          <button
+            onClick={async () => {
+              const supabase = createClient();
+              await supabase.auth.signOut();
+              window.location.href = "/";
+            }}
+            className={cn(
+              "group relative flex w-full items-center gap-3 rounded-xl px-2.5 py-2.5 text-[13.5px] font-medium text-[var(--fg-2)] transition-colors hover:text-[var(--sai-red)]",
+              collapsed && "justify-center px-2"
+            )}
+          >
+            <LogOut className="h-[18px] w-[18px] flex-shrink-0" />
+            {!collapsed && <span>Sign out</span>}
+          </button>
+        </div>
       </div>
 
-      {/* Collapse toggle */}
       <button
         type="button"
         onClick={onToggle}
