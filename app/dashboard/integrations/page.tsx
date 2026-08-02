@@ -173,6 +173,7 @@ export default function IntegrationsPage() {
             {g.items.map((p) => {
               const Icon = ICONS[p.id];
               const isComingSoon = ["linkedin", "snapchat", "reddit", "whatsapp"].includes(p.id);
+              const connected = accountsFor(p.id);
               return (
                 <GlassCard key={p.id} className="flex flex-col p-5 relative">
                   <div className="flex items-start justify-between">
