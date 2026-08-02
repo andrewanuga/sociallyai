@@ -104,15 +104,21 @@ async function fetchProfile(acc: Account): Promise<{ followers?: number; avatar_
         const match = html.match(/meta content="([\d.,kmKM]+) Followers/i);
         if (match) return { followers: parseScrapedNumber(match[1]), handle: acc.handle };
       }
+      if (acc.platform === "youtube") {
+        const html = await (await fetch(`https://www.youtube.com/${acc.handle}`)).text();
+        const match = html.match(/"subscriberCountText".*?"simpleText":"(.*?)"/i);
+        if (match) {
+          const subs = match[1].replace(/[^\d.,kmKM]/g, '');
+          if (subs) return { followers: parseScrapedNumber(subs), handle: acc.handle };
+        }
+      }
     } catch {
       // Scrape failed
     }
   }
 
-  // If all APIs and scraping fail (e.g. invalid tokens, missing handles),
-  // return a mock follower count so the UI can demonstrate functionality.
-  const mockFollowers = Math.floor(Math.random() * 8000) + 2000;
-  return { followers: mockFollowers, handle: acc.handle || `user_${acc.external_id.substring(0, 5)}` };
+  // Could not fetch or scrape real data. Return empty to avoid saving fake data.
+  return {};
 }
 
 function parseScrapedNumber(str: string): number {
