@@ -79,8 +79,13 @@ export default function IntegrationsPage() {
 
   const connectOAuth = (p: PlatformDef) => {
     // Show a modal to optionally collect their handle before redirecting
-    setOauthFor(p);
-    setOauthHandle("");
+    // Only really necessary for Instagram since Facebook uses IDs natively.
+    if (p.id === "instagram") {
+      setOauthFor(p);
+      setOauthHandle("");
+    } else {
+      window.location.href = `/api/social/connect/${p.id}`;
+    }
   };
 
   const proceedOAuth = () => {
