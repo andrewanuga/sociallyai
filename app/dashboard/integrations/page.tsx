@@ -167,14 +167,17 @@ export default function IntegrationsPage() {
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {g.items.map((p) => {
               const Icon = ICONS[p.id];
-              const connected = accountsFor(p.id);
+              const isComingSoon = ["linkedin", "snapchat", "reddit", "whatsapp"].includes(p.id);
               return (
-                <GlassCard key={p.id} className="flex flex-col p-5">
+                <GlassCard key={p.id} className="flex flex-col p-5 relative">
                   <div className="flex items-start justify-between">
                     <span className="flex h-11 w-11 items-center justify-center rounded-xl" style={{ background: `color-mix(in srgb, ${p.color} 16%, transparent)` }}>
                       <Icon className="h-5 w-5" style={{ color: p.color }} />
                     </span>
-                    {connected.length > 0 && <Pill tone="green"><Check className="h-3 w-3" /> {connected.length}</Pill>}
+                    <div className="flex gap-2">
+                      {isComingSoon && <Pill tone="muted">Coming Soon</Pill>}
+                      {connected.length > 0 && <Pill tone="green"><Check className="h-3 w-3" /> {connected.length}</Pill>}
+                    </div>
                   </div>
 
                   <h3 className="font-display mt-4 text-[15px] font-semibold text-[var(--fg)]">{p.name}</h3>
@@ -204,13 +207,17 @@ export default function IntegrationsPage() {
                   )}
 
                   <button
-                    onClick={() => (p.connectType === "oauth" ? connectOAuth(p) : setTokenFor(p))}
-                    disabled={busy === p.id}
-                    className="mt-4 flex items-center justify-center gap-1.5 rounded-xl py-2.5 text-[13px] font-medium text-white transition-transform hover:scale-[1.01] disabled:opacity-60"
-                    style={{ background: "linear-gradient(135deg,#6366f1,#a855f7)" }}
+                    onClick={() => {
+                      if (!isComingSoon) p.connectType === "oauth" ? connectOAuth(p) : setTokenFor(p);
+                    }}
+                    disabled={busy === p.id || isComingSoon}
+                    className={`mt-4 flex items-center justify-center gap-1.5 rounded-xl py-2.5 text-[13px] font-medium transition-transform disabled:opacity-60 ${
+                      isComingSoon ? "bg-[var(--panel-fill-2)] text-[var(--fg-3)] cursor-not-allowed border border-[var(--stroke)]" : "text-white hover:scale-[1.01]"
+                    }`}
+                    style={isComingSoon ? {} : { background: "linear-gradient(135deg,#6366f1,#a855f7)" }}
                   >
                     {busy === p.id ? <Loader2 className="h-4 w-4 animate-spin" /> : p.connectType === "oauth" ? <Plug className="h-4 w-4" /> : <KeyRound className="h-4 w-4" />}
-                    {connected.length > 0 ? "Add another" : "Connect"}
+                    {isComingSoon ? "Coming Soon" : connected.length > 0 ? "Add another" : "Connect"}
                   </button>
                 </GlassCard>
               );
@@ -227,28 +234,38 @@ export default function IntegrationsPage() {
             const Icon = TOOL_ICONS[t.id];
             const label = tools[t.id];
             const on = !!label;
+            const isComingSoon = true; // All tools coming soon
             return (
-              <GlassCard key={t.id} className="flex flex-col p-5">
+              <GlassCard key={t.id} className="flex flex-col p-5 relative">
                 <div className="flex items-start justify-between">
                   <span className="flex h-11 w-11 items-center justify-center rounded-xl" style={{ background: `color-mix(in srgb, ${t.color} 16%, transparent)` }}>
                     <Icon className="h-5 w-5" style={{ color: t.color }} />
                   </span>
-                  {on && <Pill tone="green"><Check className="h-3 w-3" /> Connected</Pill>}
+                  <div className="flex gap-2">
+                    {isComingSoon && <Pill tone="muted">Coming Soon</Pill>}
+                    {on && <Pill tone="green"><Check className="h-3 w-3" /> Connected</Pill>}
+                  </div>
                 </div>
                 <h3 className="font-display mt-4 text-[15px] font-semibold text-[var(--fg)]">{t.name}</h3>
                 <div className="mt-1"><span className="rounded-md px-1.5 py-0.5 text-[10px]" style={{ background: "var(--panel-fill-2)", color: "var(--fg-3)" }}>{t.category}</span></div>
                 <p className="mt-2.5 flex-1 text-[12.5px] leading-relaxed text-[var(--fg-4)]">{t.desc}</p>
                 {on && <div className="mt-3 truncate rounded-lg border border-[var(--stroke)] bg-[var(--panel-fill)] px-2.5 py-1.5 text-[12px] text-[var(--fg-2)]">{label}</div>}
                 <button
-                  onClick={() => (on ? disconnectTool(t) : connectTool(t))}
-                  disabled={busy === t.id}
-                  className="mt-4 flex items-center justify-center gap-1.5 rounded-xl py-2.5 text-[13px] font-medium transition-colors disabled:opacity-60"
-                  style={on
+                  onClick={() => {
+                    if (!isComingSoon) on ? disconnectTool(t) : connectTool(t);
+                  }}
+                  disabled={busy === t.id || isComingSoon}
+                  className={`mt-4 flex items-center justify-center gap-1.5 rounded-xl py-2.5 text-[13px] font-medium transition-colors disabled:opacity-60 ${
+                    isComingSoon ? "bg-[var(--panel-fill-2)] text-[var(--fg-3)] cursor-not-allowed border border-[var(--stroke)]" : on ? "text-[var(--fg)] hover:bg-[var(--hover)]" : "text-white"
+                  }`}
+                  style={isComingSoon 
+                    ? { background: "var(--panel-fill-2)", border: "1px solid var(--stroke)" } 
+                    : on
                     ? { background: "var(--panel-fill-2)", border: "1px solid var(--stroke)", color: "var(--fg)" }
                     : { background: "linear-gradient(135deg,#6366f1,#a855f7)", color: "#fff" }}
                 >
                   {busy === t.id ? <Loader2 className="h-4 w-4 animate-spin" /> : t.connectType === "oauth" ? <Plug className="h-4 w-4" /> : <KeyRound className="h-4 w-4" />}
-                  {on ? "Disconnect" : "Connect"}
+                  {isComingSoon ? "Coming Soon" : on ? "Disconnect" : "Connect"}
                 </button>
               </GlassCard>
             );
