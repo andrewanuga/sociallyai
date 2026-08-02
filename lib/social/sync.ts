@@ -112,37 +112,49 @@ async function fetchProfile(acc: Account, token: string | null): Promise<{ follo
           break;
         }
         case "facebook": {
-          // Try fetching personal profile data — pages_read_engagement gives us posts
-          // Personal profile followers_count is not available in Graph API v19+
-          // We get the profile picture and name at minimum
+          // Facebook personal profiles: can get name + picture
+          // followers_count not available on personal profiles in Graph API v19+
+          // Only Business Pages expose fan_count
           const r = await fetch(
-            `https://graph.facebook.com/v19.0/${acc.external_id}?fields=name,picture&access_token=${token}`
+            `https://graph.facebook.com/v19.0/${acc.external_id}?fields=name,picture.type(large)&access_token=${token}`
           );
           const d = await r.json();
-          if (d.id) {
+          if (d.id && !d.error) {
             return {
-              // Facebook personal profiles don't expose follower counts via API
-              // Only Facebook Pages (with page access tokens) can get fan_count
               avatar_url: d.picture?.data?.url,
               handle: d.name,
               display_name: d.name,
             };
           }
+          // Try /me as fallback
+          const r2 = await fetch(`https://graph.facebook.com/v19.0/me?fields=name,picture.type(large)&access_token=${token}`);
+          const d2 = await r2.json();
+          if (d2.id && !d2.error) {
+            return { avatar_url: d2.picture?.data?.url, display_name: d2.name };
+          }
           break;
         }
         case "instagram": {
-          // Instagram Basic Display API - check if we have a proper IG Business account
-          // The external_id may be a FB Page ID or IG User ID
-          const r = await fetch(
-            `https://graph.facebook.com/v19.0/${acc.external_id}?fields=id,name,followers_count,profile_picture_url&access_token=${token}`
+          // Strategy 1: Try Instagram Business Graph API (works if IG Business Account ID is stored)
+          const r1 = await fetch(
+            `https://graph.facebook.com/v19.0/${acc.external_id}?fields=id,name,username,followers_count,profile_picture_url&access_token=${token}`
           );
-          const d = await r.json();
-          if (d.id && !d.error) {
+          const d1 = await r1.json();
+          if (d1.id && !d1.error && (d1.followers_count !== undefined || d1.username)) {
             return {
-              followers: d.followers_count,
-              avatar_url: d.profile_picture_url,
-              display_name: d.name,
+              followers: d1.followers_count,
+              avatar_url: d1.profile_picture_url,
+              handle: d1.username ? `@${d1.username}` : undefined,
+              display_name: d1.name,
             };
+          }
+          // Strategy 2: The token is a Meta User token — get the user's name+picture at minimum
+          const r2 = await fetch(
+            `https://graph.facebook.com/v19.0/me?fields=name,picture.type(large)&access_token=${token}`
+          );
+          const d2 = await r2.json();
+          if (d2.id && !d2.error) {
+            return { avatar_url: d2.picture?.data?.url, display_name: d2.name };
           }
           break;
         }
@@ -162,11 +174,28 @@ async function fetchProfile(acc: Account, token: string | null): Promise<{ follo
           break;
         }
         case "telegram": {
-          // Use Telegram Bot API to get chat member count
+          // Telegram Bot API: get bot info + look through bot's known chats
           const r = await fetch(`https://api.telegram.org/bot${token}/getMe`);
           const d = await r.json();
           if (d.ok) {
+            // Get updates to find any chats this bot is in
+            let totalMembers = 0;
+            try {
+              const updatesRes = await fetch(`https://api.telegram.org/bot${token}/getUpdates?limit=100`);
+              const updates = await updatesRes.json();
+              const chatIds = new Set<number>();
+              (updates.result ?? []).forEach((u: Record<string, Record<string, Record<string, number>>>) => {
+                const chatId = u.message?.chat?.id || u.channel_post?.chat?.id;
+                if (chatId) chatIds.add(chatId);
+              });
+              for (const chatId of chatIds) {
+                const memberRes = await fetch(`https://api.telegram.org/bot${token}/getChatMemberCount?chat_id=${chatId}`);
+                const memberData = await memberRes.json();
+                if (memberData.ok && memberData.result > 1) totalMembers += memberData.result;
+              }
+            } catch { /* ignore */ }
             return {
+              followers: totalMembers || undefined,
               handle: `@${d.result.username}`,
               display_name: d.result.first_name,
             };
@@ -272,47 +301,72 @@ async function fetchPosts(acc: Account, token: string | null): Promise<Normalize
         return [];
       }
       case "facebook": {
-        const r = await fetch(
-          `https://graph.facebook.com/v19.0/${acc.external_id}/posts?fields=message,created_time&limit=20&access_token=${token}`
-        );
-        const d = await r.json();
-        if (d.error) {
-          console.error("[sync] Facebook posts error:", d.error);
-          return [];
+        // Try personal profile feed first, then /posts endpoint
+        const endpoints = [
+          `https://graph.facebook.com/v19.0/${acc.external_id}/feed?fields=message,story,created_time&limit=20&access_token=${token}`,
+          `https://graph.facebook.com/v19.0/${acc.external_id}/posts?fields=message,created_time&limit=20&access_token=${token}`,
+          `https://graph.facebook.com/v19.0/me/feed?fields=message,story,created_time&limit=20&access_token=${token}`,
+        ];
+        for (const endpoint of endpoints) {
+          const r = await fetch(endpoint);
+          const d = await r.json();
+          if (!d.error && Array.isArray(d.data) && d.data.length > 0) {
+            return d.data.map((p: Record<string, unknown>) => ({
+              external_id: String(p.id),
+              content: (p.message as string) ?? (p.story as string) ?? null,
+              posted_at: String(p.created_time),
+              impressions: 0, likes: 0, comments: 0,
+            }));
+          }
         }
-        return (d.data ?? []).map((p: Record<string, unknown>) => ({
-          external_id: String(p.id), content: (p.message as string) ?? null, posted_at: String(p.created_time),
-          impressions: 0, likes: 0, comments: 0,
-        }));
+        return [];
       }
       case "instagram": {
-        // Get Instagram media
-        const r = await fetch(
-          `https://graph.facebook.com/v19.0/${acc.external_id}/media?fields=id,caption,timestamp,like_count,comments_count,impressions&limit=20&access_token=${token}`
+        // Try Instagram Business Graph API (needs IG Business Account ID)
+        const r1 = await fetch(
+          `https://graph.facebook.com/v19.0/${acc.external_id}/media?fields=id,caption,timestamp,like_count,comments_count&limit=20&access_token=${token}`
         );
-        const d = await r.json();
-        if (d.error) {
-          console.error("[sync] Instagram media error:", d.error);
-          return [];
+        const d1 = await r1.json();
+        if (!d1.error && Array.isArray(d1.data)) {
+          return d1.data.map((p: Record<string, unknown>) => ({
+            external_id: String(p.id), content: (p.caption as string) ?? null, posted_at: String(p.timestamp),
+            likes: Number(p.like_count ?? 0), comments: Number(p.comments_count ?? 0), impressions: 0,
+          }));
         }
-        return (d.data ?? []).map((p: Record<string, unknown>) => ({
-          external_id: String(p.id), content: (p.caption as string) ?? null, posted_at: String(p.timestamp),
-          impressions: Number(p.impressions ?? 0), likes: Number(p.like_count ?? 0), comments: Number(p.comments_count ?? 0),
-        }));
+        // If IG Business API fails (personal token), return empty — can't get IG posts without proper IG Business Account
+        return [];
       }
       case "threads": {
+        // Threads Graph API — only works with a proper Threads access token
         const r = await fetch(
           `https://graph.threads.net/v1.0/me/threads?fields=id,text,timestamp,like_count,reply_count&limit=20&access_token=${token}`
         );
         const d = await r.json();
         if (d.error) {
-          console.error("[sync] Threads error:", d.error);
+          // Token is not a Threads token — silently skip
           return [];
         }
         return (d.data ?? []).map((p: Record<string, unknown>) => ({
           external_id: String(p.id), content: (p.text as string) ?? null, posted_at: String(p.timestamp),
           likes: Number(p.like_count ?? 0), comments: Number(p.reply_count ?? 0), impressions: 0,
         }));
+      }
+      case "telegram": {
+        // Use bot updates as a proxy for "messages/posts"
+        // Each unique message to the bot can be treated as a user engagement data point
+        const r = await fetch(`https://api.telegram.org/bot${token}/getUpdates?limit=100`);
+        const d = await r.json();
+        if (!d.ok) return [];
+        return (d.result ?? []).slice(0, 20).map((u: Record<string, Record<string, unknown>>) => {
+          const msg = u.message || u.channel_post;
+          if (!msg) return null;
+          return {
+            external_id: String(u.update_id),
+            content: (msg.text as string) ?? null,
+            posted_at: new Date(Number(msg.date) * 1000).toISOString(),
+            impressions: 0, likes: 0, comments: 0,
+          };
+        }).filter(Boolean) as NormalizedPost[];
       }
       default:
         return [];
