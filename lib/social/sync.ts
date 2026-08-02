@@ -24,11 +24,11 @@ export interface NormalizedPost {
 type Account = {
   id: string; user_id: string; platform: PlatformId;
   external_id: string; access_token: string | null;
-  username?: string | null;
+  handle?: string | null;
 };
 
 /** Fetch profile metadata (followers) for one account. */
-async function fetchProfile(acc: Account): Promise<{ followers?: number; avatar_url?: string; username?: string }> {
+async function fetchProfile(acc: Account): Promise<{ followers?: number; avatar_url?: string; handle?: string }> {
   try {
     if (acc.access_token) {
       switch (acc.platform) {
@@ -42,7 +42,7 @@ async function fetchProfile(acc: Account): Promise<{ followers?: number; avatar_
           return {
             followers: d.data.public_metrics?.followers_count,
             avatar_url: d.data.profile_image_url,
-            username: d.data.username,
+            handle: d.data.username,
           };
         }
         break;
@@ -57,7 +57,7 @@ async function fetchProfile(acc: Account): Promise<{ followers?: number; avatar_
           return {
             followers: Number(d.items[0].statistics?.subscriberCount),
             avatar_url: d.items[0].snippet?.thumbnails?.default?.url,
-            username: d.items[0].snippet?.customUrl || d.items[0].snippet?.title,
+            handle: d.items[0].snippet?.customUrl || d.items[0].snippet?.title,
           };
         }
         break;
@@ -71,7 +71,7 @@ async function fetchProfile(acc: Account): Promise<{ followers?: number; avatar_
           return {
             followers: d.followers_count,
             avatar_url: d.picture?.data?.url,
-            username: d.name,
+            handle: d.name,
           };
         }
         break;
@@ -85,7 +85,7 @@ async function fetchProfile(acc: Account): Promise<{ followers?: number; avatar_
           return {
             followers: d.followers_count,
             avatar_url: d.profile_picture_url,
-            username: d.username,
+            handle: d.username,
           };
         }
         break;
@@ -97,12 +97,12 @@ async function fetchProfile(acc: Account): Promise<{ followers?: number; avatar_
   }
 
   // Fallback: Web Scraper for platforms without official API or if token failed
-  if (acc.username) {
+  if (acc.handle) {
     try {
       if (acc.platform === "instagram") {
-        const html = await (await fetch(`https://www.instagram.com/${acc.username}/`)).text();
+        const html = await (await fetch(`https://www.instagram.com/${acc.handle}/`)).text();
         const match = html.match(/meta content="([\d.,kmKM]+) Followers/i);
-        if (match) return { followers: parseScrapedNumber(match[1]), username: acc.username };
+        if (match) return { followers: parseScrapedNumber(match[1]), handle: acc.handle };
       }
     } catch {
       // Scrape failed
@@ -185,7 +185,7 @@ export async function syncAccount(acc: Account, supabase: SupabaseClient): Promi
     await supabase.from("social_accounts").update({
       followers: profile.followers,
       ...(profile.avatar_url && { avatar_url: profile.avatar_url }),
-      ...(profile.username && { username: profile.username }),
+      ...(profile.handle && { handle: profile.handle }),
       last_synced_at: new Date().toISOString()
     }).eq("id", acc.id);
   } else {
