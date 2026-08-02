@@ -53,7 +53,7 @@ function getApiKey(): string | undefined {
 }
 
 function getDefaultModel(): string {
-  return process.env.OPENROUTER_DEFAULT_MODEL || "google/gemini-2.5-flash";
+  return process.env.OPENROUTER_DEFAULT_MODEL || "google/gemma-4-26b-a4b-it:free";
 }
 
 /* ── Main call function ───────────────────────────────────────── */
