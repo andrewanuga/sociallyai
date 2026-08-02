@@ -107,10 +107,11 @@ export type TaskPriority = "low" | "normal" | "high";
 export interface Task {
   id: string;
   user_id: string;
+  bot_id?: string | null;
   title: string;
   notes: string | null;
   priority: TaskPriority;
-  status: "pending" | "done";
+  status: "pending" | "ongoing" | "done" | "finished" | "failed";
   created_at: string;
   completed_at: string | null;
 }

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
-  Plus, ArrowUpFromLine, Check, Trash2, Undo2, Layers, CornerDownLeft,
+  Plus, ArrowUpFromLine, Check, Trash2, Undo2, Layers, CornerDownLeft, Bot
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/components/ui/toast";
@@ -23,13 +23,13 @@ export default function TasksPage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
 
-  // Stack = pending tasks, newest first (LIFO: top of stack pops first).
+  // Stack = pending/ongoing tasks, newest first
   const stack = useMemo(
-    () => tasks.filter((t) => t.status === "pending"),
+    () => tasks.filter((t) => t.status === "pending" || t.status === "ongoing"),
     [tasks]
   );
   const done = useMemo(
-    () => tasks.filter((t) => t.status === "done").slice(0, 8),
+    () => tasks.filter((t) => t.status === "done" || t.status === "finished").slice(0, 8),
     [tasks]
   );
 
@@ -56,7 +56,7 @@ export default function TasksPage() {
     if (!t) return;
     const optimistic: Task = {
       id: `tmp-${Date.now()}`, user_id: userId ?? "local", title: t,
-      notes: null, priority, status: "pending",
+      notes: null, priority, status: "ongoing",
       created_at: new Date().toISOString(), completed_at: null,
     };
     setTasks((prev) => [optimistic, ...prev]); // push onto top
@@ -75,23 +75,23 @@ export default function TasksPage() {
 
   const pop = async (id: string) => {
     setTasks((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, status: "done", completed_at: new Date().toISOString() } : t))
+      prev.map((t) => (t.id === id ? { ...t, status: "finished", completed_at: new Date().toISOString() } : t))
     );
     if (userId && !id.startsWith("tmp-")) {
       const supabase = createClient();
       const { error } = await supabase
         .from("tasks")
-        .update({ status: "done", completed_at: new Date().toISOString() })
+        .update({ status: "finished", completed_at: new Date().toISOString() })
         .eq("id", id);
       if (error) toastError("Couldn't complete task", error.message);
     }
   };
 
   const undo = async (id: string) => {
-    setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, status: "pending", completed_at: null } : t)));
+    setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, status: "ongoing", completed_at: null } : t)));
     if (userId && !id.startsWith("tmp-")) {
       const supabase = createClient();
-      await supabase.from("tasks").update({ status: "pending", completed_at: null }).eq("id", id);
+      await supabase.from("tasks").update({ status: "ongoing", completed_at: null }).eq("id", id);
     }
   };
 
@@ -203,6 +203,11 @@ export default function TasksPage() {
                         <div className="flex flex-wrap items-center gap-2">
                           {top && <Pill tone="indigo">Next to pop</Pill>}
                           <Pill tone={toneFor(t.priority)}>{t.priority}</Pill>
+                          {t.bot_id && (
+                            <span className="inline-flex items-center gap-1 rounded-full border border-[#a855f7]/30 bg-[#a855f7]/10 px-2 py-0.5 text-[10px] font-semibold text-[#a855f7]">
+                              <Bot className="h-3 w-3" /> Autonomous
+                            </span>
+                          )}
                         </div>
                         <p className="mt-2 text-[15px] font-medium leading-snug text-[var(--fg)]">{t.title}</p>
                         {t.notes && <p className="mt-1 text-[13px] text-[var(--fg-3)]">{t.notes}</p>}

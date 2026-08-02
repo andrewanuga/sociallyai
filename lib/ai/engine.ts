@@ -52,9 +52,9 @@ JSON SCHEMA:
 
   try {
     const res = await callAI([{ role: "system", content: prompt }], {
-      agent: "ghost_engine",
+      agent: "ghost",
       temperature: 0.2,
-      responseFormat: { type: "json_object" }
+      jsonMode: true
     });
 
     let jsonStr = res.content.trim();

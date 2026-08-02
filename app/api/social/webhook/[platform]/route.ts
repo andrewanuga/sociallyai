@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { evaluateIncomingMessage } from "@/lib/ai/engine";
 import { dispatchReply } from "@/lib/social/dispatch";
+import { startBotTask, finishBotTask } from "@/lib/ai/bot_tasks";
 
 // Helper to handle Meta's verification challenge
 export async function GET(
@@ -70,6 +71,15 @@ export async function POST(
 
         if (bot) {
           const rules = (bot.config as any)?.rules || [];
+          
+          // Log that the bot is starting work
+          const taskId = await startBotTask(
+            account.user_id,
+            bot.id,
+            `Ghost Mode: Processing Telegram DM from ${senderName}`,
+            `Applying ${rules.filter((r:any) => r.enabled).length} active rules`
+          );
+
           const evalRes = await evaluateIncomingMessage(text, "Telegram", senderName, rules, false);
           
           if (evalRes.action === "auto_reply" && evalRes.reply) {
@@ -92,6 +102,8 @@ export async function POST(
               reason: "Incoming message rule match"
             });
           }
+
+          if (taskId) await finishBotTask(taskId);
           break; // processed
         }
       }
@@ -172,6 +184,15 @@ async function handleInstagramInteraction(
   if (!bot) return;
 
   const rules = (bot.config as any)?.rules || [];
+  
+  // Log that the bot is starting work
+  const taskId = await startBotTask(
+    account.user_id,
+    bot.id,
+    `Ghost Mode: Processing Instagram ${isComment ? "comment" : "DM"} from ${senderName}`,
+    `Applying ${rules.filter((r:any) => r.enabled).length} active rules`
+  );
+
   const evalRes = await evaluateIncomingMessage(text, "Instagram", senderName, rules, isComment);
 
   if (evalRes.action === "auto_reply" && evalRes.reply) {
@@ -195,4 +216,6 @@ async function handleInstagramInteraction(
       reason: `Incoming ${isComment ? "comment" : "DM"} rule match`
     });
   }
+
+  if (taskId) await finishBotTask(taskId);
 }
