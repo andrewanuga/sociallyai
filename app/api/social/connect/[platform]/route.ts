@@ -32,7 +32,10 @@ export async function GET(
   }
 
   const state = randomBytes(16).toString("hex");
-  (await cookies()).set(`sai_oauth_${platform}`, state, {
+  const handle = req.nextUrl.searchParams.get("handle");
+  
+  const cookieData = JSON.stringify({ state, handle });
+  (await cookies()).set(`sai_oauth_${platform}`, cookieData, {
     httpOnly: true, secure: true, sameSite: "lax", path: "/", maxAge: 600,
   });
 

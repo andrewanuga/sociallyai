@@ -25,9 +25,17 @@ export async function GET(
   const code = sp.get("code");
   const state = sp.get("state");
   const jar = await cookies();
-  const expected = jar.get(`sai_oauth_${platform}`)?.value;
+  let expectedState = "";
+  let providedHandle = "";
+  try {
+    const parsed = JSON.parse(jar.get(`sai_oauth_${platform}`)?.value || "{}");
+    expectedState = parsed.state;
+    providedHandle = parsed.handle || "";
+  } catch {
+    expectedState = jar.get(`sai_oauth_${platform}`)?.value || "";
+  }
   jar.delete(`sai_oauth_${platform}`);
-  if (!code || !state || state !== expected) return back(origin, { error: "bad_state", platform });
+  if (!code || !state || state !== expectedState) return back(origin, { error: "bad_state", platform });
 
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -69,7 +77,7 @@ export async function GET(
         platform,
         account_type: profile.type ?? "personal",
         external_id: profile.id ?? `me:${user.id}`,
-        handle: profile.handle ?? null,
+        handle: providedHandle || profile.handle || null,
         display_name: profile.name ?? p.name,
         avatar_url: profile.avatar ?? null,
         access_token: token.access_token,

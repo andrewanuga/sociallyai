@@ -31,6 +31,8 @@ export default function IntegrationsPage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [tokenFor, setTokenFor] = useState<PlatformDef | null>(null);
   const [tokenVal, setTokenVal] = useState("");
+  const [oauthFor, setOauthFor] = useState<PlatformDef | null>(null);
+  const [oauthHandle, setOauthHandle] = useState("");
   const [keyFor, setKeyFor] = useState<ToolDef | null>(null);
   const [keyVal, setKeyVal] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
@@ -76,8 +78,16 @@ export default function IntegrationsPage() {
   const accountsFor = (id: PlatformId) => accounts.filter((a) => a.platform === id);
 
   const connectOAuth = (p: PlatformDef) => {
-    // Real OAuth redirect; the route returns a helpful error if creds are missing.
-    window.location.href = `/api/social/connect/${p.id}`;
+    // Show a modal to optionally collect their handle before redirecting
+    setOauthFor(p);
+    setOauthHandle("");
+  };
+
+  const proceedOAuth = () => {
+    if (!oauthFor) return;
+    const url = new URL(`/api/social/connect/${oauthFor.id}`, window.location.origin);
+    if (oauthHandle.trim()) url.searchParams.set("handle", oauthHandle.trim());
+    window.location.href = url.toString();
   };
 
   const connectToken = async () => {
@@ -272,7 +282,44 @@ export default function IntegrationsPage() {
         </div>
       )}
 
-      {/* token connect modal (Telegram / WhatsApp) */}
+      {/* OAuth Handle Prompt Modal */}
+      {oauthFor && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
+          <GlassCard className="w-full max-w-md p-6 animate-in zoom-in-95 duration-200">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-lg font-medium text-[var(--fg)]">Connect {oauthFor.name}</h3>
+              <button onClick={() => setOauthFor(null)} className="rounded-full p-1 text-[var(--fg-3)] hover:bg-[var(--hover)] hover:text-[var(--fg)]">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <p className="mb-4 text-sm text-[var(--fg-2)]">
+              Before we redirect you to {oauthFor.name}, please enter your @handle. This helps us accurately fetch your follower metrics later.
+            </p>
+            <input
+              type="text"
+              autoFocus
+              value={oauthHandle}
+              onChange={(e) => setOauthHandle(e.target.value)}
+              placeholder="e.g. @yourusername"
+              className="mb-4 w-full rounded-xl border border-[var(--stroke)] bg-[var(--app-bg)] px-4 py-2 text-[var(--fg)] placeholder:text-[var(--fg-3)] focus:border-[var(--brand)] focus:outline-none focus:ring-1 focus:ring-[var(--brand)]"
+              onKeyDown={(e) => e.key === "Enter" && proceedOAuth()}
+            />
+            <div className="flex justify-end gap-3">
+              <button onClick={() => setOauthFor(null)} className="rounded-full px-4 py-2 text-sm font-medium text-[var(--fg-2)] transition-colors hover:text-[var(--fg)]">
+                Cancel
+              </button>
+              <button
+                onClick={proceedOAuth}
+                className="rounded-full bg-[var(--brand)] px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90"
+              >
+                Connect {oauthFor.name}
+              </button>
+            </div>
+          </GlassCard>
+        </div>
+      )}
+
+      {/* Token Connection Modal (Telegram/WhatsApp) */}
       {tokenFor && (
         <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm" onClick={() => setTokenFor(null)}>
           <div className="glass-panel w-full max-w-md rounded-2xl p-6" onClick={(e) => e.stopPropagation()} style={{ background: "var(--app-surface)" }}>
