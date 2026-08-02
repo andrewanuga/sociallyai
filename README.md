@@ -29,9 +29,13 @@ Most tools tell you what happened. Socially AI tells you what will — and often
 
 ## Supported platforms
 
-**Publishing:** Instagram · YouTube · X (Twitter) · LinkedIn · Facebook · Threads · Snapchat · Reddit
-**Messaging & bots:** Telegram · WhatsApp — manage bots, message/reply when away, schedule messages, and summarize flagged groups.
-**Tools & analytics:** Google Calendar · Google Analytics · Google Sheets · Slack · Notion · Discord · Mailchimp · Zapier · Webhooks.
+**Publishing:** Instagram · YouTube · X (Twitter) · Facebook · Threads 
+*(Coming Soon: LinkedIn · Snapchat · Reddit)*
+
+**Messaging & bots:** Telegram 
+*(Coming Soon: WhatsApp)*
+
+**Tools & analytics (Coming Soon):** Google Calendar · Google Analytics · Google Sheets · Slack · Notion · Discord · Mailchimp · Zapier · Webhooks.
 
 ---
 
@@ -62,8 +66,8 @@ app/
 │                                  #   Integrations, Billing, Settings
 └── api/
     ├── ai/{chat,generate,score,trends,ghost}
-    ├── social/{connect,callback}/[platform]   # per-platform OAuth / token
-    ├── social/sync                            # pull posts + metrics
+    ├── social/{connect,callback}/[platform]   # Dynamic per-platform OAuth / token
+    ├── social/sync                            # Dynamic Sync Worker & Scraper fallbacks
     └── tools/{connect,callback}/[provider]    # calendar/analytics/tools OAuth
 
 lib/social/{platforms,tools,types,sync}.ts     # registries + sync worker
@@ -104,14 +108,19 @@ Open http://localhost:3000
 
 ---
 
-## Connecting platforms (production)
+## Connecting platforms & Data Sync
 
 Each platform needs a registered developer app (most require review/approval).
 - **OAuth callback:** `{APP_URL}/api/social/callback/<platform>`
 - **Tools callback:** `{APP_URL}/api/tools/callback/<provider>`
-- **Telegram/WhatsApp:** token-based — connect from **Integrations** by pasting a bot token / Cloud API token.
+- **Telegram:** token-based — connect from **Integrations** by pasting a bot token.
 
-Once connected, hit **Sync now** (or run the sync worker on a cron/queue) to pull posts, metrics, inbox, and campaigns into the dashboard.
+### Robust Sync & Scrape Engine
+Socially AI uses a dual-engine architecture to fetch metrics:
+1. **API Primary:** Attempts to fetch deep metrics directly from native APIs (Graph API for FB/IG, YouTube Data API, etc.)
+2. **Web Scraper Fallback:** If the API fails (e.g. personal profiles, missing scope, expired tokens), our custom-built Node scraping engine uses the user's `@handle` (collected securely via OAuth Modals) to parse public subscriber/follower counts seamlessly from the web!
+
+Once connected, a silent background sync triggers automatically when the user visits the Dashboard to ensure follower counts and recent posts are always perfectly up-to-date.
 
 ---
 
@@ -155,21 +164,11 @@ Leave `OPENROUTER_API_KEY` empty in dev to use built-in mock responses.
 
 ---
 
-## Pricing
-
-| Tier | Price | Accounts | Highlights |
-|---|---|---|---|
-| Free | ₦0/mo | 1 | Scheduling + basic analytics |
-| Basic | ₦5,000/mo | 3 | Brand Voice + Trends |
-| Pro | ₦12,000/mo | 7 | Ghost Mode + ROI Pulse + Auto-Plug |
-| Advanced | ₦25,000/mo | 15+ | 3 agents + white-label reports + API |
-
----
-
 ## Security & privacy
 
 - Supabase Auth (JWT); Row-Level Security on every user table.
 - OAuth tokens only — no social passwords stored.
+- Secure, HTTP-Only Cookie Session management during OAuth redirects.
 - [Privacy Policy](/privacy) and [Terms of Service](/terms) are shipped in-app (required for platform app review).
 
 ---
