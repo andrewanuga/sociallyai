@@ -4,8 +4,9 @@
 // Real fetchers are implemented where the API is straightforward; the rest are
 // safe no-ops clearly marked to fill in as each platform app gets approved.
 // Every fetch is wrapped so one failing account never breaks a sync run.
-import type { SupabaseClient } from "@supabase/supabase-js";
-import type { PlatformId } from "./platforms";
+import { type SupabaseClient } from "@supabase/supabase-js";
+import { type PlatformId } from "./platforms";
+import { scrapeFollowers } from "./scraper";
 
 export interface NormalizedPost {
   external_id: string;
@@ -384,6 +385,16 @@ export async function syncAccount(acc: Account, supabase: SupabaseClient): Promi
 
   // 1. Fetch Profile info (followers)
   const profile = await fetchProfile(acc, token);
+  
+  // Fallback: If API returned no followers, attempt scraping if handle is available
+  if (profile.followers === undefined && (profile.handle || acc.handle)) {
+    const handleToScrape = profile.handle || acc.handle;
+    if (handleToScrape) {
+      const scraped = await scrapeFollowers(acc.platform, handleToScrape);
+      if (scraped !== undefined) profile.followers = scraped;
+    }
+  }
+
   if (profile.followers !== undefined || profile.display_name || profile.avatar_url) {
     await supabase.from("social_accounts").update({
       ...(profile.followers !== undefined && { followers: profile.followers }),
