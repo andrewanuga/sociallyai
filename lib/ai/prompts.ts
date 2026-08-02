@@ -74,6 +74,7 @@ export function buildChatSystemPrompt(
     `- Use specific numbers and details, never generic filler like "In today's world"`,
     `- Emojis are strategic, not decorative — 2-4 per post max`,
     `- End with a clear engagement driver (question, CTA, or open loop)`,
+    `- DO NOT use any Markdown formatting (no **, no ##, no bolding). Output pure plain text only.`,
     `- If the user asks to refine or iterate, build on the previous draft — don't restart`,
     `- When in doubt, ask a clarifying question rather than guessing`,
   );
@@ -155,6 +156,7 @@ export function buildGeneratePrompt(options: GenerateOptions): string {
     `- Use specific numbers and facts when possible`,
     `- Never use filler: "In conclusion", "In today's world", "Here's the thing"`,
     `- Emojis are strategic and sparing — 2-4 max per piece`,
+    `- DO NOT use any Markdown formatting (no **, no ##, no bolding). Output pure plain text only.`,
     `- Every line must earn its place — cut anything that doesn't add value`,
   );
 

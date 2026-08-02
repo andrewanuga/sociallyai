@@ -96,14 +96,14 @@ export const PLATFORMS: Record<PlatformId, PlatformDef> = {
   },
   threads: {
     id: "threads", name: "Threads", category: "Publishing", color: "#a855f7",
-    connectType: "oauth", env: ["META_APP_ID", "META_APP_SECRET"],
+    connectType: "oauth", env: ["THREAD_APP_ID", "THREAD_APP_SECRET"],
     capabilities: ["post", "schedule", "analytics", "bots"],
     oauth: {
       authorizeUrl: "https://threads.net/oauth/authorize",
       tokenUrl: "https://graph.threads.net/oauth/access_token",
       scopes: ["threads_basic", "threads_content_publish", "threads_manage_insights"],
       docs: "https://developers.facebook.com/docs/threads",
-      clientIdEnv: "META_APP_ID", clientSecretEnv: "META_APP_SECRET",
+      clientIdEnv: "THREAD_APP_ID", clientSecretEnv: "THREAD_APP_SECRET",
     },
   },
   snapchat: {

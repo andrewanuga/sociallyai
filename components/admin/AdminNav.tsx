@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, Users, ShieldAlert, ArrowLeft, LogOut, Megaphone, ToggleLeft, Activity, Flame } from "lucide-react";
+import { LayoutDashboard, Users, ShieldAlert, ArrowLeft, LogOut, Megaphone, ToggleLeft, Activity, Flame, LifeBuoy } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 
@@ -14,6 +14,7 @@ const ITEMS = [
   { href: "/admin/broadcasts", label: "Broadcasts", icon: Megaphone },
   { href: "/admin/health", label: "Health Matrix", icon: Activity },
   { href: "/admin/firehose", label: "Agent Firehose", icon: Flame },
+  { href: "/admin/support", label: "Support Tickets", icon: LifeBuoy },
 ];
 
 export function AdminNav() {

@@ -115,10 +115,15 @@ async function fetchProfile(platform: PlatformId, accessToken: string): Promise<
       const d = await r.json();
       return { id: d.id, handle: d.name ? `u/${d.name}` : undefined, name: d.name };
     }
-    if (platform === "facebook" || platform === "instagram" || platform === "threads") {
+    if (platform === "facebook" || platform === "instagram") {
       const r = await fetch(`https://graph.facebook.com/v19.0/me?fields=id,name&access_token=${accessToken}`);
       const d = await r.json();
       return { id: d.id, name: d.name, type: platform === "instagram" ? "business" : "page" };
+    }
+    if (platform === "threads") {
+      const r = await fetch(`https://graph.threads.net/v1.0/me?fields=id,username,name,threads_profile_picture_url&access_token=${accessToken}`);
+      const d = await r.json();
+      return { id: d.id, handle: d.username ? `@${d.username}` : undefined, name: d.name, avatar: d.threads_profile_picture_url, type: "creator" };
     }
   } catch { /* fall through to empty profile */ }
   return {};

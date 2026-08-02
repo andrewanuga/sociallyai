@@ -34,6 +34,9 @@ export const metadata: Metadata = {
     "Nigeria",
     "Africa",
   ],
+   icons: {
+    icon: "/logo.png",
+  },
   openGraph: {
     title: "SociallyAI — AI-Powered Social Media Manager",
     description:

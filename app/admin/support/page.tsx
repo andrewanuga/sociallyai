@@ -71,7 +71,7 @@ export default function AdminSupport() {
               <div key={t.id} className="flex flex-col gap-4 rounded-xl border border-[var(--stroke)] bg-[var(--panel-fill)] p-5 transition-colors hover:border-[var(--stroke-hover)] sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <Pill tone={t.category === "bug" ? "red" : t.category === "feature" ? "indigo" : t.category === "help" ? "gold" : "gray"}>
+                    <Pill tone={t.category === "bug" ? "red" : t.category === "feature" ? "indigo" : t.category === "help" ? "gold" : "muted"}>
                       {t.category.toUpperCase()}
                     </Pill>
                     <span className="text-[12px] text-[var(--fg-4)]">{timeAgo(t.created_at)}</span>
