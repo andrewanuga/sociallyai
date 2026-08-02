@@ -22,6 +22,7 @@ function useClickOutside(onClose: () => void) {
 type Notif = {
   id: string; author: string | null; body: string; category: string;
   received_at: string;
+  table: "social_inbox" | "user_notifications";
 };
 
 const catTone: Record<string, string> = {
@@ -40,16 +41,22 @@ export function NotificationsMenu() {
   const load = async () => {
     try {
       const supabase = createClient();
-      const { data } = await supabase
-        .from("social_inbox")
-        .select("id, author_name, body, category, received_at, is_read")
-        .eq("is_read", false)
-        .order("received_at", { ascending: false })
-        .limit(8);
-      const list = (data ?? []).map((m) => ({ id: m.id, author: m.author_name, body: m.body, category: m.category, received_at: m.received_at }));
-      setItems(list);
-      const { count: c } = await supabase.from("social_inbox").select("id", { count: "exact", head: true }).eq("is_read", false);
-      setCount(c ?? 0);
+      const [inboxRes, notifRes] = await Promise.all([
+        supabase.from("social_inbox").select("id, author_name, body, category, received_at, is_read").eq("is_read", false).order("received_at", { ascending: false }).limit(8),
+        supabase.from("user_notifications").select("id, title, body, type, created_at, is_read").eq("is_read", false).order("created_at", { ascending: false }).limit(8)
+      ]);
+      
+      const inboxList = (inboxRes.data ?? []).map((m) => ({ id: m.id, author: m.author_name, body: m.body, category: m.category, received_at: m.received_at, table: "social_inbox" as const }));
+      const notifList = (notifRes.data ?? []).map((m) => ({ id: m.id, author: m.title || "System", body: m.body, category: m.type, received_at: m.created_at, table: "user_notifications" as const }));
+      
+      const merged = [...inboxList, ...notifList].sort((a, b) => new Date(b.received_at).getTime() - new Date(a.received_at).getTime()).slice(0, 8);
+      setItems(merged);
+
+      const [inboxCount, notifCount] = await Promise.all([
+        supabase.from("social_inbox").select("id", { count: "exact", head: true }).eq("is_read", false),
+        supabase.from("user_notifications").select("id", { count: "exact", head: true }).eq("is_read", false)
+      ]);
+      setCount((inboxCount.count ?? 0) + (notifCount.count ?? 0));
     } catch { /* offline */ }
     setLoaded(true);
   };
@@ -60,13 +67,20 @@ export function NotificationsMenu() {
     const channel = supabase
       .channel("sai-inbox-notifications")
       .on("postgres_changes", { event: "*", schema: "public", table: "social_inbox" }, () => load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "user_notifications" }, () => load())
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, []);
 
   const markAll = async () => {
     setItems([]); setCount(0);
-    try { const supabase = createClient(); await supabase.from("social_inbox").update({ is_read: true }).eq("is_read", false); } catch {}
+    try { 
+      const supabase = createClient(); 
+      await Promise.all([
+        supabase.from("social_inbox").update({ is_read: true }).eq("is_read", false),
+        supabase.from("user_notifications").update({ is_read: true }).eq("is_read", false)
+      ]);
+    } catch {}
   };
 
   return (

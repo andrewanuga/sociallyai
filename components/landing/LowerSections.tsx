@@ -5,11 +5,11 @@ import {
   Brain, Ghost, TrendingUp, DollarSign, Target, BarChart3,
   Calendar, MessageSquare, FileText, Clock,
   Link2, Sparkles, Send, LineChart,
-  ArrowRight, Check, Star,
+  ArrowRight, Check, Star, Users, Zap, Search, Globe, Camera, Briefcase, Play, MessageCircle, Music
 } from "lucide-react";
 import { useGsapReveal } from "./useGsapReveal";
 
-/* ── Shared bits ─────────────────────────────────────────────────── */
+/* --- Shared bits --------------------------------------------------- */
 
 function Eyebrow({ children, tone = "indigo" }: { children: React.ReactNode; tone?: "indigo" | "violet" | "gold" }) {
   const color =
@@ -45,7 +45,7 @@ function SectionHead({
   );
 }
 
-/* ── Features ────────────────────────────────────────────────────── */
+/* --- Features ---------------------------------------------------─── */
 
 const MUST_HAVES = [
   { icon: Calendar, title: "Visual calendar", desc: "Drag-and-drop scheduling. Your whole strategy at a glance." },
@@ -128,7 +128,109 @@ export function Features() {
   );
 }
 
-/* ── How it works ────────────────────────────────────────────────── */
+/* --- Agent Tools --------------------------------------------------- */
+
+const AGENT_TOOLS = [
+  { icon: Search, title: "Competitor Spy", desc: "Scrape any competitor's site to instantly reverse-engineer their strategy." },
+  { icon: FileText, title: "Longform Repurposing", desc: "Paste a video link and splinter it into a 7-day multi-platform calendar." },
+  { icon: Target, title: "Fact-Checker", desc: "Verifies statistical claims and grabs credible citations before posting." },
+  { icon: BarChart3, title: "Auto-Scheduler", desc: "Approve a drafted post and the AI schedules it straight to the DB." },
+  { icon: Brain, title: "Visual Prompting", desc: "Automatically generates Midjourney/DALL-E prompts to match your copy." },
+  { icon: Zap, title: "Viral Formats", desc: "Injects currently trending 'fill-in-the-blank' meme hooks into your drafts." },
+];
+
+export function AgentTools() {
+  const ref = useGsapReveal<HTMLElement>();
+  return (
+    <section id="tools" ref={ref} className="relative px-5 py-28 sm:py-32 bg-[var(--sai-indigo)]/5">
+      <div className="mx-auto max-w-6xl">
+        <SectionHead
+          eyebrow="Agentic Tool Calling"
+          tone="indigo"
+          title={<>Equipped with <span className="sai-gradient-text">11 Native Tools</span></>}
+          sub="Your AI doesn't just write. It runs a full ReAct loop—autonomously fetching weather, scraping competitors, checking your inbox, and scheduling posts."
+        />
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {AGENT_TOOLS.map((t, i) => (
+            <div
+              key={t.title}
+              data-reveal
+              className="glass-panel group relative overflow-hidden rounded-2xl p-6 transition-all duration-300 hover:-translate-y-1 hover:bg-white/[0.08]"
+              style={{ transitionDelay: `${i * 50}ms` }}
+            >
+              <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--sai-indigo)]/20">
+                <t.icon className="h-6 w-6 text-[var(--sai-indigo)] transition-transform duration-300 group-hover:scale-110" />
+              </div>
+              <h3 className="font-display text-lg font-semibold text-white">{t.title}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-white/60">{t.desc}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* --- Integrations ────────────────────────────────────────────────── */
+
+const PLATFORMS = [
+  { name: "Twitter", icon: MessageCircle },
+  { name: "LinkedIn", icon: Briefcase },
+  { name: "Instagram", icon: Camera },
+  { name: "TikTok", icon: Music },
+  { name: "YouTube", icon: Play },
+  { name: "Facebook", icon: Globe },
+  { name: "Slack", icon: MessageSquare },
+  { name: "Notion", icon: FileText },
+];
+
+export function Integrations() {
+  const ref = useGsapReveal<HTMLElement>();
+  return (
+    <section ref={ref} className="sai-vignette relative overflow-hidden py-28 sm:py-32">
+      <div className="mx-auto mb-14 max-w-2xl px-5 text-center">
+        <div data-reveal><Eyebrow tone="violet">Connected everywhere</Eyebrow></div>
+        <h2 data-reveal className="font-display mt-4 text-4xl font-semibold tracking-[-0.02em] text-white sm:text-5xl">
+          Plug into your <span className="sai-gradient-text">entire stack</span>
+        </h2>
+      </div>
+
+      <div className="sai-marquee py-2">
+        <div className="sai-marquee-track">
+          {[...PLATFORMS, ...PLATFORMS, ...PLATFORMS].map((p, i) => (
+            <div key={`${p.name}-${i}`} className="flex items-center gap-3 rounded-full border border-white/10 bg-white/5 px-6 py-3 transition-colors hover:bg-white/10 mx-3">
+              <p.icon className="h-5 w-5 text-white/70" />
+              <span className="font-display text-sm font-medium text-white">{p.name}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* --- Collaboration ───────────────────────────────────────────────── */
+
+export function Collaboration() {
+  const ref = useGsapReveal<HTMLElement>();
+  return (
+    <section ref={ref} className="relative px-5 py-28 sm:py-32 bg-[var(--sai-violet)]/5">
+      <div className="mx-auto max-w-5xl flex flex-col items-center text-center">
+        <div className="mb-8 flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--sai-violet)]/20" data-reveal>
+          <Users className="h-8 w-8 text-[var(--sai-violet)]" />
+        </div>
+        <h2 data-reveal className="font-display text-4xl font-semibold tracking-[-0.02em] text-white sm:text-5xl">
+          Multi-Seat <span className="sai-gradient-text">Workspaces</span>
+        </h2>
+        <p data-reveal className="mt-5 max-w-2xl text-lg leading-relaxed text-white/55">
+          Built for agencies and marketing teams. Invite members to your workspace with strict Row-Level Security (RLS). They manage the accounts, but you own the billing.
+        </p>
+      </div>
+    </section>
+  );
+}
+
+/* --- How it works ────────────────────────────────────────────────── */
 
 const STEPS = [
   { icon: Link2, title: "Connect your accounts", desc: "Link X, LinkedIn, Instagram, TikTok in seconds. Secure OAuth — no passwords stored.", tag: "OAuth 2.0" },
@@ -173,7 +275,7 @@ export function HowItWorks() {
   );
 }
 
-/* ── Stories (testimonials) ──────────────────────────────────────── */
+/* --- Stories (testimonials) ──────────────────────────────────────── */
 
 const STORIES = [
   { name: "Adaeze Okonkwo", role: "Fintech Founder, Lagos", avatar: "AO", text: "I replaced Buffer and a freelance manager with Socially AI. Ghost Mode handles engagement while I close deals. ROI in week one.", highlight: "Replaced a freelance manager" },
@@ -248,7 +350,7 @@ export function Stories() {
   );
 }
 
-/* ── Pricing ─────────────────────────────────────────────────────── */
+/* --- Pricing ---------------------------------------------------──── */
 
 const PLANS = [
   { name: "Free", price: "₦0", desc: "For creators getting started", accounts: "1 account", features: ["Post scheduling", "Simple analytics", "Calendar view", "Mobile app"], cta: "Start free", highlight: false },
@@ -369,7 +471,7 @@ export function FinalCTA() {
   );
 }
 
-/* ── Footer ──────────────────────────────────────────────────────── */
+/* ── Footer -------------------------------------------------------- */
 
 export function SiteFooter() {
   return (

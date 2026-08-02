@@ -124,7 +124,7 @@ export default function SettingsPage() {
 
   const [form, setForm] = useState({
     full_name: "", username: "", niche: "", brand_website: "",
-    ai_model: "google/gemini-2.5-flash", ai_unfiltered: false, ai_temperature: 0.7,
+    ai_model: "google/gemma-4-26b-a4b-it:free", ai_unfiltered: false, ai_temperature: 0.7,
     font_pref: "inter", plan: "free",
   });
   const [notif, setNotif] = useState({ leads: true, trends: true, agentActions: false, reports: true });
@@ -156,7 +156,7 @@ export default function SettingsPage() {
             ...f,
             full_name: data.full_name ?? "", username: data.username ?? "",
             niche: data.niche ?? "", brand_website: data.brand_website ?? "",
-            ai_model: data.ai_model ?? "google/gemini-2.5-flash", ai_unfiltered: !!data.ai_unfiltered,
+            ai_model: data.ai_model ?? "google/gemma-4-26b-a4b-it:free", ai_unfiltered: !!data.ai_unfiltered,
             ai_temperature: Number(data.ai_temperature ?? 0.7),
             font_pref: data.font_pref ?? "inter", plan: data.plan ?? "free",
           }));

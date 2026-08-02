@@ -3,6 +3,9 @@ import { FloatingNav } from "@/components/landing/FloatingNav";
 import { CinematicHero } from "@/components/landing/CinematicHero";
 import {
   Features,
+  AgentTools,
+  Integrations,
+  Collaboration,
   HowItWorks,
   Stories,
   Pricing,
@@ -18,6 +21,9 @@ export default function LandingPage() {
       <main>
         <CinematicHero />
         <Features />
+        <AgentTools />
+        <Integrations />
+        <Collaboration />
         <HowItWorks />
         <Stories />
         <Pricing />

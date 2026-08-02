@@ -46,6 +46,32 @@ insert into public.feature_flags (key, is_enabled, description) values
   ('competitor_spy', true, 'Toggle the competitor analysis tools')
 on conflict (key) do nothing;
 
+-- ── User Notifications ───────────────────────────────────────
+create table if not exists public.user_notifications (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  title text,
+  body text not null,
+  type text not null default 'system',
+  is_read boolean not null default false,
+  created_at timestamptz not null default now()
+);
+
+alter table public.user_notifications enable row level security;
+create policy "users can read their own notifications"
+  on public.user_notifications for select using (auth.uid() = user_id);
+create policy "users can update their own notifications"
+  on public.user_notifications for update using (auth.uid() = user_id);
+create policy "admins manage user_notifications"
+  on public.user_notifications for all using (public.is_admin(auth.uid()));
+
+do $$ begin
+  begin
+    alter publication supabase_realtime add table public.user_notifications;
+  exception when duplicate_object then null; when undefined_object then null;
+  end;
+end $$;
+
 -- ── Global Admin RLS Overrides for Impersonation ──────────────
 -- These policies allow admins to read and manage all user data,
 -- enabling the "Impersonation" feature.

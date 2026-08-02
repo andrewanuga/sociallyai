@@ -6,6 +6,7 @@ import { GlassCard, PageHeader, Pill } from "@/components/dashboard/ui";
 import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/components/ui/toast";
 import { timeAgo } from "@/lib/dashboard/helpers";
+import { blockIpAddress, unblockIpAddress } from "./actions";
 
 type Blocked = { ip: string; reason: string | null; auto: boolean; created_at: string; expires_at: string | null };
 type Evt = { id: string; type: string; ip: string | null; email: string | null; severity: string; path: string | null; detail: string | null; created_at: string };
@@ -41,10 +42,7 @@ export default function AdminSecurity() {
     if (!ip) return;
     setBusy(true);
     try {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      const { error } = await supabase.from("blocked_ips").upsert({ ip, reason: "Manually blocked by admin", auto: false, blocked_by: user?.id ?? null }, { onConflict: "ip" });
-      if (error) throw error;
+      await blockIpAddress(ip);
       setBlocked((prev) => [{ ip, reason: "Manually blocked by admin", auto: false, created_at: new Date().toISOString(), expires_at: null }, ...prev.filter((b) => b.ip !== ip)]);
       setIpInput(""); success("IP blocked");
     } catch (e) { toastError("Couldn't block IP", e instanceof Error ? e.message : undefined); }
@@ -53,7 +51,7 @@ export default function AdminSecurity() {
 
   const unblock = async (ip: string) => {
     setBlocked((prev) => prev.filter((b) => b.ip !== ip));
-    try { await createClient().from("blocked_ips").delete().eq("ip", ip); success("IP unblocked"); }
+    try { await unblockIpAddress(ip); success("IP unblocked"); }
     catch { load(); }
   };
 

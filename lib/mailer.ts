@@ -26,3 +26,37 @@ export function getTransporter(): Transporter | null {
 
 export const MAIL_FROM =
   process.env.SMTP_FROM || process.env.SMTP_USER || "socially.ai.io@gmail.com";
+
+export async function sendBroadcastEmail(emails: string[], message: string, type: string) {
+  const transporter = getTransporter();
+  if (!transporter) return;
+
+  const subject = type === "critical" ? "Critical Update from SociallyAI" : 
+                  type === "warning" ? "Action Required: SociallyAI Warning" : 
+                  "SociallyAI Announcement";
+
+  const html = `
+    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eaeaea; border-radius: 8px;">
+      <h2 style="color: #333;">${subject}</h2>
+      <p style="color: #555; line-height: 1.6; font-size: 16px;">
+        ${message}
+      </p>
+      <hr style="border: 0; border-top: 1px solid #eaeaea; margin: 30px 0;" />
+      <p style="color: #999; font-size: 12px; text-align: center;">
+        You're receiving this because you are registered on SociallyAI.
+      </p>
+    </div>
+  `;
+
+  // Send individually using Promise.allSettled to prevent one failure from blocking others
+  await Promise.allSettled(
+    emails.map(email => 
+      transporter.sendMail({
+        from: `"SociallyAI" <${MAIL_FROM}>`,
+        to: email,
+        subject,
+        html,
+      })
+    )
+  );
+}

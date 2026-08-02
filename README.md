@@ -13,11 +13,14 @@ Most tools tell you what happened. Socially AI tells you what will — and often
 | Feature | What it means |
 |---|---|
 | **Create (AI chat)** | A per-user agent that drafts posts, threads, captions, and replies in your voice — with image/video/file uploads for context. |
+| **Agentic Loop** | Our AI runs a full ReAct loop. Before it answers, it can autonomously use tools to fetch weather, scrape URLs, and fact-check claims. |
+| **Premium Tools** | The agent has 11 native tools: `schedule_post`, `analyze_competitor`, `repurpose_longform`, `verify_claim`, `fetch_unread_messages`, and more. |
 | **Ghost Mode™ Agent** | Replies to surface-level comments in your voice, flags leads, escalates complaints. You only touch what matters. |
 | **Tasks (LIFO stack)** | A last-in, first-out task stack that keeps the newest work front-of-mind. |
 | **Scheduler** | A month calendar of everything scheduled across every connected account. |
 | **Smart Inbox** | One tab per connected account; messages arrive as a stack, AI-triaged into leads / complaints / questions / fluff. |
 | **Analytics** | Real per-post analytics with cross-post *referral* suggestions (creators) and per-campaign boards with improvement tips (marketers). |
+| **Collaboration** | Multi-seat workspaces with Row-Level Security (RLS). Invite your team to manage specific accounts. |
 | **Trends** | Live web-search trends for your niche/persona, each referred to the right connected account. |
 | **Bots** | Real bots across connected accounts with a management system (assist vs. full-auto). |
 | **Personalization** | The agent stores past messages, learns your tone, and mirrors how you write. |

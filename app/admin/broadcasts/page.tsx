@@ -18,6 +18,7 @@ export default function AdminBroadcasts() {
   
   const [msgInput, setMsgInput] = useState("");
   const [typeInput, setTypeInput] = useState<"info" | "warning" | "critical">("info");
+  const [targetUser, setTargetUser] = useState("");
 
   const load = async () => {
     try {
@@ -38,9 +39,10 @@ export default function AdminBroadcasts() {
     if (!msgInput.trim()) return;
     setBusy("create");
     try {
-      await createBroadcast(msgInput, typeInput);
-      success("Broadcast created");
+      await createBroadcast(msgInput, typeInput, targetUser.trim() || undefined);
+      success("Broadcast/Message sent");
       setMsgInput("");
+      setTargetUser("");
       load();
     } catch (e) {
       toastError("Couldn't create broadcast", e instanceof Error ? e.message : undefined);
@@ -90,6 +92,12 @@ export default function AdminBroadcasts() {
             onChange={(e) => setMsgInput(e.target.value)} 
             placeholder="e.g. System maintenance at midnight..." 
             className="h-10 flex-1 rounded-xl border border-[var(--stroke)] bg-[var(--panel-fill)] px-3 text-sm text-[var(--fg)] placeholder:text-[var(--fg-4)] focus:border-[var(--sai-indigo)]/50 focus:outline-none" 
+          />
+          <input 
+            value={targetUser} 
+            onChange={(e) => setTargetUser(e.target.value)} 
+            placeholder="User ID (optional)" 
+            className="h-10 w-full rounded-xl border border-[var(--stroke)] bg-[var(--panel-fill)] px-3 text-sm text-[var(--fg)] placeholder:text-[var(--fg-4)] focus:border-[var(--sai-indigo)]/50 focus:outline-none sm:w-40" 
           />
           <select
             value={typeInput}

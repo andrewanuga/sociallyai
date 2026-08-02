@@ -199,7 +199,7 @@ export function OnboardingFlow({ initialName }: { initialName?: string }) {
                 The essentials
               </h1>
               <p className="mt-2 text-sm text-white/55">
-                Pick a handle and a rhythm. You can change these later.
+                Pick a UserName. You can update it later.
               </p>
 
               <div className="mt-7 space-y-6">
