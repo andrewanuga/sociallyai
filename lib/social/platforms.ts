@@ -35,14 +35,14 @@ export interface PlatformDef {
 export const PLATFORMS: Record<PlatformId, PlatformDef> = {
   instagram: {
     id: "instagram", name: "Instagram", category: "Publishing", color: "#E1306C",
-    connectType: "oauth", env: ["META_APP_ID", "META_APP_SECRET"],
+    connectType: "oauth", env: ["INSTAGRAM_APP_ID", "INSTAGRAM_APP_SECRET"],
     capabilities: ["post", "schedule", "inbox", "analytics", "campaigns", "bots"],
     oauth: {
-      authorizeUrl: "https://www.facebook.com/v19.0/dialog/oauth",
-      tokenUrl: "https://graph.facebook.com/v19.0/oauth/access_token",
-      scopes: ["instagram_basic", "instagram_manage_insights", "instagram_manage_comments", "pages_show_list"],
+      authorizeUrl: "https://www.instagram.com/oauth/authorize",
+      tokenUrl: "https://api.instagram.com/oauth/access_token",
+      scopes: ["instagram_business_basic", "instagram_business_manage_messages", "instagram_business_manage_comments", "instagram_business_content_publish", "instagram_business_manage_insights"],
       docs: "https://developers.facebook.com/docs/instagram-api",
-      clientIdEnv: "META_APP_ID", clientSecretEnv: "META_APP_SECRET",
+      clientIdEnv: "INSTAGRAM_APP_ID", clientSecretEnv: "INSTAGRAM_APP_SECRET",
     },
   },
   youtube: {
