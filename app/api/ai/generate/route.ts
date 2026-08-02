@@ -13,6 +13,7 @@ interface GenerateBody {
   tone?: string;
   context?: string;
   type?: "caption" | "thread" | "reply" | "hashtags" | "bio" | "idea";
+  useTrends?: boolean;
 }
 
 /* ── POST /api/ai/generate ────────────────────────────────────── */
@@ -26,9 +27,29 @@ export async function POST(req: NextRequest) {
     const workspaceId = workspace.workspaceId;
 
     const body: GenerateBody = await req.json();
-    const { prompt, platform, framework, tone, context, type = "caption" } = body;
+    const { prompt, platform, framework, tone, context, type = "caption", useTrends } = body;
 
-    if (!prompt && !context) {
+    let finalPrompt = prompt || "";
+    let trendUsed = "";
+
+    if (useTrends) {
+      // Fetch the top trend from the user's database cache
+      const { data: trends } = await supabase
+        .from("social_trends")
+        .select("topic, summary")
+        .eq("user_id", workspaceId)
+        .order("score", { ascending: false })
+        .limit(1);
+      
+      if (trends && trends.length > 0) {
+        trendUsed = trends[0].topic;
+        finalPrompt = `Trend: ${trends[0].topic}. Context: ${trends[0].summary}`;
+      } else {
+        // Fallback if no trends generated yet
+        trendUsed = "AI tools in our niche";
+        finalPrompt = "Latest AI tools in our niche";
+      }
+    } else if (!prompt && !context) {
       return NextResponse.json(
         { error: "Prompt or context is required" },
         { status: 400 },
@@ -47,13 +68,13 @@ export async function POST(req: NextRequest) {
       type,
       platform,
       tone,
-      context: context || prompt || "",
+      context: context || finalPrompt || "",
       framework,
     });
 
     const userPrompt = context
-      ? `Brand context: ${context}\n\nCreate a compelling ${platform || "social media"} post about: ${prompt || "our brand"}`
-      : `Create a compelling ${platform || "social media"} post about: ${prompt}`;
+      ? `Brand context: ${context}\n\nCreate a compelling ${platform || "social media"} post about: ${finalPrompt || "our brand"}`
+      : `Create a compelling ${platform || "social media"} post about: ${finalPrompt}`;
 
     // ── No API key → mock ───────────────────────────────────────
     if (!isConfigured()) {
@@ -76,7 +97,7 @@ export async function POST(req: NextRequest) {
     // Deduct from user's generation quota
     const { error: dbError } = await supabase.rpc("decrement_generations", { user_id: workspaceId });
 
-    return NextResponse.json({ content: result.content, model: result.model });
+    return NextResponse.json({ content: result.content, model: result.model, trendUsed });
   } catch (err) {
     console.error("[/api/ai/generate]", err);
     const errorMessage = err instanceof Error ? err.message : "Generation failed. Please try again.";

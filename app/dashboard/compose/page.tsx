@@ -59,17 +59,22 @@ export default function ComposePage() {
     return () => clearTimeout(timer);
   }, [content, selectedPlatforms]);
 
-  const handleGenerate = useCallback(async () => {
-    if (!topic.trim()) { toastError("Add a topic first", "Tell the agent what to write about."); return; }
+  const handleGenerate = useCallback(async (useTrends: boolean = false) => {
+    if (!useTrends && !topic.trim()) { toastError("Add a topic first", "Tell the agent what to write about."); return; }
     setGenerating(true);
     try {
+      const payload: any = { platform: selectedPlatforms[0] || "x", framework, tone };
+      if (useTrends) payload.useTrends = true;
+      else payload.prompt = topic;
+
       const res = await fetch("/api/ai/generate", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: topic, platform: selectedPlatforms[0] || "x", framework, tone }),
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
       setContent(data.content);
+      if (useTrends && data.trendUsed) setTopic(`Trend: ${data.trendUsed}`);
     } catch (err: unknown) {
       toastError("Generation failed", err instanceof Error ? err.message : undefined);
     } finally { setGenerating(false); }
@@ -160,9 +165,13 @@ export default function ComposePage() {
           </GlassCard>
 
           <div className="flex flex-wrap items-center gap-3">
-            <button onClick={handleGenerate} disabled={generating} className="flex min-w-[160px] flex-1 items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold text-[var(--fg)] transition-transform hover:scale-[1.02] disabled:opacity-60" style={{ background: "linear-gradient(135deg,#6366f1,#a855f7)" }}>
+            <button onClick={() => handleGenerate(false)} disabled={generating} className="flex min-w-[160px] flex-1 items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold text-[var(--fg)] transition-transform hover:scale-[1.02] disabled:opacity-60" style={{ background: "linear-gradient(135deg,#6366f1,#a855f7)" }}>
               {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
               {generating ? "Generating…" : "Generate with AI"}
+            </button>
+            <button onClick={() => handleGenerate(true)} disabled={generating} className="flex min-w-[160px] flex-1 items-center justify-center gap-2 rounded-xl border border-[var(--sai-indigo)] bg-[var(--sai-indigo)]/10 py-2.5 text-sm font-semibold text-[var(--fg)] transition-transform hover:scale-[1.02] disabled:opacity-60">
+              {generating ? <Loader2 className="h-4 w-4 animate-spin text-[var(--sai-indigo)]" /> : <TrendingUp className="h-4 w-4 text-[var(--sai-indigo)]" />}
+              Generate from Trends
             </button>
             <button onClick={handleSchedule} disabled={scheduling || !content} className="flex items-center gap-2 rounded-xl border border-[var(--stroke)] bg-[var(--panel-fill)] px-5 py-2.5 text-sm font-medium text-[var(--fg)] hover:bg-[var(--hover)] disabled:opacity-50">
               {scheduling ? <Loader2 className="h-4 w-4 animate-spin" /> : <Calendar className="h-4 w-4" />} Schedule
@@ -227,7 +236,7 @@ export default function ComposePage() {
             </div>
           </GlassCard>
 
-          <button onClick={handleGenerate} disabled={generating || !topic.trim()} className="flex w-full items-center justify-center gap-2 rounded-xl border border-[var(--stroke)] bg-[var(--panel-fill)] py-2.5 text-sm font-medium text-[var(--fg)] hover:bg-[var(--hover)] disabled:opacity-50">
+          <button onClick={() => handleGenerate(false)} disabled={generating || !topic.trim()} className="flex w-full items-center justify-center gap-2 rounded-xl border border-[var(--stroke)] bg-[var(--panel-fill)] py-2.5 text-sm font-medium text-[var(--fg)] hover:bg-[var(--hover)] disabled:opacity-50">
             {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCw className="h-4 w-4" />} Regenerate variation
           </button>
         </div>

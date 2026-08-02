@@ -92,7 +92,7 @@ export async function POST(
           }
 
           // Log action
-          if (evalRes.action !== "ignore") {
+          if (evalRes.action !== "ignore" || evalRes.is_lead) {
             await supabase.from("agent_actions").insert({
               bot_id: bot.id,
               action: evalRes.action,
@@ -100,6 +100,21 @@ export async function POST(
               reply: evalRes.reply || null,
               platform: "Telegram",
               reason: "Incoming message rule match"
+            });
+          }
+
+          if (evalRes.is_lead) {
+            await supabase.from("social_inbox").insert({
+              account_id: account.id,
+              user_id: account.user_id,
+              platform: "telegram",
+              external_msg_id: `telegram_${senderId}_${Date.now()}`,
+              sender_id: senderId,
+              sender_name: senderName,
+              content: text,
+              category: "lead",
+              status: "unread",
+              is_comment: false
             });
           }
 
@@ -206,7 +221,7 @@ async function handleInstagramInteraction(
     });
   }
 
-  if (evalRes.action !== "ignore") {
+  if (evalRes.action !== "ignore" || evalRes.is_lead) {
     await supabase.from("agent_actions").insert({
       bot_id: bot.id,
       action: evalRes.action,
@@ -214,6 +229,21 @@ async function handleInstagramInteraction(
       reply: evalRes.reply || null,
       platform: "Instagram",
       reason: `Incoming ${isComment ? "comment" : "DM"} rule match`
+    });
+  }
+
+  if (evalRes.is_lead) {
+    await supabase.from("social_inbox").insert({
+      account_id: account.id,
+      user_id: account.user_id,
+      platform: "instagram",
+      external_msg_id: commentId || `ig_${senderId}_${Date.now()}`,
+      sender_id: senderId,
+      sender_name: senderName,
+      content: text,
+      category: "lead",
+      status: "unread",
+      is_comment: isComment
     });
   }
 

@@ -24,7 +24,64 @@ export interface NormalizedPost {
 type Account = {
   id: string; user_id: string; platform: PlatformId;
   external_id: string; access_token: string | null;
+  username?: string | null;
 };
+
+/** Fetch profile metadata (followers) for one account. */
+async function fetchProfile(acc: Account): Promise<{ followers?: number; avatar_url?: string; username?: string }> {
+  if (!acc.access_token) return {};
+  try {
+    switch (acc.platform) {
+      case "x": {
+        const r = await fetch(
+          `https://api.twitter.com/2/users/${acc.external_id}?user.fields=public_metrics,profile_image_url,username`,
+          { headers: { Authorization: `Bearer ${acc.access_token}` } }
+        );
+        const d = await r.json();
+        if (d.data) {
+          return {
+            followers: d.data.public_metrics?.followers_count,
+            avatar_url: d.data.profile_image_url,
+            username: d.data.username,
+          };
+        }
+        break;
+      }
+      case "youtube": {
+        const r = await fetch(
+          `https://www.googleapis.com/youtube/v3/channels?part=statistics,snippet&id=${acc.external_id}`,
+          { headers: { Authorization: `Bearer ${acc.access_token}` } }
+        );
+        const d = await r.json();
+        if (d.items?.[0]) {
+          return {
+            followers: Number(d.items[0].statistics?.subscriberCount),
+            avatar_url: d.items[0].snippet?.thumbnails?.default?.url,
+            username: d.items[0].snippet?.customUrl || d.items[0].snippet?.title,
+          };
+        }
+        break;
+      }
+      case "facebook": {
+        const r = await fetch(
+          `https://graph.facebook.com/v19.0/${acc.external_id}?fields=followers_count,picture,name&access_token=${acc.access_token}`
+        );
+        const d = await r.json();
+        if (d.id) {
+          return {
+            followers: d.followers_count,
+            avatar_url: d.picture?.data?.url,
+            username: d.name,
+          };
+        }
+        break;
+      }
+    }
+  } catch {
+    // skip
+  }
+  return {};
+}
 
 /** Fetch recent posts + metrics for one account. Returns [] when unavailable. */
 async function fetchPosts(acc: Account): Promise<NormalizedPost[]> {
@@ -86,6 +143,20 @@ async function fetchPosts(acc: Account): Promise<NormalizedPost[]> {
 
 /** Sync a single account: upsert posts + metrics, stamp last_synced_at. */
 export async function syncAccount(acc: Account, supabase: SupabaseClient): Promise<number> {
+  // 1. Fetch Profile info (followers)
+  const profile = await fetchProfile(acc);
+  if (profile.followers !== undefined) {
+    await supabase.from("social_accounts").update({
+      followers: profile.followers,
+      ...(profile.avatar_url && { avatar_url: profile.avatar_url }),
+      ...(profile.username && { username: profile.username }),
+      last_synced_at: new Date().toISOString()
+    }).eq("id", acc.id);
+  } else {
+    await supabase.from("social_accounts").update({ last_synced_at: new Date().toISOString() }).eq("id", acc.id);
+  }
+
+  // 2. Fetch Posts
   const posts = await fetchPosts(acc);
   if (posts.length) {
     const rows = posts.map((p) => ({
@@ -102,6 +173,27 @@ export async function syncAccount(acc: Account, supabase: SupabaseClient): Promi
     // falls back to insert-ignore semantics otherwise.
     await supabase.from("social_posts").upsert(rows, { onConflict: "account_id,external_id" });
   }
-  await supabase.from("social_accounts").update({ last_synced_at: new Date().toISOString() }).eq("id", acc.id);
+
+  // 3. Snapshot Metrics for Deep Analytics
+  if (profile.followers !== undefined) {
+    const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+    
+    // Sum engagement from recent posts
+    let sumImp = 0; let sumEng = 0;
+    posts.forEach(p => {
+      sumImp += p.impressions ?? 0;
+      sumEng += (p.likes ?? 0) + (p.comments ?? 0) + (p.shares ?? 0) + (p.video_views ?? 0);
+    });
+    
+    await supabase.from("social_account_metrics").upsert({
+      account_id: acc.id,
+      date: today,
+      followers: profile.followers,
+      impressions: sumImp,
+      engagements: sumEng,
+      updated_at: new Date().toISOString()
+    }, { onConflict: "account_id,date" });
+  }
+
   return posts.length;
 }

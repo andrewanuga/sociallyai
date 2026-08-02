@@ -6,6 +6,7 @@ export interface EvaluationResult {
   action: AgentActionType;
   comment: string;
   reply?: string;
+  is_lead?: boolean;
 }
 
 /**
@@ -47,7 +48,8 @@ JSON SCHEMA:
 {
   "action": "auto_reply" | "flag_lead" | "escalate_complaint" | "ignore",
   "comment": "Short explanation of why you chose this action based on the rules.",
-  "reply": "The actual text to send back to the user (ONLY IF action is 'auto_reply', otherwise omit or null)"
+  "reply": "The actual text to send back to the user (ONLY IF action is 'auto_reply', otherwise omit or null)",
+  "is_lead": true | false (Set to true if the user is expressing buying intent, asking for pricing, or showing strong interest in a service)
 }`;
 
   try {
