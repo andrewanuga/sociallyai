@@ -12,13 +12,15 @@ import { useToast } from "@/components/ui/toast";
 import type { PlatformId } from "@/lib/social/platforms";
 import type { SocialAccount, SocialInboxMessage } from "@/lib/social/types";
 
-const ICONS: Record<PlatformId, React.ComponentType<{ className?: string; style?: React.CSSProperties }>> = {
+const ICONS: Record<PlatformId | "system", React.ComponentType<{ className?: string; style?: React.CSSProperties }>> = {
   instagram: Camera, youtube: Play, x: AtSign, linkedin: Building2, facebook: Users,
   threads: Hash, snapchat: Ghost, reddit: MessagesSquare, telegram: SendIcon, whatsapp: MessageCircle,
+  system: Sparkles,
 };
-const COLORS: Record<PlatformId, string> = {
+const COLORS: Record<PlatformId | "system", string> = {
   instagram: "#E1306C", youtube: "#FF0000", x: "#1DA1F2", linkedin: "#0A66C2", facebook: "#1877F2",
   threads: "#a855f7", snapchat: "#FFFC00", reddit: "#FF4500", telegram: "#229ED9", whatsapp: "#25D366",
+  system: "#6366f1",
 };
 
 const catTone = (c: string) => (c === "complaint" ? "red" : c === "lead" ? "gold" : c === "question" ? "indigo" : "muted") as "red" | "gold" | "indigo" | "muted";
@@ -40,11 +42,16 @@ export function InboxClient({ accounts, messages }: { accounts: SocialAccount[];
   const initials = (n: string | null) => (n ?? "?").split(" ").map((p) => p[0]).join("").toUpperCase().slice(0, 2);
 
   const sendReply = async (m: SocialInboxMessage) => {
-    if (!reply.trim()) return;
+    if ((m.platform as string) !== "system" && !reply.trim()) return;
     setReplied((r) => ({ ...r, [m.id]: true }));
     const supabase = createClient();
-    await supabase.from("social_inbox").update({ replied: true, reply_body: reply, is_read: true }).eq("id", m.id);
-    success("Reply sent");
+    if ((m.platform as string) === "system") {
+      await supabase.from("user_notifications").update({ is_read: true }).eq("id", m.id);
+      success("Notification dismissed");
+    } else {
+      await supabase.from("social_inbox").update({ replied: true, reply_body: reply, is_read: true }).eq("id", m.id);
+      success("Reply sent");
+    }
     setReply("");
   };
 
@@ -78,7 +85,7 @@ export function InboxClient({ accounts, messages }: { accounts: SocialAccount[];
           return (
             <button key={a.id} onClick={() => setTab(a.id)} className="flex items-center gap-2 rounded-full border px-3.5 py-2 text-[13px] font-medium transition-all"
               style={active ? { borderColor: "rgba(99,102,241,0.5)", background: "rgba(99,102,241,0.12)", color: "var(--fg)" } : { borderColor: "var(--stroke)", color: "var(--fg-2)" }}>
-              <Icon className="h-3.5 w-3.5" style={{ color: COLORS[a.platform] }} />
+              {Icon && <Icon className="h-3.5 w-3.5" style={{ color: COLORS[a.platform as PlatformId | "system"] }} />}
               <span className="lowercase">{a.platform}</span>
               <span className="opacity-50">/</span>
               <span className="max-w-[90px] truncate">{a.handle || a.display_name || "account"}</span>
@@ -133,13 +140,19 @@ export function InboxClient({ accounts, messages }: { accounts: SocialAccount[];
                 )}
               </div>
             </div>
-            <div className="border-t border-[var(--stroke)] p-4">
-              <textarea placeholder="Write a reply…" value={reply} onChange={(e) => setReply(e.target.value)} className="mb-3 min-h-[80px] w-full resize-none rounded-xl border border-[var(--stroke)] bg-[var(--panel-fill)] p-3 text-sm text-[var(--fg)] outline-none placeholder:text-[var(--fg-4)] focus:border-[var(--sai-indigo)]/50" />
-              <div className="flex items-center justify-between">
-                <button onClick={() => setReply((r) => r || "Hi! Thanks for reaching out — here's a quick overview…")} className="rounded-full border border-[var(--stroke)] bg-[var(--panel-fill)] px-3.5 py-1.5 text-[12px] text-[var(--fg-2)] hover:bg-[var(--hover)]">Use AI suggestion</button>
-                <button onClick={() => sendReply(selected)} className="rounded-full px-4 py-1.5 text-[12.5px] font-semibold text-white transition-transform hover:scale-[1.03]" style={{ background: "linear-gradient(135deg,#6366f1,#a855f7)" }}>Send reply</button>
+            {(selected.platform as string) !== "system" ? (
+              <div className="border-t border-[var(--stroke)] p-4">
+                <textarea placeholder="Write a reply…" value={reply} onChange={(e) => setReply(e.target.value)} className="mb-3 min-h-[80px] w-full resize-none rounded-xl border border-[var(--stroke)] bg-[var(--panel-fill)] p-3 text-sm text-[var(--fg)] outline-none placeholder:text-[var(--fg-4)] focus:border-[var(--sai-indigo)]/50" />
+                <div className="flex items-center justify-between">
+                  <button onClick={() => setReply((r) => r || "Hi! Thanks for reaching out — here's a quick overview…")} className="rounded-full border border-[var(--stroke)] bg-[var(--panel-fill)] px-3.5 py-1.5 text-[12px] text-[var(--fg-2)] hover:bg-[var(--hover)]">Use AI suggestion</button>
+                  <button onClick={() => sendReply(selected)} className="rounded-full px-4 py-1.5 text-[12.5px] font-semibold text-white transition-transform hover:scale-[1.03]" style={{ background: "linear-gradient(135deg,#6366f1,#a855f7)" }}>Send reply</button>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="border-t border-[var(--stroke)] p-4 flex justify-end">
+                <button onClick={() => sendReply(selected)} className="rounded-full px-4 py-1.5 text-[12.5px] font-semibold text-white transition-transform hover:scale-[1.03]" style={{ background: "var(--panel-fill-2)", color: "var(--fg-2)", border: "1px solid var(--stroke)" }}>Dismiss notification</button>
+              </div>
+            )}
           </div>
         ) : (
           <div className="flex items-center justify-center rounded-2xl border border-dashed border-[var(--stroke)] lg:col-span-2">
