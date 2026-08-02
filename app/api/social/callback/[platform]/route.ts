@@ -15,7 +15,7 @@ export async function GET(
   { params }: { params: Promise<{ platform: string }> }
 ) {
   const { platform } = await params;
-  const origin = req.nextUrl.origin;
+  const origin = process.env.NEXT_PUBLIC_APP_URL || req.nextUrl.origin;
   const p = PLATFORMS[platform as PlatformId];
   const sp = req.nextUrl.searchParams;
 
