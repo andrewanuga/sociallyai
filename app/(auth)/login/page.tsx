@@ -65,7 +65,7 @@ export default function LoginPage() {
 
       <div className="glass-panel rounded-3xl p-8">
         {/* Google SSO */}
-        {/* <button
+        <button
           type="button"
           onClick={handleGoogleLogin}
           className="flex h-11 w-full items-center justify-center gap-3 rounded-xl border border-white/12 bg-white/[0.05] text-sm font-medium text-white transition-colors hover:bg-white/[0.09]"
@@ -84,11 +84,11 @@ export default function LoginPage() {
             <div className="w-full border-t border-white/10" />
           </div>
           <div className="relative flex justify-center">
-            <span className="font-data bg-transparent px-3 text-[11px] uppercase tracking-widest text-white/35">
+            <span className="font-data bg-[#121214] px-3 text-[11px] uppercase tracking-widest text-white/35">
               or with email
             </span>
           </div>
-        </div> */}
+        </div>
 
         <form onSubmit={handleLogin} className="space-y-5">
           <div className="space-y-2">

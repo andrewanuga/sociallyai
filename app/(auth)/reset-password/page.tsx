@@ -2,96 +2,110 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Loader2, Mail } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
+import { ArrowRight, Loader2 } from "lucide-react";
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/toast";
+import { createClient } from "@/lib/supabase/client";
+
+const inputCls =
+  "flex h-11 w-full rounded-xl border border-white/10 bg-white/[0.04] px-3.5 text-sm text-white placeholder:text-white/35 transition-colors focus:border-[var(--sai-indigo)]/60 focus:bg-white/[0.06] focus:outline-none focus:ring-2 focus:ring-[var(--sai-indigo)]/25";
 
 export default function ResetPasswordPage() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
-  const { success, error: toastError } = useToast();
-  const supabase = createClient();
+  const [success, setSuccess] = useState(false);
+  const { error: toastError, success: toastSuccess } = useToast();
 
   const handleReset = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email) return;
-
     setLoading(true);
+
+    const supabase = createClient();
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth/callback?next=/update-password`,
+      redirectTo: `${window.location.origin}/update-password`,
     });
-    setLoading(false);
 
     if (error) {
       toastError("Failed to send reset link", error.message);
-    } else {
-      setSubmitted(true);
-      success("Reset link sent!", "Check your email for the password reset link.");
+      setLoading(false);
+      return;
     }
+    
+    toastSuccess("Reset link sent", "Check your email for instructions.");
+    setSuccess(true);
+    setLoading(false);
   };
 
-  const inputCls =
-    "h-11 w-full rounded-xl border border-[var(--stroke)] bg-[var(--panel-fill)] px-3.5 text-sm text-[var(--fg)] placeholder:text-[var(--fg-4)] focus:border-[var(--sai-indigo)]/50 focus:outline-none focus:ring-2 focus:ring-[var(--sai-indigo)]/20";
-  const btnCls =
-    "relative flex h-11 w-full items-center justify-center gap-2 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-50";
-
-  if (submitted) {
+  if (success) {
     return (
-      <div className="mx-auto w-full max-w-sm text-center">
-        <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-[var(--sai-indigo)]/10 text-[var(--sai-indigo)]">
-          <Mail className="h-8 w-8" />
+      <div className="w-full max-w-md text-center">
+        <div className="glass-panel rounded-3xl p-8">
+          <h2 className="font-display text-2xl font-semibold text-white">Check your email</h2>
+          <p className="mt-3 text-sm leading-relaxed text-white/60">
+            We sent a password reset link to <span className="font-medium text-white">{email}</span>.
+          </p>
+          <div className="mt-6">
+            <Link href="/login" className="text-sm font-medium text-[var(--sai-indigo)] hover:text-indigo-300">
+              Return to login
+            </Link>
+          </div>
         </div>
-        <h1 className="mb-2 text-2xl font-bold tracking-tight text-[var(--fg)]">Check your email</h1>
-        <p className="mb-8 text-sm text-[var(--fg-3)]">
-          We've sent a password reset link to <span className="font-semibold text-[var(--fg)]">{email}</span>.
-        </p>
-        <Link href="/login" className="text-sm font-medium text-[var(--sai-indigo)] hover:underline">
-          Return to login
-        </Link>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto w-full max-w-sm">
-      <Link href="/login" className="mb-8 flex items-center gap-2 text-sm text-[var(--fg-3)] hover:text-[var(--fg)] transition-colors">
-        <ArrowLeft className="h-4 w-4" />
-        Back to login
-      </Link>
-      
+    <div className="w-full max-w-md">
       <div className="mb-8">
-        <h1 className="mb-2 text-3xl font-bold tracking-tight text-[var(--fg)]">Forgot Password</h1>
-        <p className="text-sm text-[var(--fg-3)]">
-          Enter your email address and we'll send you a link to reset your password.
+        <h1 className="font-display text-3xl font-semibold tracking-[-0.02em] text-white">
+          Reset password
+        </h1>
+        <p className="mt-2 text-sm text-white/50">
+          Enter your email and we&apos;ll send you a link to reset your password.
         </p>
       </div>
 
-      <form onSubmit={handleReset} className="space-y-4">
-        <div>
-          <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-[var(--fg-2)]">
-            Email address
-          </label>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className={inputCls}
-            placeholder="you@example.com"
-            required
-            disabled={loading}
-          />
-        </div>
+      <div className="glass-panel rounded-3xl p-8">
+        <form onSubmit={handleReset} className="space-y-5">
+          <div className="space-y-2">
+            <Label htmlFor="email" className="text-white/70">Email address</Label>
+            <input
+              id="email"
+              type="email"
+              placeholder="you@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className={inputCls}
+            />
+          </div>
 
-        <button
-          type="submit"
-          className={btnCls}
-          disabled={loading || !email}
-          style={{ background: "linear-gradient(135deg, #6366f1 0%, #a855f7 100%)" }}
-        >
-          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Send Reset Link"}
-        </button>
-      </form>
+          <button
+            type="submit"
+            disabled={loading}
+            className="flex h-11 w-full items-center justify-center gap-2 rounded-xl text-sm font-semibold text-white transition-transform duration-200 hover:scale-[1.02] disabled:opacity-60"
+            style={{
+              background: "linear-gradient(135deg,#6366f1 0%,#a855f7 70%,#f5c451 130%)",
+              boxShadow: "0 0 34px -8px rgba(99,102,241,0.7)",
+            }}
+          >
+            {loading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <>
+                Send reset link <ArrowRight className="h-4 w-4" />
+              </>
+            )}
+          </button>
+        </form>
+      </div>
+
+      <p className="mt-6 text-center text-sm text-white/45">
+        Remember your password?{" "}
+        <Link href="/login" className="font-medium text-[var(--sai-indigo)] transition-colors hover:text-indigo-300">
+          Sign in
+        </Link>
+      </p>
     </div>
   );
 }
