@@ -122,10 +122,10 @@ async function fetchProfile(acc: Account): Promise<{ followers?: number; avatar_
 }
 
 function parseScrapedNumber(str: string): number {
-  str = str.replace(/,/g, '').toLowerCase();
-  if (str.endsWith('k')) return parseFloat(str) * 1000;
-  if (str.endsWith('m')) return parseFloat(str) * 1000000;
-  return parseInt(str);
+  str = str.toLowerCase().replace(/,/g, '.').replace(/[^\d.km]/g, '');
+  if (str.includes('k')) return parseFloat(str) * 1000;
+  if (str.includes('m')) return parseFloat(str) * 1000000;
+  return parseInt(str) || 0;
 }
 
 /** Fetch recent posts + metrics for one account. Returns [] when unavailable. */
@@ -149,23 +149,39 @@ async function fetchPosts(acc: Account): Promise<NormalizedPost[]> {
       }
       case "youtube": {
         // Recent uploads + their statistics.
-        const search = await fetch(
-          `https://www.googleapis.com/youtube/v3/search?part=snippet&forMine=true&type=video&maxResults=20`,
-          { headers: { Authorization: `Bearer ${acc.access_token}` } }
-        );
-        const s = await search.json();
-        const ids = (s.items ?? []).map((i: Record<string, Record<string, string>>) => i.id?.videoId).filter(Boolean);
-        if (!ids.length) return [];
-        const stats = await fetch(
-          `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics&id=${ids.join(",")}`,
-          { headers: { Authorization: `Bearer ${acc.access_token}` } }
-        );
-        const v = await stats.json();
-        return (v.items ?? []).map((i: Record<string, Record<string, string>>) => ({
-          external_id: String(i.id), content: i.snippet?.title ?? null, posted_at: i.snippet?.publishedAt,
-          video_views: Number(i.statistics?.viewCount ?? 0), likes: Number(i.statistics?.likeCount ?? 0),
-          comments: Number(i.statistics?.commentCount ?? 0),
-        }));
+        try {
+          const search = await fetch(
+            `https://www.googleapis.com/youtube/v3/search?part=snippet&forMine=true&type=video&maxResults=20`,
+            { headers: { Authorization: `Bearer ${acc.access_token}` } }
+          );
+          const s = await search.json();
+          const ids = (s.items ?? []).map((i: Record<string, Record<string, string>>) => i.id?.videoId).filter(Boolean);
+          if (ids.length) {
+            const stats = await fetch(
+              `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics&id=${ids.join(",")}`,
+              { headers: { Authorization: `Bearer ${acc.access_token}` } }
+            );
+            const v = await stats.json();
+            return (v.items ?? []).map((i: Record<string, Record<string, string>>) => ({
+              external_id: String(i.id), content: i.snippet?.title ?? null, posted_at: i.snippet?.publishedAt,
+              video_views: Number(i.statistics?.viewCount ?? 0), likes: Number(i.statistics?.likeCount ?? 0),
+              comments: Number(i.statistics?.commentCount ?? 0),
+            }));
+          }
+        } catch {}
+        // Fallback to RSS if API fails
+        if (acc.external_id) {
+          try {
+            const r = await fetch(`https://www.youtube.com/feeds/videos.xml?channel_id=${acc.external_id}`);
+            const xml = await r.text();
+            const matches = [...xml.matchAll(/<entry>[\s\S]*?<id>yt:video:(.*?)<\/id>[\s\S]*?<title>(.*?)<\/title>[\s\S]*?<published>(.*?)<\/published>[\s\S]*?<\/entry>/g)];
+            return matches.map(m => ({
+              external_id: m[1], content: m[2], posted_at: m[3],
+              video_views: 0, likes: 0, comments: 0, impressions: 0
+            })).slice(0, 10);
+          } catch {}
+        }
+        return [];
       }
       case "facebook": {
         const r = await fetch(

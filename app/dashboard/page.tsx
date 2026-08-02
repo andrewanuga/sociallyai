@@ -13,6 +13,15 @@ export default async function DashboardPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
+  function generateInsight(postCount: number, impr: number, platform: string) {
+    if (postCount === 0) return `No recent posts detected. Scheduling new content via Compose could boost your reach.`;
+    if (impr === 0) return `Your posts aren't reaching audiences. Consider adjusting your hashtags or timing.`;
+    const avg = Math.round(impr / postCount);
+    if (avg > 1000) return `High performance detected! Your ${platform} audience is highly engaged with your recent formats.`;
+    if (avg > 100) return `Consistent reach. Repurposing your top-performing posts could double these numbers.`;
+    return `Steady growth. Let Ghost Mode handle replies to increase algorithm ranking.`;
+  }
+
   const { data: onboardProfile } = await supabase
     .from("profiles").select("onboarded").eq("id", user.id).single();
   if (onboardProfile && !onboardProfile.onboarded) redirect("/onboarding");
@@ -30,7 +39,7 @@ export default async function DashboardPage() {
   ] = await Promise.all([
     supabase.from("social_accounts").select("id, platform, handle, display_name, avatar_url, followers, status"),
     supabase.from("social_posts")
-      .select("platform, impressions, likes, comments, shares, followers_gained, revenue")
+      .select("platform, impressions, likes, comments, shares, followers_gained, revenue, account_id")
       .gte("posted_at", d30),
     supabase.from("social_posts")
       .select("impressions, likes, comments, shares, followers_gained, revenue")
@@ -135,27 +144,53 @@ export default async function DashboardPage() {
         <div className="mb-5">
           <h3 className="font-display mb-4 text-[15px] font-semibold text-[var(--fg)]">Connected accounts</h3>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {(accounts ?? []).filter(a => a.status === "connected").map((acc) => (
-              <Link key={acc.id} href={`/dashboard/accounts/${acc.id}`} className="glass-panel group flex items-center gap-4 rounded-2xl p-4 transition-colors hover:border-[var(--sai-indigo)]/40 hover:bg-[var(--hover)]">
-                <div className="relative h-12 w-12 flex-shrink-0">
-                  {acc.avatar_url ? (
-                    <img src={acc.avatar_url} alt="" className="h-full w-full rounded-full object-cover ring-2 ring-[var(--panel-fill)]" />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center rounded-full bg-[var(--panel-fill-2)] text-[15px] font-bold text-[var(--fg-3)]">
-                      {(acc.display_name || acc.handle || "?").slice(0, 1).toUpperCase()}
+            {(accounts ?? []).filter(a => a.status === "connected").map((acc) => {
+              const accPosts = (curr ?? []).filter((p) => p.account_id === acc.id);
+              const postCount = accPosts.length;
+              const accountImpr = sumField(accPosts, "impressions");
+              const insightStr = generateInsight(postCount, accountImpr, platformLabel(acc.platform));
+
+              return (
+                <Link key={acc.id} href={`/dashboard/accounts/${acc.id}`} className="glass-panel group flex flex-col gap-4 rounded-2xl p-4 transition-colors hover:border-[var(--sai-indigo)]/40 hover:bg-[var(--hover)]">
+                  <div className="flex items-center gap-4">
+                    <div className="relative h-12 w-12 flex-shrink-0">
+                      {acc.avatar_url ? (
+                        <img src={acc.avatar_url} alt="" className="h-full w-full rounded-full object-cover ring-2 ring-[var(--panel-fill)]" />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center rounded-full bg-[var(--panel-fill-2)] text-[15px] font-bold text-[var(--fg-3)]">
+                          {(acc.display_name || acc.handle || "?").slice(0, 1).toUpperCase()}
+                        </div>
+                      )}
+                      <div className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--panel-fill)] text-[10px] shadow-sm">
+                        {acc.platform.slice(0, 1).toUpperCase()}
+                      </div>
                     </div>
-                  )}
-                  <div className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--panel-fill)] text-[10px] shadow-sm">
-                    {acc.platform.slice(0, 1).toUpperCase()}
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-[var(--fg)]">{acc.display_name || acc.handle}</p>
+                      <p className="text-[12px] text-[var(--fg-4)]">{fmtNum(acc.followers)} followers</p>
+                    </div>
+                    <ArrowUpRight className="h-4 w-4 text-[var(--fg-4)] opacity-0 transition-all group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:opacity-100" />
                   </div>
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-[var(--fg)]">{acc.display_name || acc.handle}</p>
-                  <p className="text-[12px] text-[var(--fg-4)]">{fmtNum(acc.followers)} followers</p>
-                </div>
-                <ArrowUpRight className="h-4 w-4 text-[var(--fg-4)] opacity-0 transition-all group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:opacity-100" />
-              </Link>
-            ))}
+                  
+                  <div className="flex items-center justify-between border-t border-[var(--stroke)] pt-3 text-[12px]">
+                    <div className="flex flex-col">
+                      <span className="text-[var(--fg-4)]">30d Posts</span>
+                      <span className="font-semibold text-[var(--fg)]">{fmtNum(postCount)}</span>
+                    </div>
+                    <div className="flex flex-col text-right">
+                      <span className="text-[var(--fg-4)]">30d Impressions</span>
+                      <span className="font-semibold text-[var(--fg)]">{fmtNum(accountImpr)}</span>
+                    </div>
+                  </div>
+
+                  <div className="rounded-lg bg-[var(--sai-indigo)]/[0.05] p-3">
+                    <p className="text-[12px] leading-relaxed text-[var(--fg-2)]">
+                      <span className="font-semibold text-[var(--sai-indigo)]">AI Insight:</span> {insightStr}
+                    </p>
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         </div>
       )}
