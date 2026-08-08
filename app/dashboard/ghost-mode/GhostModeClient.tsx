@@ -1,7 +1,10 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Ghost, Bot, AlertCircle, Settings2, Pause, Play, Zap } from "lucide-react";
+import {
+  Ghost, Bot, AlertCircle, Settings2, Pause, Play, Zap,
+  Send, MessageCircle, X, Loader2, CheckCircle2,
+} from "lucide-react";
 import { GlassCard, PageHeader } from "@/components/dashboard/ui";
 import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/components/ui/toast";
@@ -24,6 +27,15 @@ const DEFAULT_RULES = [
   { label: "Ignore spam comments", enabled: false },
 ];
 
+const PLATFORMS = [
+  { id: "telegram", label: "Telegram" },
+  { id: "twitter", label: "Twitter / X" },
+  { id: "instagram", label: "Instagram" },
+  { id: "facebook", label: "Facebook" },
+  { id: "whatsapp", label: "WhatsApp" },
+  { id: "linkedin", label: "LinkedIn" },
+];
+
 function Toggle({ on, onChange }: { on: boolean; onChange: () => void }) {
   return (
     <button
@@ -42,6 +54,138 @@ function Toggle({ on, onChange }: { on: boolean; onChange: () => void }) {
   );
 }
 
+interface DMModalProps {
+  action: AgentActionRow;
+  onClose: () => void;
+}
+
+function DMModal({ action, onClose }: DMModalProps) {
+  const { success: toastSuccess, error: toastError } = useToast();
+  const [platform, setPlatform] = useState(action.platform || "telegram");
+  const [recipient, setRecipient] = useState("");
+  const [msgText, setMsgText] = useState(
+    `Hi! I noticed your interest and wanted to follow up personally. ${action.reply ? `I already responded: "${action.reply}"` : ""} Would love to chat more!`
+  );
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
+
+  const handleSend = async () => {
+    if (!recipient.trim() || !msgText.trim()) return;
+    setSending(true);
+    try {
+      const res = await fetch("/api/social/send-dm", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ platform, recipient: recipient.trim(), message: msgText }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSent(true);
+        toastSuccess(`DM sent to ${recipient} on ${platform}`);
+        setTimeout(onClose, 1500);
+      } else {
+        toastError("DM failed", data.error);
+      }
+    } catch (e: any) {
+      toastError("Send error", e.message);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(6px)" }}>
+      <div className="glass-panel w-full max-w-lg rounded-2xl p-6 shadow-2xl">
+        <div className="mb-5 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ background: "linear-gradient(135deg,#6366f1,#a855f7)" }}>
+              <MessageCircle className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <h3 className="font-display text-[15px] font-semibold text-[var(--fg)]">Send Direct Message</h3>
+              <p className="text-[12px] text-[var(--fg-4)]">Lead: {action.action === "flag_lead" ? "🟡 High priority" : "from Ghost Mode"}</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="rounded-full p-2 text-[var(--fg-4)] hover:bg-[var(--hover)] hover:text-[var(--fg)]">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        {/* Lead context */}
+        {action.comment && (
+          <div className="mb-4 rounded-xl border border-[var(--stroke)] bg-[var(--panel-fill-2)] p-3">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--fg-4)]">Their comment</p>
+            <p className="mt-1 text-[13px] italic text-[var(--fg-2)]">&ldquo;{action.comment}&rdquo;</p>
+          </div>
+        )}
+
+        <div className="space-y-4">
+          {/* Platform selector */}
+          <div>
+            <label className="mb-1.5 block text-[12px] font-semibold text-[var(--fg-3)]">Platform</label>
+            <div className="flex flex-wrap gap-2">
+              {PLATFORMS.map((p) => (
+                <button
+                  key={p.id}
+                  onClick={() => setPlatform(p.id)}
+                  className="rounded-full px-3 py-1 text-[12px] font-medium transition-all"
+                  style={
+                    platform === p.id
+                      ? { background: "linear-gradient(135deg,#6366f1,#a855f7)", color: "white" }
+                      : { background: "var(--panel-fill-2)", color: "var(--fg-3)", border: "1px solid var(--stroke)" }
+                  }
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Recipient */}
+          <div>
+            <label className="mb-1.5 block text-[12px] font-semibold text-[var(--fg-3)]">
+              {platform === "whatsapp" ? "Phone number (with country code)" : platform === "telegram" ? "Chat ID or @username" : "Username or ID"}
+            </label>
+            <input
+              type="text"
+              value={recipient}
+              onChange={(e) => setRecipient(e.target.value)}
+              placeholder={platform === "whatsapp" ? "+1234567890" : "@username or ID"}
+              className="w-full rounded-xl border border-[var(--stroke)] bg-[var(--panel-fill)] px-4 py-2.5 text-sm text-[var(--fg)] placeholder:text-[var(--fg-4)] focus:border-[var(--sai-indigo)] focus:outline-none"
+            />
+          </div>
+
+          {/* Message */}
+          <div>
+            <label className="mb-1.5 block text-[12px] font-semibold text-[var(--fg-3)]">Message</label>
+            <textarea
+              value={msgText}
+              onChange={(e) => setMsgText(e.target.value)}
+              rows={4}
+              className="w-full resize-none rounded-xl border border-[var(--stroke)] bg-[var(--panel-fill)] px-4 py-2.5 text-sm text-[var(--fg)] placeholder:text-[var(--fg-4)] focus:border-[var(--sai-indigo)] focus:outline-none"
+            />
+          </div>
+
+          <button
+            onClick={handleSend}
+            disabled={sending || sent || !recipient.trim()}
+            className="flex w-full items-center justify-center gap-2 rounded-full py-3 text-sm font-semibold text-white transition-all disabled:opacity-50"
+            style={{ background: sent ? "#34d399" : "linear-gradient(135deg,#6366f1,#a855f7)" }}
+          >
+            {sent ? (
+              <><CheckCircle2 className="h-4 w-4" /> Sent!</>
+            ) : sending ? (
+              <><Loader2 className="h-4 w-4 animate-spin" /> Sending...</>
+            ) : (
+              <><Send className="h-4 w-4" /> Send Message</>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 interface Props {
   initialActions: AgentActionRow[];
   statsToday: { autoReplies: number; leads: number; hoursSaved: number };
@@ -55,8 +199,8 @@ export function GhostModeClient({ initialActions, statsToday, initiallyActive, b
   const [agentActive, setAgentActive] = useState(initiallyActive);
   const [rules, setRules] = useState(savedRules?.length ? savedRules : DEFAULT_RULES);
   const idRef = useRef<string | null>(botId);
+  const [dmAction, setDmAction] = useState<AgentActionRow | null>(null);
 
-  // Persist the ghost bot (status + rules) to social_bots.
   const persist = async (patch: { status?: "active" | "paused"; rules?: typeof rules }) => {
     try {
       const supabase = createClient();
@@ -95,17 +239,35 @@ export function GhostModeClient({ initialActions, statsToday, initiallyActive, b
 
   return (
     <div className="mx-auto max-w-5xl">
+      {dmAction && <DMModal action={dmAction} onClose={() => setDmAction(null)} />}
+
       <PageHeader
         eyebrow="Automation"
         title="Ghost Mode™"
         sub="Your autonomous engagement agent. It handles the noise — you handle the signal."
         actions={
           <div className="flex items-center gap-2.5">
-            <span className="font-data inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[11px] uppercase tracking-wider" style={{ color: agentActive ? "#34d399" : "var(--fg-3)", background: agentActive ? "color-mix(in srgb,#34d399 13%,transparent)" : "var(--panel-fill-2)" }}>
-              <span className="h-2 w-2 rounded-full" style={{ background: agentActive ? "#34d399" : "var(--fg-4)" }} /> {agentActive ? "Active" : "Paused"}
+            <span
+              className="font-data inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[11px] uppercase tracking-wider"
+              style={{
+                color: agentActive ? "#34d399" : "var(--fg-3)",
+                background: agentActive ? "color-mix(in srgb,#34d399 13%,transparent)" : "var(--panel-fill-2)",
+              }}
+            >
+              <span className="h-2 w-2 rounded-full" style={{ background: agentActive ? "#34d399" : "var(--fg-4)" }} />
+              {agentActive ? "Active" : "Paused"}
             </span>
-            <button onClick={toggleActive} className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-[13px] font-semibold text-[var(--fg)] transition-transform hover:scale-[1.03]" style={agentActive ? { background: "var(--panel-fill-2)", border: "1px solid var(--stroke)" } : { background: "linear-gradient(135deg,#6366f1,#a855f7)" }}>
-              {agentActive ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />} {agentActive ? "Pause agent" : "Activate agent"}
+            <button
+              onClick={toggleActive}
+              className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-[13px] font-semibold transition-transform hover:scale-[1.03]"
+              style={
+                agentActive
+                  ? { background: "var(--panel-fill-2)", border: "1px solid var(--stroke)", color: "var(--fg)" }
+                  : { background: "linear-gradient(135deg,#6366f1,#a855f7)", color: "white" }
+              }
+            >
+              {agentActive ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+              {agentActive ? "Pause agent" : "Activate agent"}
             </button>
           </div>
         }
@@ -121,7 +283,7 @@ export function GhostModeClient({ initialActions, statsToday, initiallyActive, b
       </div>
 
       <div className="grid gap-5 lg:grid-cols-3">
-        {/* log */}
+        {/* Live agent log */}
         <GlassCard className="p-6 lg:col-span-2">
           <h3 className="font-display mb-4 text-[15px] font-semibold text-[var(--fg)]">Live agent log</h3>
           {initialActions.length === 0 ? (
@@ -135,8 +297,16 @@ export function GhostModeClient({ initialActions, statsToday, initiallyActive, b
               {initialActions.map((action) => {
                 const meta = ACTION_META[action.action as keyof typeof ACTION_META] ?? ACTION_META.ignore;
                 const Icon = meta.icon;
+                const isLead = action.action === "flag_lead";
                 return (
-                  <div key={action.id} className="rounded-xl border border-[var(--stroke)] bg-[var(--panel-fill)] p-4">
+                  <div
+                    key={action.id}
+                    className="rounded-xl border p-4 transition-colors"
+                    style={{
+                      borderColor: isLead ? "rgba(245,196,81,0.3)" : "var(--stroke)",
+                      background: isLead ? "rgba(245,196,81,0.04)" : "var(--panel-fill)",
+                    }}
+                  >
                     <div className="flex items-start gap-3">
                       <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg" style={{ background: `color-mix(in srgb, ${meta.color} 16%, transparent)` }}>
                         <Icon className="h-4 w-4" style={{ color: meta.color }} />
@@ -149,12 +319,21 @@ export function GhostModeClient({ initialActions, statsToday, initiallyActive, b
                         </div>
                         <p className="mb-1 text-[13px] italic text-[var(--fg-3)]">&ldquo;{action.comment}&rdquo;</p>
                         {action.reply && <p className="rounded-md border border-[#34d399]/15 bg-[#34d399]/[0.06] px-3 py-1.5 text-[13px] text-[var(--fg)]">→ {action.reply}</p>}
-                        {!action.reply && action.action !== "ignore" && (
-                          <div className="mt-2 flex gap-2">
-                            <button className="rounded-full px-3 py-1 text-[12px] font-semibold text-[var(--fg)]" style={{ background: "linear-gradient(135deg,#6366f1,#a855f7)" }}>Reply now</button>
-                            <button className="rounded-full border border-[var(--stroke)] bg-[var(--panel-fill)] px-3 py-1 text-[12px] text-[var(--fg-2)] hover:bg-[var(--hover)]">Dismiss</button>
-                          </div>
-                        )}
+                        <div className="mt-2 flex gap-2">
+                          {!action.reply && action.action !== "ignore" && (
+                            <button className="rounded-full px-3 py-1 text-[12px] font-semibold text-white" style={{ background: "linear-gradient(135deg,#6366f1,#a855f7)" }}>
+                              Reply now
+                            </button>
+                          )}
+                          {/* DM this lead button */}
+                          <button
+                            onClick={() => setDmAction(action)}
+                            className="flex items-center gap-1.5 rounded-full border border-[var(--stroke)] bg-[var(--panel-fill)] px-3 py-1 text-[12px] text-[var(--fg-2)] transition-all hover:border-[var(--sai-indigo)]/50 hover:text-[var(--fg)]"
+                          >
+                            <Send className="h-3 w-3" />
+                            {isLead ? "DM this lead" : "Send DM"}
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -164,10 +343,13 @@ export function GhostModeClient({ initialActions, statsToday, initiallyActive, b
           )}
         </GlassCard>
 
-        {/* rules */}
+        {/* Rules panel */}
         <div className="space-y-4">
           <GlassCard className="p-6">
-            <div className="mb-4 flex items-center gap-2"><Settings2 className="h-5 w-5 text-[var(--fg-3)]" /><h3 className="font-display text-[15px] font-semibold text-[var(--fg)]">Agent rules</h3></div>
+            <div className="mb-4 flex items-center gap-2">
+              <Settings2 className="h-5 w-5 text-[var(--fg-3)]" />
+              <h3 className="font-display text-[15px] font-semibold text-[var(--fg)]">Agent rules</h3>
+            </div>
             <div className="space-y-3.5">
               {rules.map((rule, i) => (
                 <div key={i} className="flex items-center justify-between gap-3">
@@ -176,6 +358,22 @@ export function GhostModeClient({ initialActions, statsToday, initiallyActive, b
                 </div>
               ))}
             </div>
+          </GlassCard>
+
+          {/* Send DM quick-action panel */}
+          <GlassCard className="p-4" style={{ borderColor: "rgba(99,102,241,0.2)", background: "rgba(99,102,241,0.04)" }}>
+            <div className="mb-2 flex items-center gap-2">
+              <MessageCircle className="h-4 w-4 text-[var(--sai-indigo)]" />
+              <p className="text-sm font-medium text-[var(--fg)]">Quick DM</p>
+            </div>
+            <p className="text-[12px] text-[var(--fg-2)]">Send a message to anyone on any connected platform directly from your AI agent.</p>
+            <button
+              onClick={() => setDmAction({ id: "quick", action: "flag_lead", comment: "", reply: null, platform: "telegram", created_at: new Date().toISOString() } as AgentActionRow)}
+              className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-full py-1.5 text-[12px] font-semibold text-white"
+              style={{ background: "linear-gradient(135deg,#6366f1,#a855f7)" }}
+            >
+              <Send className="h-3.5 w-3.5" /> Send a message
+            </button>
           </GlassCard>
 
           <GlassCard className="p-4" style={{ borderColor: "rgba(245,196,81,0.2)", background: "rgba(245,196,81,0.05)" }}>
