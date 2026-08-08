@@ -41,3 +41,15 @@ yarn-error.log*
 next-env.d.ts
 
 certificates
+
+# scratch / debug files — never commit these
+*.html
+*.json
+!package.json
+!package-lock.json
+!tsconfig.json
+!eslint.config.*
+!next.config.*
+!postcss.config.*
+proxy.ts
+videos/
