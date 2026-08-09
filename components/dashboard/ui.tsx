@@ -143,9 +143,11 @@ export function PrimaryButton({
 export function Pill({
   children,
   tone = "indigo",
+  className,
 }: {
   children: React.ReactNode;
   tone?: "indigo" | "violet" | "gold" | "red" | "green" | "muted";
+  className?: string;
 }) {
   const color =
     tone === "violet" ? "var(--sai-violet)"
@@ -156,7 +158,7 @@ export function Pill({
     : "var(--sai-indigo)";
   return (
     <span
-      className="font-data inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10.5px] uppercase tracking-wider"
+      className={cn("font-data inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10.5px] uppercase tracking-wider", className)}
       style={{ color, background: `color-mix(in srgb, ${color} 13%, transparent)` }}
     >
       {children}
