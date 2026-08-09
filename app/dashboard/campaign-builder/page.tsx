@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Link2, Sparkles, Send, Twitter, Linkedin, Instagram, LayoutTemplate, Layers } from "lucide-react";
+import { Link2, Sparkles, Send, AtSign, Building2, Camera, LayoutTemplate, Layers } from "lucide-react";
 import { PageHeader, GlassCard, PrimaryButton } from "@/components/dashboard/ui";
 import { useToast } from "@/components/ui/toast";
 
@@ -113,7 +113,7 @@ export default function CampaignBuilderPage() {
               <GlassCard className="p-6 border-[var(--stroke)] hover:border-[#1DA1F2]/30 transition-colors">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="font-display font-semibold text-[var(--fg)] flex items-center gap-2">
-                    <Twitter className="w-4 h-4 text-[#1DA1F2]" /> X (Twitter) Thread
+                    <AtSign className="w-4 h-4 text-[#1DA1F2]" /> X (Twitter) Thread
                   </h3>
                   <button className="text-[12px] font-semibold text-[var(--fg-3)] hover:text-[var(--fg)] flex items-center gap-1 bg-[var(--panel-fill-2)] px-3 py-1 rounded-full">
                     <Send className="w-3 h-3" /> Schedule
@@ -133,7 +133,7 @@ export default function CampaignBuilderPage() {
               <GlassCard className="p-6 border-[var(--stroke)] hover:border-[#0A66C2]/30 transition-colors">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="font-display font-semibold text-[var(--fg)] flex items-center gap-2">
-                    <Linkedin className="w-4 h-4 text-[#0A66C2]" /> LinkedIn Post
+                    <Building2 className="w-4 h-4 text-[#0A66C2]" /> LinkedIn Post
                   </h3>
                   <button className="text-[12px] font-semibold text-[var(--fg-3)] hover:text-[var(--fg)] flex items-center gap-1 bg-[var(--panel-fill-2)] px-3 py-1 rounded-full">
                     <Send className="w-3 h-3" /> Schedule
@@ -148,7 +148,7 @@ export default function CampaignBuilderPage() {
               <GlassCard className="p-6 border-[var(--stroke)] hover:border-[#E1306C]/30 transition-colors">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="font-display font-semibold text-[var(--fg)] flex items-center gap-2">
-                    <Instagram className="w-4 h-4 text-[#E1306C]" /> Instagram Caption
+                    <Camera className="w-4 h-4 text-[#E1306C]" /> Instagram Caption
                   </h3>
                   <button className="text-[12px] font-semibold text-[var(--fg-3)] hover:text-[var(--fg)] flex items-center gap-1 bg-[var(--panel-fill-2)] px-3 py-1 rounded-full">
                     <Send className="w-3 h-3" /> Schedule

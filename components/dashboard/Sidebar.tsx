@@ -6,7 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard, MessagesSquare, ListTodo, CalendarRange, Inbox,
   BarChart3, TrendingUp, Bot, Ghost, Plug, CreditCard, Settings,
-  LifeBuoy, LogOut, PanelLeftClose, PanelLeftOpen, Megaphone, Users, UserPlus, Target
+  LifeBuoy, LogOut, PanelLeftClose, PanelLeftOpen, Megaphone, Users, UserPlus, Target, Sparkles
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
@@ -50,8 +50,10 @@ const MARKETER_SECTIONS: { title: string; items: Item[] }[] = [
     title: "Agency Hub",
     items: [
       { href: "/dashboard/agency", label: "Clients", icon: Users, exact: true },
+      { href: "/dashboard/campaign-builder", label: "Campaign Builder", icon: Sparkles },
       { href: "/dashboard/campaigns", label: "Campaigns", icon: Megaphone },
       { href: "/dashboard/crm", label: "Lead CRM", icon: Target },
+      { href: "/dashboard/calendar", label: "Grid Planner", icon: CalendarRange },
     ],
   },
   {
