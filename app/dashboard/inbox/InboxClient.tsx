@@ -129,8 +129,20 @@ export function InboxClient({ accounts, messages }: { accounts: SocialAccount[];
               <div className="flex-1"><p className="font-medium text-[var(--fg)]">{selected.author_name ?? selected.author_handle ?? "Unknown"}</p><p className="text-[12px] text-[var(--fg-4)]">{selected.platform} · {selected.kind} · {new Date(selected.received_at).toLocaleString()}</p></div>
               <Pill tone={catTone(selected.category)}>{selected.category}</Pill>
             </div>
-            <div className="flex-1 overflow-y-auto p-6">
-              <div className="max-w-lg">
+            <div className="flex-1 overflow-y-auto p-6 relative">
+              {/* Collision Detection UI */}
+              <div className="absolute top-4 right-6 flex -space-x-2">
+                <div className="group relative">
+                  <div className="h-8 w-8 rounded-full border-2 border-[var(--app-surface)] bg-[var(--sai-indigo)] flex items-center justify-center text-[10px] font-bold text-white shadow-md animate-pulse">
+                    SA
+                  </div>
+                  <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-max opacity-0 transition-opacity group-hover:opacity-100 bg-[var(--fg)] text-[var(--app-bg)] text-[11px] px-2 py-1 rounded">
+                    Sarah is viewing this
+                  </div>
+                </div>
+              </div>
+
+              <div className="max-w-lg mt-4">
                 <div className="rounded-xl border border-[var(--stroke)] bg-[var(--panel-fill)] p-4"><p className="text-sm leading-relaxed text-[var(--fg)]">{selected.body}</p></div>
                 {selected.category === "lead" && (
                   <div className="mt-4 rounded-xl border border-[var(--sai-gold)]/20 bg-[var(--sai-gold)]/[0.06] p-4">

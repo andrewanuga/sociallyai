@@ -113,6 +113,18 @@ export interface DMCampaign {
   updated_at: string;
 }
 
+export interface DMCampaignLead {
+  id: string;
+  campaign_id: string;
+  recipient_handle: string;
+  recipient_platform_id: string | null;
+  status: "pending" | "sent" | "replied" | "failed" | "closed";
+  lead_score: number;
+  current_step: number;
+  last_contacted_at: string | null;
+  created_at: string;
+}
+
 export interface TrendMonitor {
   id: string;
   user_id: string;

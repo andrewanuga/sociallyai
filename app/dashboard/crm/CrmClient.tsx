@@ -12,6 +12,7 @@ interface Lead {
   campaign_name: string;
   platform: string;
   last_contacted_at: string | null;
+  lead_score: number;
 }
 
 const COLUMNS = [
@@ -72,10 +73,15 @@ export function CrmClient({ initialLeads }: { initialLeads: Lead[] }) {
                   </div>
                 ) : (
                   colLeads.map(lead => (
-                    <div key={lead.id} className="group relative cursor-pointer rounded-2xl border border-[var(--stroke)] bg-[var(--panel-fill)] p-4 transition-all duration-300 hover:-translate-y-1 hover:border-[var(--sai-indigo)]/40 hover:shadow-xl hover:shadow-[var(--sai-indigo)]/10 hover:bg-[var(--app-surface)]">
+                    <div key={lead.id} className={`group relative cursor-pointer rounded-2xl border bg-[var(--panel-fill)] p-4 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:bg-[var(--app-surface)] ${lead.lead_score >= 70 ? 'border-[var(--sai-red)]/40 hover:border-[var(--sai-red)]/60 hover:shadow-[var(--sai-red)]/10' : 'border-[var(--stroke)] hover:border-[var(--sai-indigo)]/40 hover:shadow-[var(--sai-indigo)]/10'}`}>
                       <div className="flex items-start justify-between">
                         <div className="flex items-center gap-2.5">
                           <span className="font-semibold text-[14px] text-[var(--fg)] tracking-tight">{lead.recipient_handle}</span>
+                          {lead.lead_score >= 70 && (
+                            <span className="flex items-center justify-center rounded-full bg-[var(--sai-red)]/10 px-1.5 py-0.5 text-[10px] font-bold text-[var(--sai-red)] border border-[var(--sai-red)]/20 shadow-[0_0_8px_rgba(239,68,68,0.3)]">
+                              🔥 {lead.lead_score}%
+                            </span>
+                          )}
                           <span className="rounded bg-[var(--panel-fill-2)] px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest text-[var(--fg-4)] ring-1 ring-inset ring-[var(--stroke)]/50">{platformLabel(lead.platform)}</span>
                         </div>
                         <button className="opacity-0 transition-opacity group-hover:opacity-100 text-[var(--fg-4)] hover:text-[var(--fg)] bg-[var(--panel-fill-2)] rounded-full p-1">

@@ -19,7 +19,8 @@ CREATE TABLE IF NOT EXISTS dm_campaign_leads (
   campaign_id UUID REFERENCES dm_campaigns(id) ON DELETE CASCADE,
   recipient_handle TEXT NOT NULL,
   recipient_platform_id TEXT,
-  status TEXT DEFAULT 'pending', -- pending, sent, replied, failed
+  status TEXT DEFAULT 'pending', -- pending, sent, replied, failed, closed
+  lead_score INTEGER DEFAULT 0, -- AI intent score 0-100
   current_step INTEGER DEFAULT 0,
   last_contacted_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT NOW()

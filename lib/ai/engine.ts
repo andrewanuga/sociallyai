@@ -7,7 +7,7 @@ export interface EvaluationResult {
   action: AgentActionType;
   comment: string;
   reply?: string;
-  is_lead?: boolean;
+  lead_score?: number;
 }
 
 /**

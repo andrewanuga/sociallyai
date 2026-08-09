@@ -185,7 +185,7 @@ export function buildGhostSystemPrompt(
       `- **fluff**: Generic praise, emoji-only, "great post", casual engagement`,
       ``,
       `Return ONLY valid JSON:`,
-      `{ "action": "flag_lead" | "escalate_complaint" | "auto_reply" | "ignore", "reason": "brief explanation", "confidence": 0.0-1.0 }`,
+      `{ "action": "flag_lead" | "escalate_complaint" | "auto_reply" | "ignore", "reason": "brief explanation", "confidence": 0.0-1.0, "lead_score": 0-100 }`,
       ``,
       `Rules for botRole = ${botRole}:`,
       botRole === "closer" ? `- You are The Closer. Aggressively flag any comment that might be a lead as "flag_lead". Reply to fluff with calls to action.` :
