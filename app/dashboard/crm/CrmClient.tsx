@@ -52,47 +52,51 @@ export function CrmClient({ initialLeads }: { initialLeads: Lead[] }) {
         }
       />
 
-      <div className="flex flex-1 gap-4 overflow-x-auto pb-4">
+      <div className="flex flex-1 gap-5 overflow-x-auto pb-6 pt-2 hide-scrollbar">
         {COLUMNS.map(col => {
           const colLeads = filteredLeads.filter(l => l.status === col.id);
           return (
-            <div key={col.id} className="flex h-full w-[320px] flex-shrink-0 flex-col rounded-2xl bg-[var(--panel-fill)] p-4 shadow-sm border border-[var(--stroke)]">
-              <div className="mb-4 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: col.color }} />
-                  <h3 className="font-display text-[14px] font-semibold text-[var(--fg)]">{col.title}</h3>
+            <div key={col.id} className="flex h-full w-[340px] flex-shrink-0 flex-col rounded-3xl bg-[var(--app-surface)] p-5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)] border border-[var(--stroke)]/50 backdrop-blur-xl">
+              <div className="mb-5 flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="h-3 w-3 rounded-full shadow-inner" style={{ backgroundColor: col.color, boxShadow: `0 0 10px ${col.color}40` }} />
+                  <h3 className="font-display text-[15px] font-bold text-[var(--fg)] tracking-tight">{col.title}</h3>
                 </div>
-                <Pill tone="muted">{colLeads.length}</Pill>
+                <Pill tone="muted" className="bg-[var(--panel-fill-2)] px-3">{colLeads.length}</Pill>
               </div>
               
-              <div className="flex-1 space-y-3 overflow-y-auto pr-1">
+              <div className="flex-1 space-y-3.5 overflow-y-auto pr-1 pb-4">
                 {colLeads.length === 0 ? (
-                  <div className="flex h-32 items-center justify-center rounded-xl border border-dashed border-[var(--stroke)] text-center text-[12px] text-[var(--fg-4)]">
-                    No leads here
+                  <div className="flex h-36 items-center justify-center rounded-2xl border-2 border-dashed border-[var(--stroke)]/60 text-center text-[13px] font-medium text-[var(--fg-4)] bg-[var(--panel-fill-2)]/30">
+                    Drop leads here
                   </div>
                 ) : (
                   colLeads.map(lead => (
-                    <div key={lead.id} className="group relative cursor-pointer rounded-xl border border-[var(--stroke)] bg-[var(--app-surface)] p-3 transition-all hover:border-[var(--sai-indigo)]/50 hover:shadow-md">
+                    <div key={lead.id} className="group relative cursor-pointer rounded-2xl border border-[var(--stroke)] bg-[var(--panel-fill)] p-4 transition-all duration-300 hover:-translate-y-1 hover:border-[var(--sai-indigo)]/40 hover:shadow-xl hover:shadow-[var(--sai-indigo)]/10 hover:bg-[var(--app-surface)]">
                       <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold text-[13px] text-[var(--fg)]">{lead.recipient_handle}</span>
-                          <span className="text-[10px] text-[var(--fg-4)] uppercase">{platformLabel(lead.platform)}</span>
+                        <div className="flex items-center gap-2.5">
+                          <span className="font-semibold text-[14px] text-[var(--fg)] tracking-tight">{lead.recipient_handle}</span>
+                          <span className="rounded bg-[var(--panel-fill-2)] px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest text-[var(--fg-4)] ring-1 ring-inset ring-[var(--stroke)]/50">{platformLabel(lead.platform)}</span>
                         </div>
-                        <button className="opacity-0 transition-opacity group-hover:opacity-100 text-[var(--fg-4)] hover:text-[var(--fg)]">
+                        <button className="opacity-0 transition-opacity group-hover:opacity-100 text-[var(--fg-4)] hover:text-[var(--fg)] bg-[var(--panel-fill-2)] rounded-full p-1">
                           <MoreHorizontal className="h-4 w-4" />
                         </button>
                       </div>
-                      <p className="mt-1 text-[11px] text-[var(--fg-3)] truncate">Camp: {lead.campaign_name}</p>
+                      <p className="mt-1.5 text-[12px] text-[var(--fg-3)] truncate font-medium flex items-center gap-1.5">
+                        <Target className="h-3 w-3 text-[var(--sai-indigo)]/70" />
+                        {lead.campaign_name}
+                      </p>
                       
-                      <div className="mt-3 flex items-center justify-between">
-                        <span className="text-[10px] text-[var(--fg-4)]">
+                      <div className="mt-4 flex items-center justify-between border-t border-[var(--stroke)] pt-3">
+                        <span className="text-[10px] font-semibold uppercase tracking-widest text-[var(--fg-4)] flex items-center gap-1">
+                          <div className="h-1.5 w-1.5 rounded-full bg-[var(--sai-green)]" />
                           {lead.last_contacted_at ? new Date(lead.last_contacted_at).toLocaleDateString() : "Never"}
                         </span>
-                        <div className="flex gap-1">
-                          <button className="flex h-6 w-6 items-center justify-center rounded bg-[var(--panel-fill-2)] text-[var(--sai-indigo)] hover:bg-[var(--sai-indigo)] hover:text-white transition-colors" title="Message">
+                        <div className="flex gap-1.5">
+                          <button className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--sai-indigo)]/10 text-[var(--sai-indigo)] hover:bg-[var(--sai-indigo)] hover:text-white transition-all hover:scale-110 shadow-sm" title="Message">
                             <MessageCircle className="h-3.5 w-3.5" />
                           </button>
-                          <button className="flex h-6 w-6 items-center justify-center rounded bg-[var(--panel-fill-2)] text-[var(--fg-3)] hover:bg-[var(--hover)] hover:text-[var(--fg)] transition-colors" title="View Profile">
+                          <button className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--panel-fill-2)] text-[var(--fg-3)] hover:bg-[var(--hover)] hover:text-[var(--fg)] transition-all hover:scale-110 ring-1 ring-inset ring-[var(--stroke)] shadow-sm" title="View Profile">
                             <ExternalLink className="h-3.5 w-3.5" />
                           </button>
                         </div>

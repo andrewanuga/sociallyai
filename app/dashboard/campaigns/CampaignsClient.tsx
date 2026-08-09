@@ -63,55 +63,62 @@ export function CampaignsClient({ initialCampaigns }: { initialCampaigns: Campai
         </div>
 
         {campaigns.length === 0 ? (
-          <GlassCard className="flex flex-col items-center justify-center py-16 text-center">
-            <Megaphone className="mb-4 h-12 w-12 text-[var(--fg-4)]" />
-            <p className="font-medium text-[var(--fg-2)]">No campaigns yet</p>
-            <p className="mt-1 max-w-md text-[13px] text-[var(--fg-4)]">
+          <GlassCard className="relative flex flex-col items-center justify-center overflow-hidden py-20 text-center">
+            <div className="absolute inset-0 bg-gradient-to-t from-[var(--sai-indigo)]/5 to-transparent" />
+            <Megaphone className="relative z-10 mb-5 h-14 w-14 text-[var(--fg-4)] transition-transform hover:rotate-12 hover:scale-110 hover:text-[var(--sai-indigo)]" />
+            <p className="relative z-10 font-display text-[20px] font-semibold text-[var(--fg)]">No campaigns yet</p>
+            <p className="relative z-10 mt-2 max-w-md text-[14px] text-[var(--fg-3)]">
               Build your first automated outbound sequence. Target specific followers, trigger messages based on engagement, and track reply rates.
             </p>
-            <button className="mt-6 rounded-full px-5 py-2.5 text-sm font-semibold text-white" style={{ background: "linear-gradient(135deg,#6366f1,#a855f7)" }}>
+            <button className="relative z-10 mt-8 rounded-full px-7 py-3 text-[15px] font-semibold text-white shadow-lg shadow-[var(--sai-indigo)]/20 transition-transform hover:-translate-y-0.5" style={{ background: "linear-gradient(135deg,#6366f1,#a855f7)" }}>
               Create Campaign
             </button>
           </GlassCard>
         ) : (
-          <div className="grid gap-4 lg:grid-cols-2">
+          <div className="grid gap-5 lg:grid-cols-2">
             {campaigns.map(c => (
-              <GlassCard key={c.id} className="p-5 transition-colors hover:border-[var(--stroke-hover)]">
+              <GlassCard key={c.id} className="group relative overflow-hidden p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-[var(--sai-indigo)]/20 hover:border-[var(--sai-indigo)]/40">
+                {/* Active Campaign Glow effect */}
+                {c.status === "active" && (
+                  <div className="absolute -left-px top-0 bottom-0 w-1 bg-gradient-to-b from-[var(--sai-indigo)] to-[var(--sai-violet)]" />
+                )}
+                
                 <div className="flex items-start justify-between">
                   <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-display text-[15px] font-semibold text-[var(--fg)]">{c.name}</h3>
+                    <div className="flex items-center gap-2.5 mb-1.5">
+                      <h3 className="font-display text-[16px] font-semibold text-[var(--fg)] tracking-tight">{c.name}</h3>
                       <Pill tone={c.status === "active" ? "green" : c.status === "draft" ? "muted" : "violet"}>{c.status}</Pill>
                     </div>
                     <p className="text-[12px] text-[var(--fg-4)]">Platform: <span className="font-medium text-[var(--fg-2)]">{platformLabel(c.platform)}</span></p>
                   </div>
                   {c.status === "active" ? (
-                    <button className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--panel-fill-2)] text-[var(--fg-3)] hover:bg-[var(--hover)] hover:text-[var(--fg)]" title="Pause">
-                      <Pause className="h-4 w-4" />
+                    <button className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--panel-fill-2)] text-[var(--fg-3)] ring-1 ring-inset ring-[var(--stroke)] transition-all hover:bg-[var(--sai-gold)] hover:text-[var(--app-bg)] hover:ring-[var(--sai-gold)] shadow-sm" title="Pause">
+                      <Pause className="h-[18px] w-[18px] fill-current" />
                     </button>
                   ) : (
-                    <button className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--panel-fill-2)] text-[var(--fg-3)] hover:bg-[var(--hover)] hover:text-[var(--fg)]" title="Start">
-                      <Play className="h-4 w-4" />
+                    <button className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--panel-fill-2)] text-[var(--fg-3)] ring-1 ring-inset ring-[var(--stroke)] transition-all hover:bg-[var(--sai-indigo)] hover:text-white hover:ring-[var(--sai-indigo)] shadow-sm" title="Start">
+                      <Play className="h-[18px] w-[18px] fill-current ml-0.5" />
                     </button>
                   )}
                 </div>
 
-                <div className="mt-5 grid grid-cols-4 gap-2 border-t border-[var(--stroke)] pt-4">
-                  <div className="rounded-lg bg-[var(--panel-fill-2)] p-2 text-center">
-                    <p className="font-data text-[14px] text-[var(--fg)]">{c.stats.totalLeads}</p>
-                    <p className="text-[10px] uppercase tracking-wider text-[var(--fg-4)]">Targeted</p>
+                <div className="mt-6 grid grid-cols-4 gap-3 border-t border-[var(--stroke)] pt-5">
+                  <div className="rounded-xl bg-[var(--panel-fill-2)] p-3 text-center ring-1 ring-inset ring-[var(--stroke)] transition-colors group-hover:bg-[var(--panel-fill)] group-hover:ring-[var(--sai-indigo)]/20">
+                    <p className="font-data text-[18px] font-semibold text-[var(--fg)]">{c.stats.totalLeads}</p>
+                    <p className="mt-0.5 text-[10px] font-bold uppercase tracking-widest text-[var(--fg-4)]">Targeted</p>
                   </div>
-                  <div className="rounded-lg bg-[var(--panel-fill-2)] p-2 text-center">
-                    <p className="font-data text-[14px] text-[var(--fg)]">{c.stats.sentCount}</p>
-                    <p className="text-[10px] uppercase tracking-wider text-[var(--fg-4)]">Sent</p>
+                  <div className="rounded-xl bg-[var(--panel-fill-2)] p-3 text-center ring-1 ring-inset ring-[var(--stroke)] transition-colors group-hover:bg-[var(--panel-fill)] group-hover:ring-[var(--sai-indigo)]/20">
+                    <p className="font-data text-[18px] font-semibold text-[var(--fg)]">{c.stats.sentCount}</p>
+                    <p className="mt-0.5 text-[10px] font-bold uppercase tracking-widest text-[var(--fg-4)]">Sent</p>
                   </div>
-                  <div className="rounded-lg bg-[var(--panel-fill-2)] p-2 text-center">
-                    <p className="font-data text-[14px] text-[var(--fg)]">{c.stats.repliedCount}</p>
-                    <p className="text-[10px] uppercase tracking-wider text-[var(--fg-4)]">Replies</p>
+                  <div className="rounded-xl bg-[var(--panel-fill-2)] p-3 text-center ring-1 ring-inset ring-[var(--stroke)] transition-colors group-hover:bg-[var(--panel-fill)] group-hover:ring-[var(--sai-indigo)]/20">
+                    <p className="font-data text-[18px] font-semibold text-[var(--fg)]">{c.stats.repliedCount}</p>
+                    <p className="mt-0.5 text-[10px] font-bold uppercase tracking-widest text-[var(--fg-4)]">Replies</p>
                   </div>
-                  <div className="rounded-lg bg-[var(--panel-fill-2)] p-2 text-center">
-                    <p className="font-data text-[14px] text-[var(--sai-gold)]">{c.stats.replyRate.toFixed(1)}%</p>
-                    <p className="text-[10px] uppercase tracking-wider text-[var(--fg-4)]">Rate</p>
+                  <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-[var(--sai-indigo)]/10 to-[var(--sai-violet)]/10 p-3 text-center ring-1 ring-inset ring-[var(--sai-indigo)]/30 transition-transform group-hover:scale-[1.02]">
+                    <div className="absolute inset-0 bg-gradient-to-t from-[var(--sai-indigo)]/10 to-transparent" />
+                    <p className="relative z-10 font-data text-[18px] font-bold text-[var(--sai-indigo)] drop-shadow-sm">{c.stats.replyRate.toFixed(1)}%</p>
+                    <p className="relative z-10 mt-0.5 text-[10px] font-bold uppercase tracking-widest text-[var(--sai-indigo)]/80">Rate</p>
                   </div>
                 </div>
               </GlassCard>

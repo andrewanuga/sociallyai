@@ -63,7 +63,7 @@ export async function POST(
 
         const { data: bot } = await supabase
           .from("social_bots")
-          .select("id, status, config")
+          .select("id, status, config, role")
           .eq("user_id", account.user_id)
           .eq("status", "active")
           .limit(1)
@@ -77,10 +77,10 @@ export async function POST(
             account.user_id,
             bot.id,
             `Ghost Mode: Processing Telegram DM from ${senderName}`,
-            `Applying ${rules.filter((r:any) => r.enabled).length} active rules`
+            `Applying ${rules.filter((r:any) => r.enabled).length} active rules with role: ${bot.role || "general"}`
           );
 
-          const evalRes = await evaluateIncomingMessage(text, "Telegram", senderName, rules, false);
+          const evalRes = await evaluateIncomingMessage(text, "Telegram", senderName, rules, false, bot.role || "general");
           
           if (evalRes.action === "auto_reply" && evalRes.reply) {
             await dispatchReply({
