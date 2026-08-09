@@ -6,10 +6,11 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard, MessagesSquare, ListTodo, CalendarRange, Inbox,
   BarChart3, TrendingUp, Bot, Ghost, Plug, CreditCard, Settings,
-  LifeBuoy, LogOut, PanelLeftClose, PanelLeftOpen,
+  LifeBuoy, LogOut, PanelLeftClose, PanelLeftOpen, Megaphone, Users, UserPlus, Target
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
+import { useWorkspace } from "./WorkspaceProvider";
 
 type Item = { href: string; label: string; icon: typeof LayoutDashboard; badge?: number; exact?: boolean };
 
@@ -44,6 +45,35 @@ const SECTIONS: { title: string; items: Item[] }[] = [
   },
 ];
 
+const MARKETER_SECTIONS: { title: string; items: Item[] }[] = [
+  {
+    title: "Agency Hub",
+    items: [
+      { href: "/dashboard/agency", label: "Clients", icon: Users, exact: true },
+      { href: "/dashboard/campaigns", label: "Campaigns", icon: Megaphone },
+      { href: "/dashboard/crm", label: "Lead CRM", icon: Target },
+    ],
+  },
+  {
+    title: "Insights",
+    items: [
+      { href: "/dashboard/analytics", label: "ROAS Analytics", icon: BarChart3 },
+      { href: "/dashboard/trends", label: "Trend Monitor", icon: TrendingUp },
+    ],
+  },
+  {
+    title: "Agents",
+    items: [
+      { href: "/dashboard/bots", label: "Support & Hype Bots", icon: Bot },
+      { href: "/dashboard/ghost-mode", label: "The Closer", icon: Ghost },
+    ],
+  },
+  {
+    title: "Connect",
+    items: [{ href: "/dashboard/integrations", label: "Integrations", icon: Plug }],
+  },
+];
+
 const BOTTOM: Item[] = [
   { href: "/dashboard/support", label: "Support", icon: LifeBuoy },
   { href: "/dashboard/billing", label: "Billing", icon: CreditCard },
@@ -59,6 +89,7 @@ export function Sidebar({
 }) {
   const pathname = usePathname();
   const router = useRouter();
+  const { persona } = useWorkspace();
   const [inboxUnread, setInboxUnread] = useState(0);
 
   // Live unread inbox count for the sidebar badge.
@@ -149,7 +180,7 @@ export function Sidebar({
         </div>
 
         <nav className="flex-1 overflow-y-auto px-2.5 py-4">
-          {SECTIONS.map((sec) => (
+          {(persona === "marketer" ? MARKETER_SECTIONS : SECTIONS).map((sec) => (
             <div key={sec.title} className="mb-4">
               {!collapsed && (
                 <p className="font-data mb-1.5 px-2.5 text-[10px] uppercase tracking-[0.2em] text-[var(--fg-4)]">
