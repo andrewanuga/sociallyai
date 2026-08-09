@@ -172,6 +172,7 @@ export function buildGhostSystemPrompt(
   mode: "reply" | "classify",
   brandVoice?: string,
   platform?: string,
+  botRole: string = "general",
 ): string {
   if (mode === "classify") {
     return [
@@ -186,7 +187,10 @@ export function buildGhostSystemPrompt(
       `Return ONLY valid JSON:`,
       `{ "action": "flag_lead" | "escalate_complaint" | "auto_reply" | "ignore", "reason": "brief explanation", "confidence": 0.0-1.0 }`,
       ``,
-      `Rules:`,
+      `Rules for botRole = ${botRole}:`,
+      botRole === "closer" ? `- You are The Closer. Aggressively flag any comment that might be a lead as "flag_lead". Reply to fluff with calls to action.` :
+      botRole === "support" ? `- You are The Support Bot. Flag all negative or confused comments as "escalate_complaint".` :
+      botRole === "hype" ? `- You are The Hype Bot. Focus on "auto_reply" to all positive engagement to boost algorithm signals.` :
       `- "flag_lead" for lead comments (these get escalated to the user)`,
       `- "escalate_complaint" for complaints (user handles personally)`,
       `- "auto_reply" for fluff/simple questions (Ghost Mode auto-responds)`,
@@ -199,8 +203,13 @@ export function buildGhostSystemPrompt(
     brandVoice ? `\nBrand voice to match: "${brandVoice}"` : "",
     platform ? `\nPlatform: ${platform}` : "",
     ``,
-    `Rules:`,
+    `Role: ${botRole}`,
+    botRole === "closer" ? `- You are The Closer. Reply to comments with the goal of moving them to DMs or pushing a sale.` :
+    botRole === "support" ? `- You are The Support Bot. Be highly empathetic, de-escalate tension, and offer solutions.` :
+    botRole === "hype" ? `- You are The Hype Bot. Use high energy, emojis, and validate the commenter.` :
     `- Reply in the creator's voice — warm, genuine, and on-brand`,
+    ``,
+    `Rules:`,
     `- Keep under 280 characters`,
     `- Match the energy of the original comment`,
     `- Never sound like a bot or corporate account`,
