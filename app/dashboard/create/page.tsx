@@ -49,13 +49,13 @@ const SUGGESTIONS = [
 ];
 
 const AGENT_TOOLS = [
-  { id: "schedule_post", name: "Schedule Post", desc: "Push a draft to calendar", promptSuffix: "schedule the post we just drafted." },
-  { id: "fetch_post_analytics", name: "Check Analytics", desc: "Analyze recent post metrics", promptSuffix: "fetch my recent post analytics and summarize them." },
-  { id: "get_viral_formats", name: "Viral Formats", desc: "Get proven hook templates", promptSuffix: "get viral formats and suggest a draft using one of them." },
-  { id: "fetch_unread_messages", name: "Check Inbox", desc: "Read recent DMs/comments", promptSuffix: "fetch my unread messages." },
-  { id: "send_message", name: "Send Message", desc: "Send a direct message", promptSuffix: "send a message to [recipient] on [platform] saying [message]." },
-  { id: "analyze_competitor", name: "Analyze Competitor", desc: "Research a competitor's strategy", promptSuffix: "analyze the content strategy of [competitor_handle]." },
-  { id: "evaluate_virality", name: "Evaluate Virality", desc: "Score a draft's potential", promptSuffix: "evaluate the virality potential of this draft." },
+  { id: "schedule_post", name: "Schedule Post", desc: "Push a draft to calendar", promptSuffix: "schedule the post we just drafted.", needsParams: false },
+  { id: "fetch_post_analytics", name: "Check Analytics", desc: "Analyze recent post metrics", promptSuffix: "fetch my recent post analytics and summarize them.", needsParams: false },
+  { id: "get_viral_formats", name: "Viral Formats", desc: "Get proven hook templates", promptSuffix: "get viral formats and suggest a draft using one of them.", needsParams: false },
+  { id: "fetch_unread_messages", name: "Check Inbox", desc: "Read recent DMs/comments", promptSuffix: "fetch my unread messages from [platform/handle].", needsParams: true },
+  { id: "send_message", name: "Send Message", desc: "Send a direct message", promptSuffix: "send a message to [recipient] on [platform] saying [message].", needsParams: true },
+  { id: "analyze_competitor", name: "Analyze Competitor", desc: "Research a competitor's strategy", promptSuffix: "analyze the content strategy of [competitor_handle].", needsParams: true },
+  { id: "evaluate_virality", name: "Evaluate Virality", desc: "Score a draft's potential", promptSuffix: "evaluate the virality potential of this draft.", needsParams: false },
 ];
 
 const GREETING: Msg = {
@@ -681,7 +681,13 @@ export default function CreatePage() {
                     <button
                       key={tool.id}
                       onClick={() => {
-                        send(`Please use your ${tool.id} tool to ${tool.promptSuffix}`);
+                        const prompt = `Please use your ${tool.id} tool to ${tool.promptSuffix}`;
+                        if (tool.needsParams) {
+                          setInput((prev) => prev ? prev + "\n" + prompt : prompt);
+                          setTimeout(() => textareaRef.current?.focus(), 10);
+                        } else {
+                          send(prompt);
+                        }
                         setShowToolPicker(false);
                       }}
                       className="group flex w-full items-center justify-between rounded-lg px-3 py-2 text-left transition-colors hover:bg-[var(--hover)]"
