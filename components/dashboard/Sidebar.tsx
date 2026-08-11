@@ -126,6 +126,11 @@ export function Sidebar({
     return (
       <Link
         href={item.href}
+        onClick={(e) => {
+          if (isMobile) {
+            onToggle();
+          }
+        }}
         className={cn(
           "group relative flex items-center gap-3 rounded-xl px-2.5 py-2.5 text-[13.5px] font-medium transition-colors duration-150",
           active ? "text-[var(--fg)]" : "text-[var(--fg-2)] hover:text-[var(--fg)]",
@@ -182,7 +187,11 @@ export function Sidebar({
             </span>
           )}
           {isMobile && (
-            <button onClick={onToggle} className="ml-auto flex items-center justify-center h-8 w-8 rounded-lg text-[var(--fg-3)] hover:text-[var(--fg)] hover:bg-[var(--hover)] transition-colors">
+            <button 
+              type="button"
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggle(); }} 
+              className="ml-auto flex items-center justify-center h-8 w-8 rounded-lg text-[var(--fg-3)] hover:text-[var(--fg)] hover:bg-[var(--hover)] transition-colors relative z-50 pointer-events-auto"
+            >
               <X className="h-5 w-5" />
             </button>
           )}
