@@ -169,13 +169,13 @@ export function Sidebar({
       <div
         className={cn(
           "flex h-full flex-col transition-[width,padding] duration-300 ease-in-out",
-          collapsed ? "w-0 overflow-hidden" : "w-[248px]"
+          collapsed ? "w-[68px]" : "w-[248px]"
         )}
       >
-        <div className={cn("flex h-16 flex-shrink-0 items-center border-b border-[var(--stroke)] px-4", collapsed ? "justify-center opacity-0" : "gap-2.5 opacity-100 transition-opacity delay-100 duration-200")}>
+        <div className={cn("flex h-16 flex-shrink-0 items-center border-b border-[var(--stroke)]", collapsed ? "justify-center px-0" : "gap-2.5 px-4 transition-opacity delay-100 duration-200")}>
           <img src="/logo.png" alt="" width={26} height={23} className="h-[24px] w-auto" style={{ filter: "drop-shadow(0 0 10px rgba(99,102,241,0.4))" }} />
           {!collapsed && (
-            <span className="font-display text-[16px] font-semibold text-[var(--fg)]">
+            <span className="font-display text-[16px] font-semibold text-[var(--fg)] whitespace-nowrap">
               Socially<span className="text-[var(--sai-indigo)]"> AI</span>
             </span>
           )}
