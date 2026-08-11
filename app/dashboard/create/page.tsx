@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import {
   ArrowUp, Sparkles, Copy, Check, RotateCcw, Paperclip, X,
-  FileText, Film, Bot, Eye, ChevronDown, Loader2, Image as ImageIcon, Edit2, MessageSquare,
+  FileText, Film, Bot, Eye, ChevronDown, Loader2, Image as ImageIcon, Edit2, MessageSquare, Trash2,
 } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
 import { createClient } from "@/lib/supabase/client";
@@ -112,9 +112,23 @@ export default function CreatePage() {
       abortControllerRef.current.abort();
       abortControllerRef.current = null;
       setBusy(false);
-      setStreamText((prev) => prev ? prev + "\n\n*[Stopped by user]*" : "");
+      setStreamText("");
+      
+      const last = messages[messages.length - 1];
+      if (last && last.role === 'user') {
+        setInput(last.content !== "(see attachment)" ? last.content : "");
+        setMessages(messages.slice(0, -1));
+      }
     }
-  }, []);
+  }, [messages]);
+
+  const deleteChat = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const supabase = createClient();
+    await supabase.from("chats").delete().eq("id", id);
+    setChats((prev) => prev.filter((c) => c.id !== id));
+    if (currentChatId === id) reset();
+  };
 
 
   const fetchChats = async () => {
@@ -431,9 +445,14 @@ export default function CreatePage() {
                     <MessageSquare className="h-3.5 w-3.5 opacity-70" />
                     <span className="truncate">{c.title}</span>
                   </button>
-                  <button onClick={() => { setRenamingChatId(c.id); setRenameInput(c.title); }} className="opacity-0 transition-opacity group-hover:opacity-100 p-1 -mr-1 hover:bg-black/20 rounded">
-                    <Edit2 className="h-3.5 w-3.5 text-[var(--fg-4)] hover:text-[var(--fg)]" />
-                  </button>
+                  <div className="opacity-0 transition-opacity group-hover:opacity-100 flex items-center">
+                    <button onClick={(e) => { e.stopPropagation(); setRenamingChatId(c.id); setRenameInput(c.title); }} className="p-1 hover:bg-black/20 rounded">
+                      <Edit2 className="h-3.5 w-3.5 text-[var(--fg-4)] hover:text-[var(--fg)]" />
+                    </button>
+                    <button onClick={(e) => deleteChat(c.id, e)} className="p-1 hover:bg-black/20 rounded">
+                      <Trash2 className="h-3.5 w-3.5 text-[var(--fg-4)] hover:text-red-400" />
+                    </button>
+                  </div>
                 </>
               )}
             </div>
