@@ -45,6 +45,20 @@ export async function GET(req: Request) {
           crmContext = `\n\nUSER'S CURRENT CRM TASKS (You may reference these if relevant to the post):\n${crmTasks.map(t => `- [${t.priority}] ${t.title} (${t.notes || ''})`).join('\n')}`;
         }
 
+        // Fetch user's social account for this platform
+        const { data: accounts } = await supabaseAdmin
+          .from("social_accounts")
+          .select("handle, display_name")
+          .eq("user_id", task.user_id)
+          .eq("platform", task.platform)
+          .limit(1);
+
+        let accountContext = "";
+        if (accounts && accounts.length > 0) {
+          const acc = accounts[0];
+          accountContext = `\n\nACCOUNT IDENTITY: You are posting on behalf of ${acc.display_name || 'the user'} (Handle: ${acc.handle || 'unknown'}). Maintain a tone consistent with this identity.`;
+        }
+
         // Format the content array for OpenRouter (Multimodal Support)
         const userMessageContent: any[] = [{ type: "text", text: task.prompt }];
         
@@ -63,7 +77,7 @@ export async function GET(req: Request) {
           {
             role: "system",
             content: `You are an expert social media AI assistant. You have been scheduled to automatically execute a task for the user on ${task.platform}. 
-Generate the requested content directly without preamble. Make sure it is optimized for ${task.platform}.${crmContext}`
+Generate the requested content directly without preamble. Make sure it is optimized for ${task.platform}.${accountContext}${crmContext}`
           },
           {
             role: "user",

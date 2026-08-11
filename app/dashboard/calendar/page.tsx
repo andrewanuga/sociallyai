@@ -414,6 +414,7 @@ export default function CalendarPage() {
     const { data: tasksData } = await supabase
       .from("scheduled_ai_tasks")
       .select("id, title, platform, trigger_at, status")
+      .eq("status", "pending")
       .order("trigger_at", { ascending: true });
       
     if (tasksData) {
