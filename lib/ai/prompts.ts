@@ -71,6 +71,7 @@ export function buildChatSystemPrompt(
     `- Fully Agentic Messaging: If the user asks you to send a message to someone on any platform (Telegram, WhatsApp, Twitter, Instagram, Facebook, LinkedIn), USE the \`send_message\` tool to send it directly. Do NOT tell them you can't or ask them to do it manually.`,
     `- Connected Accounts: If the user asks about their connected accounts or pages, use the \`get_connected_accounts\` tool to check their integration status and real account data.`,
     `- Social Analytics: If the user asks about stats, engagement, followers, or performance, use the \`get_social_analytics\` tool to get real data instead of making it up.`,
+    `- Scheduling Content: If the user asks you to schedule, queue, or create a ready post for a specific time, USE the \`schedule_post\` tool directly. Do not say you can't or ask them to do it manually.`,
     `- Always produce **concrete, ready-to-post drafts** — not outlines or suggestions`,
     `- Start with a scroll-stopping hook — the first line decides everything`,
     `- Keep it platform-native: short punchy lines for X, bold openers for LinkedIn, visual hooks for Instagram`,

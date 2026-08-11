@@ -410,16 +410,42 @@ export default function CalendarPage() {
       setAiTaskPlatform(accountsData[0].platform);
     }
 
-    // Fetch scheduled tasks for calendar
-    const { data: tasksData } = await supabase
+    // Fetch scheduled AI tasks
+    const { data: aiTasksData } = await supabase
       .from("scheduled_ai_tasks")
       .select("id, title, platform, trigger_at, status")
       .eq("status", "pending")
       .order("trigger_at", { ascending: true });
       
-    if (tasksData) {
-      setScheduledTasks(tasksData);
+    // Fetch directly scheduled posts
+    const { data: scheduledPostsData } = await supabase
+      .from("scheduled_posts")
+      .select("id, content, platform, scheduled_at, status")
+      .in("status", ["scheduled", "queued", "pending"])
+      .order("scheduled_at", { ascending: true });
+
+    let mergedEvents: any[] = [];
+    if (aiTasksData) {
+      mergedEvents = [...mergedEvents, ...aiTasksData.map(t => ({
+        id: t.id,
+        title: t.title,
+        platform: t.platform,
+        trigger_at: t.trigger_at,
+        type: 'ai_task'
+      }))];
     }
+    
+    if (scheduledPostsData) {
+      mergedEvents = [...mergedEvents, ...scheduledPostsData.map(p => ({
+        id: p.id,
+        title: p.content.substring(0, 35) + (p.content.length > 35 ? '...' : ''),
+        platform: p.platform,
+        trigger_at: p.scheduled_at,
+        type: 'post'
+      }))];
+    }
+    
+    setScheduledTasks(mergedEvents);
   };
 
   useEffect(() => {
@@ -539,10 +565,11 @@ export default function CalendarPage() {
     }
   };
 
-  const handleDeleteTask = async (taskId: string, e: React.MouseEvent) => {
+  const handleDeleteTask = async (taskId: string, type: 'ai_task' | 'post', e: React.MouseEvent) => {
     e.stopPropagation();
     try {
-      const { error } = await supabase.from('scheduled_ai_tasks').delete().eq('id', taskId);
+      const table = type === 'post' ? 'scheduled_posts' : 'scheduled_ai_tasks';
+      const { error } = await supabase.from(table).delete().eq('id', taskId);
       if (error) throw error;
       loadData(); // Refresh the calendar view
     } catch (err: any) {
@@ -665,11 +692,11 @@ export default function CalendarPage() {
                           {event.platform === "Instagram" && <Camera className="w-3 h-3 text-[#E1306C] flex-shrink-0" />}
                           {event.platform === "X" && <AtSign className="w-3 h-3 text-[#1DA1F2] flex-shrink-0" />}
                           {event.platform === "LinkedIn" && <Building2 className="w-3 h-3 text-[#0A66C2] flex-shrink-0" />}
-                          <span className="text-[10px] font-medium text-[var(--fg-2)] truncate group-hover:text-[var(--fg)]">{event.title}</span>
+                          <span className="text-[10px] font-medium text-[var(--fg-2)] truncate group-hover:text-[var(--fg)]">{event.type === 'post' ? '📝 ' : '🤖 '}{event.title}</span>
                           <button 
-                            onClick={(e) => handleDeleteTask(event.id, e)} 
+                            onClick={(e) => handleDeleteTask(event.id, event.type, e)} 
                             className="absolute right-1.5 opacity-0 group-hover:opacity-100 transition-opacity p-0.5 hover:bg-[var(--stroke)] rounded text-[var(--fg-3)] hover:text-red-400"
-                            title="Delete task"
+                            title="Delete"
                           >
                             <X className="w-3 h-3" />
                           </button>
