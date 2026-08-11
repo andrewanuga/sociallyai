@@ -6,7 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard, MessagesSquare, ListTodo, CalendarRange, Inbox,
   BarChart3, TrendingUp, Bot, Ghost, Plug, CreditCard, Settings,
-  LifeBuoy, LogOut, PanelLeftClose, PanelLeftOpen, Megaphone, Users, UserPlus, Target, Sparkles
+  LifeBuoy, LogOut, PanelLeftClose, PanelLeftOpen, Megaphone, Users, UserPlus, Target, Sparkles, X
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
@@ -85,9 +85,11 @@ const BOTTOM: Item[] = [
 export function Sidebar({
   collapsed,
   onToggle,
+  isMobile,
 }: {
   collapsed: boolean;
   onToggle: () => void;
+  isMobile?: boolean;
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -179,6 +181,11 @@ export function Sidebar({
               Socially<span className="text-[var(--sai-indigo)]"> AI</span>
             </span>
           )}
+          {isMobile && (
+            <button onClick={onToggle} className="ml-auto flex items-center justify-center h-8 w-8 rounded-lg text-[var(--fg-3)] hover:text-[var(--fg)] hover:bg-[var(--hover)] transition-colors">
+              <X className="h-5 w-5" />
+            </button>
+          )}
         </div>
 
         <nav className="flex-1 overflow-y-auto px-2.5 py-4">
@@ -216,14 +223,16 @@ export function Sidebar({
         </div>
       </div>
 
-      <button
-        type="button"
-        onClick={onToggle}
-        aria-label="Toggle sidebar"
-        className="glass-panel absolute -right-3 top-[70px] z-50 flex h-6 w-6 items-center justify-center rounded-full text-[var(--fg-2)] transition-colors hover:text-[var(--fg)]"
-      >
-        {collapsed ? <PanelLeftOpen className="h-3.5 w-3.5" /> : <PanelLeftClose className="h-3.5 w-3.5" />}
-      </button>
+      {!isMobile && (
+        <button
+          type="button"
+          onClick={onToggle}
+          aria-label="Toggle sidebar"
+          className="glass-panel absolute -right-3 top-[70px] z-50 flex h-6 w-6 items-center justify-center rounded-full text-[var(--fg-2)] transition-colors hover:text-[var(--fg)]"
+        >
+          {collapsed ? <PanelLeftOpen className="h-3.5 w-3.5" /> : <PanelLeftClose className="h-3.5 w-3.5" />}
+        </button>
+      )}
     </aside>
   );
 }

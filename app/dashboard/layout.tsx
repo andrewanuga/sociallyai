@@ -55,7 +55,7 @@ export default function DashboardLayout({
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
-        <Sidebar collapsed={false} onToggle={() => setMobileOpen(false)} />
+        <Sidebar collapsed={false} onToggle={() => setMobileOpen(false)} isMobile={true} />
       </div>
 
       {/* Main */}
