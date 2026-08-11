@@ -538,6 +538,18 @@ export default function CalendarPage() {
       setIsSaving(false);
     }
   };
+
+  const handleDeleteTask = async (taskId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      const { error } = await supabase.from('scheduled_ai_tasks').delete().eq('id', taskId);
+      if (error) throw error;
+      loadData(); // Refresh the calendar view
+    } catch (err: any) {
+      console.error(err);
+      toastError("Error", err.message || "Failed to delete task.");
+    }
+  };
   
   const daysInMonth = getDaysInMonth(currentYear, currentMonth);
   const firstDay = getFirstDayOfMonth(currentYear, currentMonth);
@@ -649,11 +661,18 @@ export default function CalendarPage() {
                     </div>
                     <div className="space-y-1.5">
                       {scheduledEvents.map(event => (
-                        <div key={event.id} className="cursor-pointer group flex items-center gap-1.5 p-1.5 rounded-lg border border-[var(--stroke)] bg-[var(--app-surface)] hover:border-[var(--sai-indigo)]/50 hover:shadow-sm transition-all">
+                        <div key={event.id} className="cursor-pointer group flex items-center gap-1.5 p-1.5 rounded-lg border border-[var(--stroke)] bg-[var(--app-surface)] hover:border-[var(--sai-indigo)]/50 hover:shadow-sm transition-all relative pr-6">
                           {event.platform === "Instagram" && <Camera className="w-3 h-3 text-[#E1306C] flex-shrink-0" />}
                           {event.platform === "X" && <AtSign className="w-3 h-3 text-[#1DA1F2] flex-shrink-0" />}
                           {event.platform === "LinkedIn" && <Building2 className="w-3 h-3 text-[#0A66C2] flex-shrink-0" />}
                           <span className="text-[10px] font-medium text-[var(--fg-2)] truncate group-hover:text-[var(--fg)]">{event.title}</span>
+                          <button 
+                            onClick={(e) => handleDeleteTask(event.id, e)} 
+                            className="absolute right-1.5 opacity-0 group-hover:opacity-100 transition-opacity p-0.5 hover:bg-[var(--stroke)] rounded text-[var(--fg-3)] hover:text-red-400"
+                            title="Delete task"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
                         </div>
                       ))}
                     </div>
