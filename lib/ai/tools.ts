@@ -366,8 +366,8 @@ Suggestion: Tweak claim to specify "For B2B enterprises...".`;
           user_id: ctx.workspaceId,
           platform: args.platform,
           content: args.content,
-          scheduled_for: args.publish_at,
-          status: "pending"
+          scheduled_at: args.publish_at,
+          status: "scheduled"
         });
         if (error) return `Error scheduling post: ${error.message}`;
         return `Successfully scheduled post for ${args.platform} at ${args.publish_at}.`;
