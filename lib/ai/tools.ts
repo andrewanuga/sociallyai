@@ -193,6 +193,56 @@ export const AI_TOOLS = [
       parameters: { type: "object", properties: {}, required: [] },
     },
   },
+  // ── Messaging & Social Action Tools ──
+  {
+    type: "function",
+    function: {
+      name: "send_message",
+      description: "Send a direct message to someone on a connected social platform. Use this when the user asks to message, DM, or reach out to someone.",
+      parameters: {
+        type: "object",
+        properties: {
+          platform: {
+            type: "string",
+            enum: ["telegram", "twitter", "x", "instagram", "facebook", "whatsapp", "linkedin"],
+            description: "The social platform to send the message on",
+          },
+          recipient: {
+            type: "string",
+            description: "The recipient's username (@handle), user ID, phone number (WhatsApp), or chat ID (Telegram)",
+          },
+          message: {
+            type: "string",
+            description: "The message content to send",
+          },
+        },
+        required: ["platform", "recipient", "message"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_connected_accounts",
+      description: "List all social accounts the user has connected to Socially AI, with their platform, handle, and follower count.",
+      parameters: { type: "object", properties: {}, required: [] },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_social_analytics",
+      description: "Get detailed analytics for a specific connected account or all accounts. Returns followers, impressions, engagement rate.",
+      parameters: {
+        type: "object",
+        properties: {
+          platform: { type: "string", description: "Optional: filter by platform name" },
+          days: { type: "number", description: "Number of days to look back (default 30)" },
+        },
+        required: [],
+      },
+    },
+  },
 ];
 
 /* ── Tool Executors ───────────────────────────────────────────── */
@@ -316,9 +366,21 @@ Suggestion: Tweak claim to specify "For B2B enterprises...".`;
           user_id: ctx.workspaceId,
           platform: args.platform,
           content: args.content,
-          scheduled_for: args.publish_at,
-          status: "pending"
+          scheduled_at: args.publish_at,
+          status: "scheduled"
         });
+        
+        if (!error) {
+          await ctx.supabase.from("tasks").insert({
+            user_id: ctx.workspaceId,
+            title: `Post scheduled for ${args.platform}`,
+            notes: `To be published at ${args.publish_at}. Content: "${args.content.substring(0, 60)}..."`,
+            priority: "normal",
+            status: "pending",
+            bot_id: "ai-scheduler"
+          });
+        }
+
         if (error) return `Error scheduling post: ${error.message}`;
         return `Successfully scheduled post for ${args.platform} at ${args.publish_at}.`;
       } catch (e: any) {
@@ -358,6 +420,76 @@ Suggestion: Tweak claim to specify "For B2B enterprises...".`;
       } catch (e: any) {
         return `Failed to fetch analytics: ${e.message}`;
       }
+
+    // ── Messaging Tools ──
+    case "send_message": {
+      const { platform, recipient, message: msgContent } = args;
+      try {
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+        const res = await fetch(`${baseUrl}/api/social/send-dm`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ platform, recipient, message: msgContent }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          return `✅ Message sent successfully to ${recipient} on ${platform}${
+            data.message_id ? ` (ID: ${data.message_id})` : ""
+          }.`;
+        } else {
+          return `❌ Failed to send message on ${platform}: ${data.error}`;
+        }
+      } catch (e: any) {
+        return `Error sending message: ${e.message}`;
+      }
+    }
+
+    case "get_connected_accounts": {
+      if (!ctx.supabase || !ctx.workspaceId) return "Database not available.";
+      try {
+        const { data, error } = await ctx.supabase
+          .from("social_accounts")
+          .select("platform, handle, display_name, followers, status, last_synced_at")
+          .eq("user_id", ctx.workspaceId)
+          .eq("status", "connected");
+        if (error) return `Error fetching accounts: ${error.message}`;
+        if (!data?.length) return "No connected accounts found. Please go to Integrations to connect your social accounts.";
+        return JSON.stringify(data.map((a: any) => ({
+          platform: a.platform,
+          handle: a.handle || a.display_name,
+          followers: a.followers || 0,
+          last_synced: a.last_synced_at,
+        })));
+      } catch (e: any) {
+        return `Failed to fetch accounts: ${e.message}`;
+      }
+    }
+
+    case "get_social_analytics": {
+      if (!ctx.supabase || !ctx.workspaceId) return "Database not available.";
+      try {
+        const days = args.days || 30;
+        const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+        let query = ctx.supabase
+          .from("social_posts")
+          .select("platform, impressions, likes, comments, shares, video_views, posted_at")
+          .gte("posted_at", since);
+        if (args.platform) query = query.eq("platform", args.platform);
+        const { data, error } = await query;
+        if (error) return `Error fetching analytics: ${error.message}`;
+        if (!data?.length) return `No posts found in the last ${days} days${args.platform ? ` for ${args.platform}` : ""}.`;
+        const byPlatform: Record<string, { posts: number; impressions: number; engagements: number }> = {};
+        for (const p of data) {
+          if (!byPlatform[p.platform]) byPlatform[p.platform] = { posts: 0, impressions: 0, engagements: 0 };
+          byPlatform[p.platform].posts++;
+          byPlatform[p.platform].impressions += (p.impressions || 0) + (p.video_views || 0);
+          byPlatform[p.platform].engagements += (p.likes || 0) + (p.comments || 0) + (p.shares || 0);
+        }
+        return JSON.stringify({ period: `Last ${days} days`, breakdown: byPlatform });
+      } catch (e: any) {
+        return `Failed to fetch analytics: ${e.message}`;
+      }
+    }
 
     default:
       return `Unknown tool: ${name}`;

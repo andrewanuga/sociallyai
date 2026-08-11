@@ -3,10 +3,11 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import {
   ArrowUp, Sparkles, Copy, Check, RotateCcw, Paperclip, X,
-  FileText, Film, Bot, Eye, ChevronDown, Loader2, Image as ImageIcon, Edit2, MessageSquare,
+  FileText, Film, Bot, Eye, ChevronDown, Loader2, Image as ImageIcon, Edit2, MessageSquare, Trash2,
 } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
 import { createClient } from "@/lib/supabase/client";
+import { MarkdownRenderer } from "@/components/dashboard/MarkdownRenderer";
 
 /* ── Types ────────────────────────────────────────────────────── */
 
@@ -47,6 +48,16 @@ const SUGGESTIONS = [
   "5 content ideas for this week",
 ];
 
+const AGENT_TOOLS = [
+  { id: "schedule_post", name: "Schedule Post", desc: "Push a draft to calendar", promptSuffix: "schedule the post we just drafted.", needsParams: false },
+  { id: "fetch_post_analytics", name: "Check Analytics", desc: "Analyze recent post metrics", promptSuffix: "fetch my recent post analytics and summarize them.", needsParams: false },
+  { id: "get_viral_formats", name: "Viral Formats", desc: "Get proven hook templates", promptSuffix: "get viral formats and suggest a draft using one of them.", needsParams: false },
+  { id: "fetch_unread_messages", name: "Check Inbox", desc: "Read recent DMs/comments", promptSuffix: "fetch my unread messages from [platform/handle].", needsParams: true },
+  { id: "send_message", name: "Send Message", desc: "Send a direct message", promptSuffix: "send a message to [recipient] on [platform] saying [message].", needsParams: true },
+  { id: "analyze_competitor", name: "Analyze Competitor", desc: "Research a competitor's strategy", promptSuffix: "analyze the content strategy of [competitor_handle].", needsParams: true },
+  { id: "evaluate_virality", name: "Evaluate Virality", desc: "Score a draft's potential", promptSuffix: "evaluate the virality potential of this draft.", needsParams: false },
+];
+
 const GREETING: Msg = {
   id: 0,
   role: "assistant",
@@ -80,6 +91,7 @@ export default function CreatePage() {
   const [showModelPicker, setShowModelPicker] = useState(false);
   const [userDefaultModel, setUserDefaultModel] = useState<string>("");
 
+  const [showToolPicker, setShowToolPicker] = useState(false);
 
   const [chats, setChats] = useState<{ id: string; title: string }[]>([]);
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
@@ -90,8 +102,33 @@ export default function CreatePage() {
   const fileRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const modelPickerRef = useRef<HTMLDivElement>(null);
+  const toolPickerRef = useRef<HTMLDivElement>(null);
   const idRef = useRef(1);
   const attIdRef = useRef(1);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  const stopGeneration = useCallback(() => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+      setBusy(false);
+      setStreamText("");
+      
+      const last = messages[messages.length - 1];
+      if (last && last.role === 'user') {
+        setInput(last.content !== "(see attachment)" ? last.content : "");
+        setMessages(messages.slice(0, -1));
+      }
+    }
+  }, [messages]);
+
+  const deleteChat = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const supabase = createClient();
+    await supabase.from("chats").delete().eq("id", id);
+    setChats((prev) => prev.filter((c) => c.id !== id));
+    if (currentChatId === id) reset();
+  };
 
 
   const fetchChats = async () => {
@@ -177,8 +214,11 @@ export default function CreatePage() {
       if (modelPickerRef.current && !modelPickerRef.current.contains(e.target as Node)) {
         setShowModelPicker(false);
       }
+      if (toolPickerRef.current && !toolPickerRef.current.contains(e.target as Node)) {
+        setShowToolPicker(false);
+      }
     }
-    if (showModelPicker) {
+    if (showModelPicker || showToolPicker) {
       document.addEventListener("mousedown", handleClick);
       return () => document.removeEventListener("mousedown", handleClick);
     }
@@ -271,9 +311,13 @@ export default function CreatePage() {
     setBusy(true);
     setStreamText("");
 
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
+
     try {
       const res = await fetch("/api/ai/chat", {
         method: "POST",
+        signal: abortController.signal,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           messages: history
@@ -344,13 +388,18 @@ export default function CreatePage() {
           },
         ]);
       }
-    } catch (e) {
-      toastError("Agent unavailable", e instanceof Error ? e.message : "Try again.");
+    } catch (e: any) {
+      if (e.name === "AbortError") {
+        console.log("Fetch aborted by user");
+      } else {
+        toastError("Agent unavailable", e instanceof Error ? e.message : "Try again.");
+      }
     } finally {
       setBusy(false);
       setStreamText("");
+      abortControllerRef.current = null;
     }
-  }, [input, attachments, busy, messages, selectedModel, toastError]);
+  }, [input, attachments, busy, messages, selectedModel, currentChatId, toastError]);
 
   /* ── Copy and reset ─────────────────────────────────────────── */
   const copy = (m: Msg) => {
@@ -396,9 +445,14 @@ export default function CreatePage() {
                     <MessageSquare className="h-3.5 w-3.5 opacity-70" />
                     <span className="truncate">{c.title}</span>
                   </button>
-                  <button onClick={() => { setRenamingChatId(c.id); setRenameInput(c.title); }} className="opacity-0 transition-opacity group-hover:opacity-100 p-1 -mr-1 hover:bg-black/20 rounded">
-                    <Edit2 className="h-3.5 w-3.5 text-[var(--fg-4)] hover:text-[var(--fg)]" />
-                  </button>
+                  <div className="opacity-0 transition-opacity group-hover:opacity-100 flex items-center">
+                    <button onClick={(e) => { e.stopPropagation(); setRenamingChatId(c.id); setRenameInput(c.title); }} className="p-1 hover:bg-black/20 rounded">
+                      <Edit2 className="h-3.5 w-3.5 text-[var(--fg-4)] hover:text-[var(--fg)]" />
+                    </button>
+                    <button onClick={(e) => deleteChat(c.id, e)} className="p-1 hover:bg-black/20 rounded">
+                      <Trash2 className="h-3.5 w-3.5 text-[var(--fg-4)] hover:text-red-400" />
+                    </button>
+                  </div>
                 </>
               )}
             </div>
@@ -462,14 +516,8 @@ export default function CreatePage() {
                 )}
 
                 {/* Content with basic markdown rendering */}
-                <div className="whitespace-pre-wrap">
-                  {m.content.split(/(\*\*.*?\*\*)/).map((part, i) =>
-                    part.startsWith("**") && part.endsWith("**") ? (
-                      <strong key={i}>{part.slice(2, -2)}</strong>
-                    ) : (
-                      <span key={i}>{part}</span>
-                    ),
-                  )}
+                <div className="w-full overflow-hidden">
+                  <MarkdownRenderer content={m.content} />
                 </div>
 
                 {/* Model badge for AI responses */}
@@ -501,7 +549,9 @@ export default function CreatePage() {
                 className="relative max-w-[85%] rounded-2xl px-4 py-3 text-[14px] leading-relaxed text-[var(--fg)]"
                 style={{ background: "var(--panel-fill-2)", border: "1px solid var(--panel-fill-2)" }}
               >
-                <div className="whitespace-pre-wrap">{streamText}</div>
+                <div className="w-full overflow-hidden">
+                  <MarkdownRenderer content={streamText} />
+                </div>
                 <span className="inline-block h-4 w-0.5 animate-pulse bg-[var(--sai-indigo)]" />
               </div>
             </div>
@@ -605,10 +655,58 @@ export default function CreatePage() {
             <Paperclip className="h-5 w-5" />
           </button>
 
+          {/* Tooling picker */}
+          <div className="relative" ref={toolPickerRef}>
+            <button
+              onClick={() => { setShowToolPicker(!showToolPicker); setShowModelPicker(false); }}
+              title="Agent Tools"
+              className="flex h-10 items-center gap-1.5 rounded-xl border border-[var(--stroke)] bg-[var(--panel-fill)] px-2.5 text-[11px] text-[var(--fg-2)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--fg)]"
+            >
+              <Sparkles className="h-3.5 w-3.5 text-[#10b981]" />
+              <span className="max-w-[100px] truncate hidden sm:inline-block">Tools</span>
+              <ChevronDown className="h-3 w-3" />
+            </button>
+
+            {showToolPicker && (
+              <div
+                className="absolute bottom-full left-0 z-50 mb-2 w-[220px] overflow-hidden rounded-xl border border-[var(--stroke)] bg-[var(--panel-fill)] shadow-2xl"
+                style={{ backdropFilter: "blur(20px)" }}
+              >
+                <div className="border-b border-[var(--stroke)] p-3">
+                  <p className="text-[12px] font-semibold text-[var(--fg)]">Agent Tools</p>
+                  <p className="mt-0.5 text-[10px] text-[var(--fg-4)]">Force the AI to act</p>
+                </div>
+                <div className="max-h-[300px] overflow-y-auto p-1.5">
+                  {AGENT_TOOLS.map((tool) => (
+                    <button
+                      key={tool.id}
+                      onClick={() => {
+                        const prompt = `Please use your ${tool.id} tool to ${tool.promptSuffix}`;
+                        if (tool.needsParams) {
+                          setInput((prev) => prev ? prev + "\n" + prompt : prompt);
+                          setTimeout(() => textareaRef.current?.focus(), 10);
+                        } else {
+                          send(prompt);
+                        }
+                        setShowToolPicker(false);
+                      }}
+                      className="group flex w-full items-center justify-between rounded-lg px-3 py-2 text-left transition-colors hover:bg-[var(--hover)]"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <span className="text-[12px] font-medium text-[var(--fg)] block group-hover:text-[var(--sai-indigo)] transition-colors">{tool.name}</span>
+                        <span className="text-[10px] text-[var(--fg-4)] block truncate">{tool.desc}</span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Model picker */}
           <div className="relative" ref={modelPickerRef}>
             <button
-              onClick={() => setShowModelPicker(!showModelPicker)}
+              onClick={() => { setShowModelPicker(!showModelPicker); setShowToolPicker(false); }}
               title="Select AI model"
               className="flex h-10 items-center gap-1.5 rounded-xl border border-[var(--stroke)] bg-[var(--panel-fill)] px-2.5 text-[11px] text-[var(--fg-2)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--fg)]"
             >
@@ -677,15 +775,25 @@ export default function CreatePage() {
             className="max-h-40 flex-1 resize-none bg-transparent px-3 py-2.5 text-[14px] text-[var(--fg)] placeholder:text-[var(--fg-4)] focus:outline-none"
           />
 
-          {/* Send button */}
-          <button
-            onClick={() => send()}
-            disabled={(!input.trim() && attachments.length === 0) || busy}
-            className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl text-[var(--fg)] transition-transform hover:scale-105 disabled:opacity-40"
-            style={{ background: "linear-gradient(135deg,#6366f1,#a855f7)" }}
-          >
-            <ArrowUp className="h-5 w-5" />
-          </button>
+          {/* Send / Stop button */}
+          {busy ? (
+            <button
+              onClick={stopGeneration}
+              className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border border-[var(--stroke)] bg-[var(--panel-fill-2)] text-red-500 transition-transform hover:scale-105"
+              title="Stop generating"
+            >
+              <div className="h-3.5 w-3.5 rounded-[2px] bg-current" />
+            </button>
+          ) : (
+            <button
+              onClick={() => send()}
+              disabled={(!input.trim() && attachments.length === 0)}
+              className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl text-[var(--fg)] transition-transform hover:scale-105 disabled:opacity-40"
+              style={{ background: "linear-gradient(135deg,#6366f1,#a855f7)" }}
+            >
+              <ArrowUp className="h-5 w-5" />
+            </button>
+          )}
         </div>
 
         <p className="mt-2 text-center text-[11px] text-[var(--fg-4)]">

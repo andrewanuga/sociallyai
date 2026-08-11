@@ -93,11 +93,49 @@ export interface SocialBot {
   platform: PlatformId | null;
   name: string;
   kind: "ghost" | "engagement" | "repurpose" | "monetize" | "triage" | "messaging" | "scheduler" | "summarizer";
+  role: "general" | "closer" | "hype" | "support"; // Added for v1.6.0
   status: "active" | "paused";
   autonomy: "assist" | "auto";
   actions_count: number;
   last_run_at: string | null;
   config: Record<string, unknown>;
+}
+
+export interface DMCampaign {
+  id: string;
+  user_id: string;
+  name: string;
+  platform: PlatformId;
+  status: "draft" | "active" | "paused" | "completed";
+  audience_filter: Record<string, any>;
+  message_sequence: { delay_hours: number; template: string }[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DMCampaignLead {
+  id: string;
+  campaign_id: string;
+  recipient_handle: string;
+  recipient_platform_id: string | null;
+  status: "pending" | "sent" | "replied" | "failed" | "closed";
+  lead_score: number;
+  current_step: number;
+  last_contacted_at: string | null;
+  created_at: string;
+}
+
+export interface TrendMonitor {
+  id: string;
+  user_id: string;
+  name: string;
+  keywords: string[];
+  competitor_handles: string[];
+  platform: PlatformId;
+  is_active: boolean;
+  notify_on_viral: boolean;
+  created_at: string;
+  last_checked_at: string | null;
 }
 
 export interface ManagedChat {

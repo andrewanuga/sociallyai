@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import {
   Sparkles, Calendar, Send, ImageIcon, Hash, AtSign,
   RotateCw, Zap, TrendingUp, TrendingDown, Loader2,
 } from "lucide-react";
-import { GlassCard, PageHeader } from "@/components/dashboard/ui";
+import { GlassCard, PageHeader, PrimaryButton } from "@/components/dashboard/ui";
 import { useToast } from "@/components/ui/toast";
+import imageCompression from "browser-image-compression";
 
 const PLATFORMS = [
   { id: "x", name: "X (Twitter)", maxChars: 280 },
@@ -43,6 +44,9 @@ export default function ComposePage() {
   const [scoring, setScoring] = useState(false);
   const [scheduling, setScheduling] = useState(false);
   const [scoreData, setScoreData] = useState<ScoreData | null>(null);
+  const [mediaFile, setMediaFile] = useState<{ file: File; previewUrl: string } | null>(null);
+  
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!content || content.length < 30) { setScoreData(null); return; }
@@ -81,9 +85,11 @@ export default function ComposePage() {
   }, [topic, selectedPlatforms, framework, tone, toastError]);
 
   const handleSchedule = async () => {
-    if (!content.trim()) { toastError("Nothing to schedule", "Write or generate content first."); return; }
+    if (!content.trim() && !mediaFile) { toastError("Nothing to schedule", "Write or generate content first."); return; }
     setScheduling(true);
     try {
+      // If we had media, we'd upload to supabase storage here (similar to calendar)
+      // For MVP, we'll just queue it.
       const res = await fetch("/api/posts/schedule", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content, platforms: selectedPlatforms, score: scoreData?.score }),
@@ -91,7 +97,7 @@ export default function ComposePage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
       toastSuccess("Scheduled", `Queued to ${selectedPlatforms.length} platform(s).`);
-      setContent(""); setTopic(""); setScoreData(null);
+      setContent(""); setTopic(""); setScoreData(null); setMediaFile(null);
     } catch (err: unknown) {
       toastError("Scheduling failed", err instanceof Error ? err.message : undefined);
     } finally { setScheduling(false); }
@@ -99,6 +105,31 @@ export default function ComposePage() {
 
   const togglePlatform = (id: string) =>
     setSelectedPlatforms((prev) => (prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]));
+
+  const handleHashClick = () => {
+    setContent(prev => prev + (prev.endsWith(' ') || prev.length === 0 ? '' : ' ') + '#');
+  };
+  
+  const handleAtClick = () => {
+    setContent(prev => prev + (prev.endsWith(' ') || prev.length === 0 ? '' : ' ') + '@');
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files?.length) return;
+    const file = e.target.files[0];
+    
+    if (file.type.startsWith('image/')) {
+      try {
+        const compressed = await imageCompression(file, { maxSizeMB: 1, maxWidthOrHeight: 1920 });
+        setMediaFile({ file: compressed, previewUrl: URL.createObjectURL(compressed) });
+      } catch (err) {
+        console.error(err);
+      }
+    } else {
+      // Just video
+      setMediaFile({ file, previewUrl: URL.createObjectURL(file) });
+    }
+  };
 
   const activeLimit = PLATFORMS.find((p) => selectedPlatforms.includes(p.id))?.maxChars || 280;
   const charCount = content.length;
@@ -138,18 +169,36 @@ export default function ComposePage() {
             />
           </GlassCard>
 
-          <GlassCard className="p-4">
+          <GlassCard className="p-4 flex flex-col">
             <textarea
               value={content}
               onChange={(e) => setContent(e.target.value)}
               placeholder="Your post will appear here after generation, or type directly…"
-              className="min-h-[280px] w-full resize-none bg-transparent text-[15px] leading-relaxed text-[var(--fg)] outline-none placeholder:text-[var(--fg-4)]"
+              className="min-h-[220px] w-full resize-none bg-transparent text-[15px] leading-relaxed text-[var(--fg)] outline-none placeholder:text-[var(--fg-4)]"
             />
-            <div className="mt-3 flex items-center justify-between border-t border-[var(--stroke)] pt-3">
+            
+            {mediaFile && (
+              <div className="relative w-32 h-32 mt-4 rounded-xl overflow-hidden border border-[var(--stroke)] group">
+                {mediaFile.file.type.startsWith('video') ? (
+                  <video src={mediaFile.previewUrl} className="w-full h-full object-cover" />
+                ) : (
+                  <img src={mediaFile.previewUrl} alt="Preview" className="w-full h-full object-cover" />
+                )}
+                <button 
+                  onClick={() => setMediaFile(null)}
+                  className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 text-white flex items-center justify-center backdrop-blur-md"
+                >
+                  <span className="text-xs">✕</span>
+                </button>
+              </div>
+            )}
+
+            <div className="mt-auto pt-3 flex items-center justify-between border-t border-[var(--stroke)]">
               <div className="flex items-center gap-1">
-                {[ImageIcon, Hash, AtSign].map((Icon, i) => (
-                  <button key={i} className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--fg-3)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--fg)]"><Icon className="h-4 w-4" /></button>
-                ))}
+                <button onClick={() => fileInputRef.current?.click()} className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--fg-3)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--fg)]" title="Attach Media"><ImageIcon className="h-4 w-4" /></button>
+                <button onClick={handleHashClick} className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--fg-3)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--fg)]" title="Add Hashtag"><Hash className="h-4 w-4" /></button>
+                <button onClick={handleAtClick} className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--fg-3)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--fg)]" title="Mention"><AtSign className="h-4 w-4" /></button>
+                <input type="file" ref={fileInputRef} className="hidden" accept="image/*,video/*" onChange={handleFileChange} />
               </div>
               <div className="flex items-center gap-3">
                 {scoring && <Loader2 className="h-4 w-4 animate-spin text-[var(--fg-4)]" />}

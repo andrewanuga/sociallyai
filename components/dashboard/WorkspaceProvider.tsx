@@ -19,6 +19,9 @@ interface WorkspaceContextType {
   activeWorkspace: Workspace | null;
   setActiveWorkspace: (id: string) => void;
   isLoading: boolean;
+  persona: string;
+  plan: string;
+  setPersona: (persona: string) => Promise<void>;
 }
 
 const WorkspaceContext = createContext<WorkspaceContextType | undefined>(undefined);
@@ -26,6 +29,8 @@ const WorkspaceContext = createContext<WorkspaceContextType | undefined>(undefin
 export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [activeWorkspaceId, setActiveWorkspaceId] = useState<string | null>(null);
+  const [persona, setPersonaState] = useState<string>("creator");
+  const [plan, setPlan] = useState<string>("free");
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
   const supabase = createClient();
@@ -41,9 +46,14 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       // 1. Fetch personal profile
       const { data: profile } = await supabase
         .from("profiles")
-        .select("id, full_name")
+        .select("id, full_name, persona, plan")
         .eq("id", user.id)
         .single();
+        
+      if (profile) {
+        setPersonaState(profile.persona || "creator");
+        setPlan(profile.plan || "free");
+      }
 
       // 2. Fetch collaborative workspaces
       const { data: members } = await supabase
@@ -101,13 +111,27 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     router.refresh();
   }, [router]);
 
+  const setPersona = useCallback(async (newPersona: string) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    
+    // Optimistic UI update
+    setPersonaState(newPersona);
+    
+    // Update DB
+    await supabase.from("profiles").update({ persona: newPersona }).eq("id", user.id);
+    
+    // Refresh to reload server components based on persona
+    router.refresh();
+  }, [supabase, router]);
+
   const activeWorkspace = useMemo(
     () => workspaces.find((w) => w.id === activeWorkspaceId) || null,
     [workspaces, activeWorkspaceId]
   );
 
   return (
-    <WorkspaceContext.Provider value={{ workspaces, activeWorkspace, setActiveWorkspace, isLoading }}>
+    <WorkspaceContext.Provider value={{ workspaces, activeWorkspace, setActiveWorkspace, isLoading, persona, plan, setPersona }}>
       {children}
     </WorkspaceContext.Provider>
   );

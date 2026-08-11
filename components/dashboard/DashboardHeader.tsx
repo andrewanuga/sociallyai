@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { Search, Menu, Plus, PanelLeft } from "lucide-react";
+import { Search, Menu, Plus, PanelLeft, Briefcase, Zap, AlertTriangle } from "lucide-react";
 import { NotificationsMenu, ProfileMenu, WorkspaceMenu } from "./HeaderMenus";
+import { useWorkspace } from "./WorkspaceProvider";
+import { useToast } from "@/components/ui/toast";
 
 export function DashboardHeader({
   onMobileMenuToggle,
@@ -12,6 +14,20 @@ export function DashboardHeader({
   onMobileMenuToggle?: () => void;
   onToggleSidebar?: () => void;
 }) {
+  const { persona, plan, setPersona } = useWorkspace();
+  const { error } = useToast();
+
+  const handleModeSwitch = async (mode: string) => {
+    if (mode === "marketer" && plan !== "advanced" && plan !== "team") {
+      error(
+        "Upgrade Required",
+        "Marketer Mode (Agency Hub, Campaigns, CRM) is strictly reserved for the Team and Advanced plan."
+      );
+      return;
+    }
+    await setPersona(mode);
+  };
+
   return (
     <header
       className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-[var(--stroke)] px-4 sm:px-6"
@@ -33,8 +49,32 @@ export function DashboardHeader({
           <PanelLeft className="h-[18px] w-[18px]" />
         </button>
 
+        {/* Mode Switcher */}
+        <div className="hidden items-center rounded-full bg-[var(--panel-fill-2)] p-1 sm:flex">
+          <button
+            onClick={() => handleModeSwitch("creator")}
+            className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-semibold transition-all ${
+              persona !== "marketer"
+                ? "bg-[var(--panel-fill)] text-[var(--fg)] shadow-sm"
+                : "text-[var(--fg-3)] hover:text-[var(--fg)]"
+            }`}
+          >
+            <Zap className="h-3.5 w-3.5" /> Creator
+          </button>
+          <button
+            onClick={() => handleModeSwitch("marketer")}
+            className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-semibold transition-all ${
+              persona === "marketer"
+                ? "bg-[var(--sai-indigo)] text-white shadow-[0_0_15px_rgba(99,102,241,0.5)]"
+                : "text-[var(--fg-3)] hover:text-[var(--fg)]"
+            }`}
+          >
+            <Briefcase className="h-3.5 w-3.5" /> Marketer
+          </button>
+        </div>
+
         {/* Search */}
-        <div className="relative hidden sm:block">
+        <div className="relative hidden lg:block">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--fg-4)]" />
           <input
             placeholder="Search posts, tasks, trends…"

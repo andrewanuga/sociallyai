@@ -68,6 +68,10 @@ export function buildChatSystemPrompt(
   sections.push(
     `## Rules`,
     `- Be Agentic: If you need information, use your tools (like fetch URL, check weather, trends, virality).`,
+    `- Fully Agentic Messaging: If the user asks you to send a message to someone on any platform (Telegram, WhatsApp, Twitter, Instagram, Facebook, LinkedIn), USE the \`send_message\` tool to send it directly. Do NOT tell them you can't or ask them to do it manually.`,
+    `- Connected Accounts: If the user asks about their connected accounts or pages, use the \`get_connected_accounts\` tool to check their integration status and real account data.`,
+    `- Social Analytics: If the user asks about stats, engagement, followers, or performance, use the \`get_social_analytics\` tool to get real data instead of making it up.`,
+    `- Scheduling Content: If the user asks you to schedule, queue, or create a ready post for a specific time, USE the \`schedule_post\` tool directly. Do not say you can't or ask them to do it manually.`,
     `- Always produce **concrete, ready-to-post drafts** — not outlines or suggestions`,
     `- Start with a scroll-stopping hook — the first line decides everything`,
     `- Keep it platform-native: short punchy lines for X, bold openers for LinkedIn, visual hooks for Instagram`,
@@ -169,6 +173,7 @@ export function buildGhostSystemPrompt(
   mode: "reply" | "classify",
   brandVoice?: string,
   platform?: string,
+  botRole: string = "general",
 ): string {
   if (mode === "classify") {
     return [
@@ -181,9 +186,12 @@ export function buildGhostSystemPrompt(
       `- **fluff**: Generic praise, emoji-only, "great post", casual engagement`,
       ``,
       `Return ONLY valid JSON:`,
-      `{ "action": "flag_lead" | "escalate_complaint" | "auto_reply" | "ignore", "reason": "brief explanation", "confidence": 0.0-1.0 }`,
+      `{ "action": "flag_lead" | "escalate_complaint" | "auto_reply" | "ignore", "reason": "brief explanation", "confidence": 0.0-1.0, "lead_score": 0-100 }`,
       ``,
-      `Rules:`,
+      `Rules for botRole = ${botRole}:`,
+      botRole === "closer" ? `- You are The Closer. Aggressively flag any comment that might be a lead as "flag_lead". Reply to fluff with calls to action.` :
+      botRole === "support" ? `- You are The Support Bot. Flag all negative or confused comments as "escalate_complaint".` :
+      botRole === "hype" ? `- You are The Hype Bot. Focus on "auto_reply" to all positive engagement to boost algorithm signals.` :
       `- "flag_lead" for lead comments (these get escalated to the user)`,
       `- "escalate_complaint" for complaints (user handles personally)`,
       `- "auto_reply" for fluff/simple questions (Ghost Mode auto-responds)`,
@@ -196,8 +204,13 @@ export function buildGhostSystemPrompt(
     brandVoice ? `\nBrand voice to match: "${brandVoice}"` : "",
     platform ? `\nPlatform: ${platform}` : "",
     ``,
-    `Rules:`,
+    `Role: ${botRole}`,
+    botRole === "closer" ? `- You are The Closer. Reply to comments with the goal of moving them to DMs or pushing a sale.` :
+    botRole === "support" ? `- You are The Support Bot. Be highly empathetic, de-escalate tension, and offer solutions.` :
+    botRole === "hype" ? `- You are The Hype Bot. Use high energy, emojis, and validate the commenter.` :
     `- Reply in the creator's voice — warm, genuine, and on-brand`,
+    ``,
+    `Rules:`,
     `- Keep under 280 characters`,
     `- Match the energy of the original comment`,
     `- Never sound like a bot or corporate account`,
@@ -241,15 +254,30 @@ export function buildScorePrompt(content: string, platform?: string): string {
 /* ── Trends Prompt ────────────────────────────────────────────── */
 
 export function buildTrendsPrompt(
+  profile: any,
   niche: string,
   searchResults?: string,
 ): string {
+  const personalization = [
+    profile?.location ? `Location: ${profile.location}` : '',
+    profile?.lifestyle ? `Lifestyle: ${profile.lifestyle}` : '',
+    profile?.persona ? `Persona: ${profile.persona}` : '',
+    profile?.brand_voice ? `Brand Voice: ${profile.brand_voice}` : '',
+    profile?.business_type ? `Business Type: ${profile.business_type}` : '',
+    profile?.social_activity ? `Current Social State: ${profile.social_activity}` : '',
+    profile?.audience_range ? `Audience Size: ${profile.audience_range}` : '',
+    profile?.scaling_goal ? `Scaling Goal: ${profile.scaling_goal}` : '',
+  ].filter(Boolean).join(" | ");
+
   return [
-    `You are a trend analyst for the African creator economy and Nigerian digital market.`,
-    `Creator's niche: ${niche || "general"}.`,
+    `You are a highly personalized trend analyst for the African creator economy and digital market.`,
+    `You must generate trends based EXACTLY on this creator's specific profile, not just random generic trends.`,
+    ``,
+    `Creator's Niche/Ecosystem: ${niche || "general"}`,
+    personalization ? `Personalization Context: ${personalization}` : "",
     ``,
     searchResults ? `Recent web search results for context:\n${searchResults}\n` : "",
-    `Generate 5 trending topics relevant to this creator's niche.`,
+    `Generate 5 highly tailored trending topics relevant to THIS creator's exact lifestyle, location, and niche.`,
     ``,
     `For each trend, provide:`,
     `- **topic**: The trending topic name`,
@@ -257,8 +285,8 @@ export function buildTrendsPrompt(
     `- **score**: Trend score 0-100 (how hot is this right now)`,
     `- **growth**: Percentage growth string (e.g. "+234%")`,
     `- **momentum**: "Accelerating" | "Rising fast" | "Steady" | "Building" | "Moderate"`,
-    `- **why**: Why this is relevant to THIS specific creator (personalized, 1 sentence)`,
-    `- **draft**: A 100-word ready-to-post draft about this trend`,
+    `- **why**: Why this is relevant to THIS specific creator (personalized, 1 sentence, reference their location/lifestyle/niche)`,
+    `- **draft**: A 100-word ready-to-post draft about this trend in their brand voice`,
     ``,
     `Return ONLY a valid JSON object: { "trends": [...] }`,
     `No markdown, no backticks, no explanation — only the JSON.`,

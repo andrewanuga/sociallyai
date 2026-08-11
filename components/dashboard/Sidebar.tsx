@@ -6,10 +6,11 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard, MessagesSquare, ListTodo, CalendarRange, Inbox,
   BarChart3, TrendingUp, Bot, Ghost, Plug, CreditCard, Settings,
-  LifeBuoy, LogOut, PanelLeftClose, PanelLeftOpen,
+  LifeBuoy, LogOut, PanelLeftClose, PanelLeftOpen, Megaphone, Users, UserPlus, Target, Sparkles, X
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
+import { useWorkspace } from "./WorkspaceProvider";
 
 type Item = { href: string; label: string; icon: typeof LayoutDashboard; badge?: number; exact?: boolean };
 
@@ -44,6 +45,37 @@ const SECTIONS: { title: string; items: Item[] }[] = [
   },
 ];
 
+const MARKETER_SECTIONS: { title: string; items: Item[] }[] = [
+  {
+    title: "Agency Hub",
+    items: [
+      { href: "/dashboard/agency", label: "Clients", icon: Users, exact: true },
+      { href: "/dashboard/campaign-builder", label: "Campaign Builder", icon: Sparkles },
+      { href: "/dashboard/campaigns", label: "Campaigns", icon: Megaphone },
+      { href: "/dashboard/crm", label: "Lead CRM", icon: Target },
+      { href: "/dashboard/calendar", label: "Grid Planner", icon: CalendarRange },
+    ],
+  },
+  {
+    title: "Insights",
+    items: [
+      { href: "/dashboard/analytics", label: "ROAS Analytics", icon: BarChart3 },
+      { href: "/dashboard/trends", label: "Trend Monitor", icon: TrendingUp },
+    ],
+  },
+  {
+    title: "Agents",
+    items: [
+      { href: "/dashboard/bots", label: "Support & Hype Bots", icon: Bot },
+      { href: "/dashboard/ghost-mode", label: "The Closer", icon: Ghost },
+    ],
+  },
+  {
+    title: "Connect",
+    items: [{ href: "/dashboard/integrations", label: "Integrations", icon: Plug }],
+  },
+];
+
 const BOTTOM: Item[] = [
   { href: "/dashboard/support", label: "Support", icon: LifeBuoy },
   { href: "/dashboard/billing", label: "Billing", icon: CreditCard },
@@ -53,12 +85,15 @@ const BOTTOM: Item[] = [
 export function Sidebar({
   collapsed,
   onToggle,
+  isMobile,
 }: {
   collapsed: boolean;
   onToggle: () => void;
+  isMobile?: boolean;
 }) {
   const pathname = usePathname();
   const router = useRouter();
+  const { persona } = useWorkspace();
   const [inboxUnread, setInboxUnread] = useState(0);
 
   // Live unread inbox count for the sidebar badge.
@@ -91,6 +126,11 @@ export function Sidebar({
     return (
       <Link
         href={item.href}
+        onClick={(e) => {
+          if (isMobile) {
+            onToggle();
+          }
+        }}
         className={cn(
           "group relative flex items-center gap-3 rounded-xl px-2.5 py-2.5 text-[13.5px] font-medium transition-colors duration-150",
           active ? "text-[var(--fg)]" : "text-[var(--fg-2)] hover:text-[var(--fg)]",
@@ -136,20 +176,29 @@ export function Sidebar({
       <div
         className={cn(
           "flex h-full flex-col transition-[width,padding] duration-300 ease-in-out",
-          collapsed ? "w-0 overflow-hidden" : "w-[248px]"
+          collapsed ? "w-[68px]" : "w-[248px]"
         )}
       >
-        <div className={cn("flex h-16 flex-shrink-0 items-center border-b border-[var(--stroke)] px-4", collapsed ? "justify-center opacity-0" : "gap-2.5 opacity-100 transition-opacity delay-100 duration-200")}>
+        <div className={cn("flex h-16 flex-shrink-0 items-center border-b border-[var(--stroke)]", collapsed ? "justify-center px-0" : "gap-2.5 px-4 transition-opacity delay-100 duration-200")}>
           <img src="/logo.png" alt="" width={26} height={23} className="h-[24px] w-auto" style={{ filter: "drop-shadow(0 0 10px rgba(99,102,241,0.4))" }} />
           {!collapsed && (
-            <span className="font-display text-[16px] font-semibold text-[var(--fg)]">
+            <span className="font-display text-[16px] font-semibold text-[var(--fg)] whitespace-nowrap">
               Socially<span className="text-[var(--sai-indigo)]"> AI</span>
             </span>
+          )}
+          {isMobile && (
+            <button 
+              type="button"
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggle(); }} 
+              className="ml-auto flex items-center justify-center h-8 w-8 rounded-lg text-[var(--fg-3)] hover:text-[var(--fg)] hover:bg-[var(--hover)] transition-colors relative z-50 pointer-events-auto"
+            >
+              <X className="h-5 w-5" />
+            </button>
           )}
         </div>
 
         <nav className="flex-1 overflow-y-auto px-2.5 py-4">
-          {SECTIONS.map((sec) => (
+          {(persona === "marketer" ? MARKETER_SECTIONS : SECTIONS).map((sec) => (
             <div key={sec.title} className="mb-4">
               {!collapsed && (
                 <p className="font-data mb-1.5 px-2.5 text-[10px] uppercase tracking-[0.2em] text-[var(--fg-4)]">
@@ -183,14 +232,16 @@ export function Sidebar({
         </div>
       </div>
 
-      <button
-        type="button"
-        onClick={onToggle}
-        aria-label="Toggle sidebar"
-        className="glass-panel absolute -right-3 top-[70px] z-50 flex h-6 w-6 items-center justify-center rounded-full text-[var(--fg-2)] transition-colors hover:text-[var(--fg)]"
-      >
-        {collapsed ? <PanelLeftOpen className="h-3.5 w-3.5" /> : <PanelLeftClose className="h-3.5 w-3.5" />}
-      </button>
+      {!isMobile && (
+        <button
+          type="button"
+          onClick={onToggle}
+          aria-label="Toggle sidebar"
+          className="glass-panel absolute -right-3 top-[70px] z-50 flex h-6 w-6 items-center justify-center rounded-full text-[var(--fg-2)] transition-colors hover:text-[var(--fg)]"
+        >
+          {collapsed ? <PanelLeftOpen className="h-3.5 w-3.5" /> : <PanelLeftClose className="h-3.5 w-3.5" />}
+        </button>
+      )}
     </aside>
   );
 }
