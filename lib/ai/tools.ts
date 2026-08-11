@@ -369,6 +369,18 @@ Suggestion: Tweak claim to specify "For B2B enterprises...".`;
           scheduled_at: args.publish_at,
           status: "scheduled"
         });
+        
+        if (!error) {
+          await ctx.supabase.from("tasks").insert({
+            user_id: ctx.workspaceId,
+            title: `Post scheduled for ${args.platform}`,
+            notes: `To be published at ${args.publish_at}. Content: "${args.content.substring(0, 60)}..."`,
+            priority: "normal",
+            status: "pending",
+            bot_id: "ai-scheduler"
+          });
+        }
+
         if (error) return `Error scheduling post: ${error.message}`;
         return `Successfully scheduled post for ${args.platform} at ${args.publish_at}.`;
       } catch (e: any) {
