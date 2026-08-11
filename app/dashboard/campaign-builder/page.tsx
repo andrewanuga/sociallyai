@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Link2, Sparkles, Send, AtSign, Building2, Camera, LayoutTemplate, Layers } from "lucide-react";
 import { PageHeader, GlassCard, PrimaryButton } from "@/components/dashboard/ui";
 import { useToast } from "@/components/ui/toast";
+import { MarkdownRenderer } from "@/components/dashboard/MarkdownRenderer";
 
 export default function CampaignBuilderPage() {
   const { error, success } = useToast();
@@ -123,7 +124,9 @@ export default function CampaignBuilderPage() {
                   {campaign.twitter.map((tweet, i) => (
                     <div key={i} className="bg-[var(--panel-fill)] p-4 rounded-xl border border-[var(--stroke)] relative">
                       <div className="absolute left-4 top-4 bottom-4 w-0.5 bg-[var(--stroke)] -z-10 hidden" />
-                      <p className="text-sm text-[var(--fg)] whitespace-pre-wrap">{tweet}</p>
+                      <div className="w-full overflow-hidden">
+                        <MarkdownRenderer content={tweet} />
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -140,7 +143,9 @@ export default function CampaignBuilderPage() {
                   </button>
                 </div>
                 <div className="bg-[var(--panel-fill)] p-4 rounded-xl border border-[var(--stroke)]">
-                  <p className="text-sm text-[var(--fg)] whitespace-pre-wrap">{campaign.linkedin}</p>
+                  <div className="w-full overflow-hidden">
+                    <MarkdownRenderer content={campaign.linkedin} />
+                  </div>
                 </div>
               </GlassCard>
 
@@ -155,7 +160,9 @@ export default function CampaignBuilderPage() {
                   </button>
                 </div>
                 <div className="bg-[var(--panel-fill)] p-4 rounded-xl border border-[var(--stroke)]">
-                  <p className="text-sm text-[var(--fg)] whitespace-pre-wrap">{campaign.instagram}</p>
+                  <div className="w-full overflow-hidden">
+                    <MarkdownRenderer content={campaign.instagram} />
+                  </div>
                 </div>
               </GlassCard>
 

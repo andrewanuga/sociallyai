@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
 import { createClient } from "@/lib/supabase/client";
+import { MarkdownRenderer } from "@/components/dashboard/MarkdownRenderer";
 
 /* ── Types ────────────────────────────────────────────────────── */
 
@@ -462,14 +463,8 @@ export default function CreatePage() {
                 )}
 
                 {/* Content with basic markdown rendering */}
-                <div className="whitespace-pre-wrap">
-                  {m.content.split(/(\*\*.*?\*\*)/).map((part, i) =>
-                    part.startsWith("**") && part.endsWith("**") ? (
-                      <strong key={i}>{part.slice(2, -2)}</strong>
-                    ) : (
-                      <span key={i}>{part}</span>
-                    ),
-                  )}
+                <div className="w-full overflow-hidden">
+                  <MarkdownRenderer content={m.content} />
                 </div>
 
                 {/* Model badge for AI responses */}
@@ -501,7 +496,9 @@ export default function CreatePage() {
                 className="relative max-w-[85%] rounded-2xl px-4 py-3 text-[14px] leading-relaxed text-[var(--fg)]"
                 style={{ background: "var(--panel-fill-2)", border: "1px solid var(--panel-fill-2)" }}
               >
-                <div className="whitespace-pre-wrap">{streamText}</div>
+                <div className="w-full overflow-hidden">
+                  <MarkdownRenderer content={streamText} />
+                </div>
                 <span className="inline-block h-4 w-0.5 animate-pulse bg-[var(--sai-indigo)]" />
               </div>
             </div>

@@ -55,10 +55,10 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const niche = searchParams.get("niche") || "general";
 
-    // Get user's model preference
+    // Get user's profile and preferences
     const { data: profile } = await supabase
       .from("profiles")
-      .select("ai_model, niche")
+      .select("ai_model, niche, location, lifestyle, persona, brand_voice, business_type, social_activity, audience_range, scaling_goal")
       .eq("id", workspaceId)
       .single();
 
@@ -66,7 +66,7 @@ export async function GET(req: NextRequest) {
 
     // ── No API key → mock ───────────────────────────────────────
     if (!isConfigured()) {
-      return NextResponse.json({ trends: getMockTrends(userNiche) });
+      return NextResponse.json({ trends: getMockTrends(userNiche, profile) });
     }
 
     // ── Web search for context ──────────────────────────────────
@@ -75,7 +75,7 @@ export async function GET(req: NextRequest) {
     );
 
     // ── Call OpenRouter ─────────────────────────────────────────
-    const prompt = buildTrendsPrompt(userNiche, searchResults || undefined);
+    const prompt = buildTrendsPrompt(profile, userNiche, searchResults || undefined);
 
     const result = await callAI(
       [
@@ -95,7 +95,7 @@ export async function GET(req: NextRequest) {
       const parsed = JSON.parse(result.content);
       trends = parsed.trends || parsed;
     } catch {
-      trends = getMockTrends(userNiche);
+      trends = getMockTrends(userNiche, profile);
     }
 
     return NextResponse.json({ trends, model: result.model });
@@ -110,7 +110,9 @@ export async function GET(req: NextRequest) {
 
 /* ── Mock trends ──────────────────────────────────────────────── */
 
-function getMockTrends(niche: string): TrendResult[] {
+function getMockTrends(niche: string, profile?: any): TrendResult[] {
+  const loc = profile?.location ? ` in ${profile.location}` : " in Africa";
+  const life = profile?.lifestyle ? ` for ${profile.lifestyle} creators` : "";
   return [
     {
       topic: "AI Regulation in Africa",
@@ -118,7 +120,7 @@ function getMockTrends(niche: string): TrendResult[] {
       score: 94,
       growth: "+342%",
       momentum: "Accelerating",
-      why: `High relevance to ${niche}-focused accounts with strong policy discussion history`,
+      why: `High relevance to ${niche}-focused accounts${loc} with strong policy discussion history`,
       draft:
         "🚨 Nigeria's AI governance framework just dropped — here's what it means for every founder building AI products in Africa...\n\nThis changes everything about how we build, deploy, and monetize AI in 2026.\n\nThread 🧵",
     },
@@ -128,7 +130,7 @@ function getMockTrends(niche: string): TrendResult[] {
       score: 87,
       growth: "+218%",
       momentum: "Rising fast",
-      why: "Directly relevant to Nigeria-focused business audience",
+      why: `Directly relevant to ${loc} business audience`,
       draft:
         "The Naira holding steady at ₦1,580/$ for 6 weeks straight has fundamentally changed how we price SaaS in Africa.\n\nHere's what I've learned after repricing 3 products this quarter 👇",
     },
@@ -138,7 +140,7 @@ function getMockTrends(niche: string): TrendResult[] {
       score: 81,
       growth: "+156%",
       momentum: "Steady",
-      why: "Matches primary content niche and target audience",
+      why: `Matches primary content niche${life} and target audience`,
       draft:
         "The Nigerian creator economy just crossed $1.2B. Yet 87% of creators are still monetizing it wrong.\n\nHere's the playbook nobody talks about for building real revenue from your audience in 2026:",
     },

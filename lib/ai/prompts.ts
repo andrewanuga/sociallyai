@@ -253,15 +253,30 @@ export function buildScorePrompt(content: string, platform?: string): string {
 /* ── Trends Prompt ────────────────────────────────────────────── */
 
 export function buildTrendsPrompt(
+  profile: any,
   niche: string,
   searchResults?: string,
 ): string {
+  const personalization = [
+    profile?.location ? `Location: ${profile.location}` : '',
+    profile?.lifestyle ? `Lifestyle: ${profile.lifestyle}` : '',
+    profile?.persona ? `Persona: ${profile.persona}` : '',
+    profile?.brand_voice ? `Brand Voice: ${profile.brand_voice}` : '',
+    profile?.business_type ? `Business Type: ${profile.business_type}` : '',
+    profile?.social_activity ? `Current Social State: ${profile.social_activity}` : '',
+    profile?.audience_range ? `Audience Size: ${profile.audience_range}` : '',
+    profile?.scaling_goal ? `Scaling Goal: ${profile.scaling_goal}` : '',
+  ].filter(Boolean).join(" | ");
+
   return [
-    `You are a trend analyst for the African creator economy and Nigerian digital market.`,
-    `Creator's niche: ${niche || "general"}.`,
+    `You are a highly personalized trend analyst for the African creator economy and digital market.`,
+    `You must generate trends based EXACTLY on this creator's specific profile, not just random generic trends.`,
+    ``,
+    `Creator's Niche/Ecosystem: ${niche || "general"}`,
+    personalization ? `Personalization Context: ${personalization}` : "",
     ``,
     searchResults ? `Recent web search results for context:\n${searchResults}\n` : "",
-    `Generate 5 trending topics relevant to this creator's niche.`,
+    `Generate 5 highly tailored trending topics relevant to THIS creator's exact lifestyle, location, and niche.`,
     ``,
     `For each trend, provide:`,
     `- **topic**: The trending topic name`,
@@ -269,8 +284,8 @@ export function buildTrendsPrompt(
     `- **score**: Trend score 0-100 (how hot is this right now)`,
     `- **growth**: Percentage growth string (e.g. "+234%")`,
     `- **momentum**: "Accelerating" | "Rising fast" | "Steady" | "Building" | "Moderate"`,
-    `- **why**: Why this is relevant to THIS specific creator (personalized, 1 sentence)`,
-    `- **draft**: A 100-word ready-to-post draft about this trend`,
+    `- **why**: Why this is relevant to THIS specific creator (personalized, 1 sentence, reference their location/lifestyle/niche)`,
+    `- **draft**: A 100-word ready-to-post draft about this trend in their brand voice`,
     ``,
     `Return ONLY a valid JSON object: { "trends": [...] }`,
     `No markdown, no backticks, no explanation — only the JSON.`,
