@@ -53,6 +53,9 @@ const AGENT_TOOLS = [
   { id: "fetch_post_analytics", name: "Check Analytics", desc: "Analyze recent post metrics", promptSuffix: "fetch my recent post analytics and summarize them." },
   { id: "get_viral_formats", name: "Viral Formats", desc: "Get proven hook templates", promptSuffix: "get viral formats and suggest a draft using one of them." },
   { id: "fetch_unread_messages", name: "Check Inbox", desc: "Read recent DMs/comments", promptSuffix: "fetch my unread messages." },
+  { id: "send_message", name: "Send Message", desc: "Send a direct message", promptSuffix: "send a message to [recipient] on [platform] saying [message]." },
+  { id: "analyze_competitor", name: "Analyze Competitor", desc: "Research a competitor's strategy", promptSuffix: "analyze the content strategy of [competitor_handle]." },
+  { id: "evaluate_virality", name: "Evaluate Virality", desc: "Score a draft's potential", promptSuffix: "evaluate the virality potential of this draft." },
 ];
 
 const GREETING: Msg = {
@@ -102,6 +105,16 @@ export default function CreatePage() {
   const toolPickerRef = useRef<HTMLDivElement>(null);
   const idRef = useRef(1);
   const attIdRef = useRef(1);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  const stopGeneration = useCallback(() => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+      setBusy(false);
+      setStreamText((prev) => prev ? prev + "\n\n*[Stopped by user]*" : "");
+    }
+  }, []);
 
 
   const fetchChats = async () => {
@@ -284,9 +297,13 @@ export default function CreatePage() {
     setBusy(true);
     setStreamText("");
 
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
+
     try {
       const res = await fetch("/api/ai/chat", {
         method: "POST",
+        signal: abortController.signal,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           messages: history
@@ -357,13 +374,18 @@ export default function CreatePage() {
           },
         ]);
       }
-    } catch (e) {
-      toastError("Agent unavailable", e instanceof Error ? e.message : "Try again.");
+    } catch (e: any) {
+      if (e.name === "AbortError") {
+        console.log("Fetch aborted by user");
+      } else {
+        toastError("Agent unavailable", e instanceof Error ? e.message : "Try again.");
+      }
     } finally {
       setBusy(false);
       setStreamText("");
+      abortControllerRef.current = null;
     }
-  }, [input, attachments, busy, messages, selectedModel, toastError]);
+  }, [input, attachments, busy, messages, selectedModel, currentChatId, toastError]);
 
   /* ── Copy and reset ─────────────────────────────────────────── */
   const copy = (m: Msg) => {
@@ -728,15 +750,25 @@ export default function CreatePage() {
             className="max-h-40 flex-1 resize-none bg-transparent px-3 py-2.5 text-[14px] text-[var(--fg)] placeholder:text-[var(--fg-4)] focus:outline-none"
           />
 
-          {/* Send button */}
-          <button
-            onClick={() => send()}
-            disabled={(!input.trim() && attachments.length === 0) || busy}
-            className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl text-[var(--fg)] transition-transform hover:scale-105 disabled:opacity-40"
-            style={{ background: "linear-gradient(135deg,#6366f1,#a855f7)" }}
-          >
-            <ArrowUp className="h-5 w-5" />
-          </button>
+          {/* Send / Stop button */}
+          {busy ? (
+            <button
+              onClick={stopGeneration}
+              className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border border-[var(--stroke)] bg-[var(--panel-fill-2)] text-red-500 transition-transform hover:scale-105"
+              title="Stop generating"
+            >
+              <div className="h-3.5 w-3.5 rounded-[2px] bg-current" />
+            </button>
+          ) : (
+            <button
+              onClick={() => send()}
+              disabled={(!input.trim() && attachments.length === 0)}
+              className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl text-[var(--fg)] transition-transform hover:scale-105 disabled:opacity-40"
+              style={{ background: "linear-gradient(135deg,#6366f1,#a855f7)" }}
+            >
+              <ArrowUp className="h-5 w-5" />
+            </button>
+          )}
         </div>
 
         <p className="mt-2 text-center text-[11px] text-[var(--fg-4)]">
