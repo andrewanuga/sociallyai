@@ -14,7 +14,7 @@ export default async function CampaignsPage() {
     .eq("id", user.id)
     .single();
 
-  if (profile?.plan !== "advanced" || profile?.persona !== "marketer") {
+  if ((profile?.plan !== "advanced" && profile?.plan !== "team") || profile?.persona !== "marketer") {
     redirect("/dashboard");
   }
 

@@ -18,10 +18,10 @@ export function DashboardHeader({
   const { error } = useToast();
 
   const handleModeSwitch = async (mode: string) => {
-    if (mode === "marketer" && plan !== "advanced") {
+    if (mode === "marketer" && plan !== "advanced" && plan !== "team") {
       error(
         "Upgrade Required",
-        "Marketer Mode (Agency Hub, Campaigns, CRM) is strictly reserved for the Advanced plan."
+        "Marketer Mode (Agency Hub, Campaigns, CRM) is strictly reserved for the Team and Advanced plan."
       );
       return;
     }

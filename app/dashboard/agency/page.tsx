@@ -15,7 +15,8 @@ export default async function AgencyPage() {
     .single();
 
   // Redirect if they somehow got here without being an advanced marketer
-  if (profile?.plan !== "advanced" || profile?.persona !== "marketer") {
+  // Must be advanced or team plan to access
+  if ((profile?.plan !== "advanced" && profile?.plan !== "team") || profile?.persona !== "marketer") {
     redirect("/dashboard");
   }
 

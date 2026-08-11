@@ -208,14 +208,14 @@ export default function SupportPage() {
               <div>
                 <label className="text-[12px] font-semibold text-[var(--fg-3)] block mb-1.5">Subject / Category</label>
                 <Select value={adminSubject} onValueChange={setAdminSubject}>
-                  <SelectTrigger style={{ backgroundColor: '#121212' }} className="w-full rounded-xl border border-[var(--stroke)] px-4 py-6 text-sm text-white focus:ring-1 focus:ring-[var(--sai-indigo)] focus:outline-none">
+                  <SelectTrigger className="w-full h-auto py-3">
                     <SelectValue placeholder="Select a category..." />
                   </SelectTrigger>
-                  <SelectContent style={{ backgroundColor: '#121212' }} className="rounded-xl border border-[var(--stroke)] text-white overflow-hidden shadow-lg z-50">
-                    <SelectItem value="Bug Report" className="focus:bg-[var(--panel-fill)] focus:text-white cursor-pointer py-2.5">Bug Report</SelectItem>
-                    <SelectItem value="Feature Request" className="focus:bg-[var(--panel-fill)] focus:text-white cursor-pointer py-2.5">Feature Request</SelectItem>
-                    <SelectItem value="Billing" className="focus:bg-[var(--panel-fill)] focus:text-white cursor-pointer py-2.5">Billing Issue</SelectItem>
-                    <SelectItem value="Other" className="focus:bg-[var(--panel-fill)] focus:text-white cursor-pointer py-2.5">Other</SelectItem>
+                  <SelectContent>
+                    <SelectItem value="Bug Report">Bug Report</SelectItem>
+                    <SelectItem value="Feature Request">Feature Request</SelectItem>
+                    <SelectItem value="Billing">Billing Issue</SelectItem>
+                    <SelectItem value="Other">Other</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
