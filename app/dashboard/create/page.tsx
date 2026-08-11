@@ -48,6 +48,13 @@ const SUGGESTIONS = [
   "5 content ideas for this week",
 ];
 
+const AGENT_TOOLS = [
+  { id: "schedule_post", name: "Schedule Post", desc: "Push a draft to calendar", promptSuffix: "schedule the post we just drafted." },
+  { id: "fetch_post_analytics", name: "Check Analytics", desc: "Analyze recent post metrics", promptSuffix: "fetch my recent post analytics and summarize them." },
+  { id: "get_viral_formats", name: "Viral Formats", desc: "Get proven hook templates", promptSuffix: "get viral formats and suggest a draft using one of them." },
+  { id: "fetch_unread_messages", name: "Check Inbox", desc: "Read recent DMs/comments", promptSuffix: "fetch my unread messages." },
+];
+
 const GREETING: Msg = {
   id: 0,
   role: "assistant",
@@ -81,6 +88,7 @@ export default function CreatePage() {
   const [showModelPicker, setShowModelPicker] = useState(false);
   const [userDefaultModel, setUserDefaultModel] = useState<string>("");
 
+  const [showToolPicker, setShowToolPicker] = useState(false);
 
   const [chats, setChats] = useState<{ id: string; title: string }[]>([]);
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
@@ -91,6 +99,7 @@ export default function CreatePage() {
   const fileRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const modelPickerRef = useRef<HTMLDivElement>(null);
+  const toolPickerRef = useRef<HTMLDivElement>(null);
   const idRef = useRef(1);
   const attIdRef = useRef(1);
 
@@ -178,8 +187,11 @@ export default function CreatePage() {
       if (modelPickerRef.current && !modelPickerRef.current.contains(e.target as Node)) {
         setShowModelPicker(false);
       }
+      if (toolPickerRef.current && !toolPickerRef.current.contains(e.target as Node)) {
+        setShowToolPicker(false);
+      }
     }
-    if (showModelPicker) {
+    if (showModelPicker || showToolPicker) {
       document.addEventListener("mousedown", handleClick);
       return () => document.removeEventListener("mousedown", handleClick);
     }
@@ -602,10 +614,52 @@ export default function CreatePage() {
             <Paperclip className="h-5 w-5" />
           </button>
 
+          {/* Tooling picker */}
+          <div className="relative" ref={toolPickerRef}>
+            <button
+              onClick={() => { setShowToolPicker(!showToolPicker); setShowModelPicker(false); }}
+              title="Agent Tools"
+              className="flex h-10 items-center gap-1.5 rounded-xl border border-[var(--stroke)] bg-[var(--panel-fill)] px-2.5 text-[11px] text-[var(--fg-2)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--fg)]"
+            >
+              <Sparkles className="h-3.5 w-3.5 text-[#10b981]" />
+              <span className="max-w-[100px] truncate hidden sm:inline-block">Tools</span>
+              <ChevronDown className="h-3 w-3" />
+            </button>
+
+            {showToolPicker && (
+              <div
+                className="absolute bottom-full left-0 z-50 mb-2 w-[220px] overflow-hidden rounded-xl border border-[var(--stroke)] bg-[var(--panel-fill)] shadow-2xl"
+                style={{ backdropFilter: "blur(20px)" }}
+              >
+                <div className="border-b border-[var(--stroke)] p-3">
+                  <p className="text-[12px] font-semibold text-[var(--fg)]">Agent Tools</p>
+                  <p className="mt-0.5 text-[10px] text-[var(--fg-4)]">Force the AI to act</p>
+                </div>
+                <div className="max-h-[300px] overflow-y-auto p-1.5">
+                  {AGENT_TOOLS.map((tool) => (
+                    <button
+                      key={tool.id}
+                      onClick={() => {
+                        send(`Please use your ${tool.id} tool to ${tool.promptSuffix}`);
+                        setShowToolPicker(false);
+                      }}
+                      className="group flex w-full items-center justify-between rounded-lg px-3 py-2 text-left transition-colors hover:bg-[var(--hover)]"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <span className="text-[12px] font-medium text-[var(--fg)] block group-hover:text-[var(--sai-indigo)] transition-colors">{tool.name}</span>
+                        <span className="text-[10px] text-[var(--fg-4)] block truncate">{tool.desc}</span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Model picker */}
           <div className="relative" ref={modelPickerRef}>
             <button
-              onClick={() => setShowModelPicker(!showModelPicker)}
+              onClick={() => { setShowModelPicker(!showModelPicker); setShowToolPicker(false); }}
               title="Select AI model"
               className="flex h-10 items-center gap-1.5 rounded-xl border border-[var(--stroke)] bg-[var(--panel-fill)] px-2.5 text-[11px] text-[var(--fg-2)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--fg)]"
             >
